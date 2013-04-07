@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DCBAE83E1712237100D3D7A0 /* TusUpload.m in Sources */ = {isa = PBXBuildFile; fileRef = DCBAE83D1712237100D3D7A0 /* TusUpload.m */; };
 		DCCB27951711CC68000E78B6 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCCB27941711CC68000E78B6 /* UIKit.framework */; };
 		DCCB27971711CC68000E78B6 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCCB27961711CC68000E78B6 /* Foundation.framework */; };
 		DCCB27991711CC68000E78B6 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCCB27981711CC68000E78B6 /* CoreGraphics.framework */; };
@@ -34,6 +35,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DCBAE83C1712237100D3D7A0 /* TusUpload.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TusUpload.h; path = ../../src/TusUpload.h; sourceTree = "<group>"; };
+		DCBAE83D1712237100D3D7A0 /* TusUpload.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TusUpload.m; path = ../../src/TusUpload.m; sourceTree = "<group>"; };
 		DCCB27911711CC68000E78B6 /* tus-ios-client-demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "tus-ios-client-demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DCCB27941711CC68000E78B6 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		DCCB27961711CC68000E78B6 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -79,6 +82,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		DC5B44AF1712243500EE4A0D /* Tus */ = {
+			isa = PBXGroup;
+			children = (
+				DCBAE83C1712237100D3D7A0 /* TusUpload.h */,
+				DCBAE83D1712237100D3D7A0 /* TusUpload.m */,
+			);
+			name = Tus;
+			sourceTree = "<group>";
+		};
 		DCCB27881711CC68000E78B6 = {
 			isa = PBXGroup;
 			children = (
@@ -112,6 +124,7 @@
 		DCCB279A1711CC68000E78B6 /* tus-ios-client-demo */ = {
 			isa = PBXGroup;
 			children = (
+				DC5B44AF1712243500EE4A0D /* Tus */,
 				DCCB27A31711CC68000E78B6 /* TusAppDelegate.h */,
 				DCCB27A41711CC68000E78B6 /* TusAppDelegate.m */,
 				DCCB279B1711CC68000E78B6 /* Supporting Files */,
@@ -264,6 +277,7 @@
 			files = (
 				DCCB27A11711CC68000E78B6 /* main.m in Sources */,
 				DCCB27A51711CC68000E78B6 /* TusAppDelegate.m in Sources */,
+				DCBAE83E1712237100D3D7A0 /* TusUpload.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

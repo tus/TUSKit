@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface TusAppDelegate : UIResponder <UIApplicationDelegate>
+@interface TusAppDelegate : UIResponder <UIApplicationDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
 

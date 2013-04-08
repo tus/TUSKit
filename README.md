@@ -1,6 +1,6 @@
 # tus-ios-client
 
-A ios client implementing the [tus resumable upload
+An iOS client implementing the [tus resumable upload
 protocol](https://github.com/tus/tus-resumable-upload-protocol).
 
 This first version will provide a low level API without a GUI. More advanced

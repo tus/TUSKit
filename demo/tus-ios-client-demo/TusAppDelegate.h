@@ -8,8 +8,9 @@
 
 #import <UIKit/UIKit.h>
 
-@interface TusAppDelegate : UIResponder <UIApplicationDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate>
+@interface TusAppDelegate : UIResponder <UIApplicationDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate, NSURLConnectionDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
+@property (strong, nonatomic) UIProgressView *progress;
 
 @end

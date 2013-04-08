@@ -24,15 +24,24 @@
     
     self.window.backgroundColor = [UIColor whiteColor];
 
+
+    float buttonWidth = 200.0;
+    float buttonHeight = 40.0;
+    float buttonX = self.window.screen.bounds.size.width / 2 - buttonWidth / 2;
+    float buttonY = self.window.screen.bounds.size.height / 2 - buttonHeight / 2;
     UIButton *button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
     [button addTarget:self action:@selector(myButtonWasPressed) forControlEvents:UIControlEventTouchDown];
     [button setTitle:@"Select File" forState:UIControlStateNormal];
-
-
-    float width = 200.0;
-    float height = 40.0;
-    button.frame = CGRectMake(self.window.screen.bounds.size.width / 2 - width / 2, self.window.screen.bounds.size.height / 2 - height / 2, width, height);
+    button.frame = CGRectMake(buttonX, buttonY, buttonWidth, buttonHeight);
     [rootController.view addSubview:button];
+    
+    float progressWidth = self.window.screen.bounds.size.width * 0.8;
+    float progressHeight = 20.0;
+    float progressX = self.window.screen.bounds.size.width / 2 - progressWidth / 2;
+    float progressY = buttonY + buttonHeight + 20.00;
+    UIProgressView *progress = [[UIProgressView alloc] initWithFrame:(CGRectMake(progressX, progressY, progressWidth, progressHeight))];
+    [rootController.view addSubview:progress];
+    self.progress = progress;
     
     [self.window makeKeyAndVisible];
     return YES;
@@ -47,7 +56,10 @@
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
     UIImage *image = [info valueForKey:UIImagePickerControllerOriginalImage];
     [picker dismissViewControllerAnimated:YES completion:nil];
+    
+    NSLog(@"creating image data");
     NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
+    NSLog(@"done");
     
     
     NSString *uploadUrl;
@@ -55,7 +67,7 @@
         NSDictionary *headers = @{ @"Content-Range": [NSString stringWithFormat:@"bytes */%d",imageData.length]} ;
         
         // the server url to which the image (or the media) is uploaded. Use your server url here
-        NSURL *requestURL = [NSURL URLWithString:@"http://localhost:1080/files"];
+        NSURL *requestURL = [NSURL URLWithString:@"http://master.tus.io/files"];
         NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:requestURL cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:30];
         [request setHTTPMethod:@"POST"];
     //    [request setHTTPBody:imageData];
@@ -85,24 +97,34 @@
         [request setHTTPShouldHandleCookies:NO];
         [request setAllHTTPHeaderFields:headers];
         
-        NSHTTPURLResponse *response;
-        
-        NSError *err;
-        [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&err];
-        if (err != nil) {
-            // @TODO: Handle
-            NSLog(@"error posting to /files: %@", err);
-        }
-        
-        NSDictionary *responseHeader = [response allHeaderFields];
-        NSLog(@"headers: %@", responseHeader);
+
+        NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
+//        [connection start];
+
+//        NSHTTPURLResponse *response;
+//        NSError *err;
+//
+//        [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&err];
+//        if (err != nil) {
+//            // @TODO: Handle
+//            NSLog(@"error posting to /files: %@", err);
+//        }
+//        
+//        NSDictionary *responseHeader = [response allHeaderFields];
+//        NSLog(@"headers: %@", responseHeader);
     }
-    
     
     
     
     NSLog(@"url: %@",uploadUrl);
     
+}
+
+- (void)connection:(NSURLConnection *)connection didSendBodyData:(NSInteger)bytesWritten totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
+{
+    float progress = (float)totalBytesWritten / (float)totalBytesExpectedToWrite;
+    [self.progress setProgress:progress];
+    NSLog(@"progress: %f - %d / %d", progress, totalBytesWritten, totalBytesExpectedToWrite);
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application

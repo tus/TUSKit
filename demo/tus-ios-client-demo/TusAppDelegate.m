@@ -33,7 +33,7 @@
     [button setTitle:@"Select File" forState:UIControlStateNormal];
     [button setFrame:CGRectMake(buttonX, buttonY, buttonWidth, buttonHeight)];
     [[rootController view] addSubview:button];
-    
+
     // Progress Bar
     float progressWidth = self.window.screen.bounds.size.width * 0.8;
     float progressHeight = 20.0;

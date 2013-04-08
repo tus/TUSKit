@@ -428,6 +428,7 @@
 				GCC_PREFIX_HEADER = "tus-ios-client-demo/tus-ios-client-demo-Prefix.pch";
 				INFOPLIST_FILE = "tus-ios-client-demoTests/tus-ios-client-demoTests-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = YES;
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = octest;
 			};

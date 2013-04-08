@@ -56,75 +56,13 @@
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
     UIImage *image = [info valueForKey:UIImagePickerControllerOriginalImage];
     [picker dismissViewControllerAnimated:YES completion:nil];
-    
-    NSLog(@"creating image data");
     NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
-    NSLog(@"done");
     
-    
-    NSString *uploadUrl;
-    {
-        NSDictionary *headers = @{ @"Content-Range": [NSString stringWithFormat:@"bytes */%d",imageData.length]} ;
-        
-        // the server url to which the image (or the media) is uploaded. Use your server url here
-        NSURL *requestURL = [NSURL URLWithString:@"http://master.tus.io/files"];
-        NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:requestURL cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:30];
-        [request setHTTPMethod:@"POST"];
-    //    [request setHTTPBody:imageData];
-        [request setHTTPShouldHandleCookies:NO];
-        [request setAllHTTPHeaderFields:headers];
-
-        NSHTTPURLResponse *response;
-
-        NSError *err;
-        [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&err];
-        if (err != nil) {
-            // @TODO: Handle
-            NSLog(@"error posting to /files: %@", err);
-        }
-        
-        NSDictionary *responseHeader = [response allHeaderFields];
-        uploadUrl = [responseHeader valueForKey:@"Location"];
-    }
-
-    {
-        NSDictionary *headers = @{ @"Content-Range": [NSString stringWithFormat:@"bytes 0-%d/%d",imageData.length-1,imageData.length]} ;
-        
-        NSURL *requestURL = [NSURL URLWithString:uploadUrl];
-        NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:requestURL cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:30];
-        [request setHTTPMethod:@"PUT"];
-        [request setHTTPBody:imageData];
-        [request setHTTPShouldHandleCookies:NO];
-        [request setAllHTTPHeaderFields:headers];
-        
-
-        NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
-//        [connection start];
-
-//        NSHTTPURLResponse *response;
-//        NSError *err;
-//
-//        [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&err];
-//        if (err != nil) {
-//            // @TODO: Handle
-//            NSLog(@"error posting to /files: %@", err);
-//        }
-//        
-//        NSDictionary *responseHeader = [response allHeaderFields];
-//        NSLog(@"headers: %@", responseHeader);
-    }
-    
-    
-    
-    NSLog(@"url: %@",uploadUrl);
-    
-}
-
-- (void)connection:(NSURLConnection *)connection didSendBodyData:(NSInteger)bytesWritten totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
-{
-    float progress = (float)totalBytesWritten / (float)totalBytesExpectedToWrite;
-    [self.progress setProgress:progress];
-    NSLog(@"progress: %f - %d / %d", progress, totalBytesWritten, totalBytesExpectedToWrite);
+    TusUpload *upload = [[TusUpload alloc] initWithEndpoint:@"http://master.tus.io/files" data:imageData progress:^(NSInteger bytesWritten, NSInteger bytesTotal) {
+        float progress = (float)bytesWritten / (float)bytesTotal;
+        [self.progress setProgress:progress];
+    }];
+    [upload start];
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application

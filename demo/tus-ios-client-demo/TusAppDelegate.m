@@ -18,13 +18,12 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     UIViewController *rootController = [[UIViewController alloc] init];
-    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    self.window.rootViewController = rootController;
-    [self.window addSubview:rootController.view];
-    
-    self.window.backgroundColor = [UIColor whiteColor];
+    [self setWindow:[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]]];
+    [[self window] setRootViewController:rootController];
+    [[self window] addSubview:[rootController view]];
+    [[self window] setBackgroundColor:[UIColor whiteColor]];
 
-
+    // Select File Button
     float buttonWidth = 200.0;
     float buttonHeight = 40.0;
     float buttonX = self.window.screen.bounds.size.width / 2 - buttonWidth / 2;
@@ -32,24 +31,25 @@
     UIButton *button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
     [button addTarget:self action:@selector(myButtonWasPressed) forControlEvents:UIControlEventTouchDown];
     [button setTitle:@"Select File" forState:UIControlStateNormal];
-    button.frame = CGRectMake(buttonX, buttonY, buttonWidth, buttonHeight);
-    [rootController.view addSubview:button];
+    [button setFrame:CGRectMake(buttonX, buttonY, buttonWidth, buttonHeight)];
+    [[rootController view] addSubview:button];
     
+    // Progress Bar
     float progressWidth = self.window.screen.bounds.size.width * 0.8;
     float progressHeight = 20.0;
     float progressX = self.window.screen.bounds.size.width / 2 - progressWidth / 2;
     float progressY = buttonY + buttonHeight + 20.00;
     UIProgressView *progress = [[UIProgressView alloc] initWithFrame:(CGRectMake(progressX, progressY, progressWidth, progressHeight))];
-    [rootController.view addSubview:progress];
-    self.progress = progress;
-    
+    [[rootController view] addSubview:progress];
+    [self setProgress:progress];
+
     [self.window makeKeyAndVisible];
     return YES;
 }
 
 - (void) myButtonWasPressed {
     UIImagePickerController *controller = [[UIImagePickerController alloc] init];
-    controller.delegate = self;
+    [controller setDelegate:self];
     [self.window.rootViewController presentViewController:controller animated:YES completion:nil];
 }
 
@@ -58,7 +58,10 @@
     [picker dismissViewControllerAnimated:YES completion:nil];
     NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
     
-    TusUpload *upload = [[TusUpload alloc] initWithEndpoint:@"http://master.tus.io/files" data:imageData progress:^(NSInteger bytesWritten, NSInteger bytesTotal) {
+    NSURL *assetUrl = [info valueForKey:UIImagePickerControllerReferenceURL];
+    NSString *fingerprint = [assetUrl absoluteString];
+    
+    TusUpload *upload = [[TusUpload alloc] initWithEndpoint:@"http://master.tus.io/files" data:imageData fingerprint:fingerprint progress:^(NSInteger bytesWritten, NSInteger bytesTotal) {
         float progress = (float)bytesWritten / (float)bytesTotal;
         [self.progress setProgress:progress];
     }];

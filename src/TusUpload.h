@@ -9,6 +9,6 @@
 #import <Foundation/Foundation.h>
 
 @interface TusUpload : NSObject
-- (id) initWithEndpoint:(NSString *)url data:(NSData *)data progress:(void (^)(NSInteger bytesWritten, NSInteger bytesTotal))progress;
+- (id) initWithEndpoint:(NSString *)url data:(NSData *)data fingerprint:(NSString *)fingerprint progress:(void (^)(NSInteger bytesWritten, NSInteger bytesTotal))progress;
 - (void) start;
 @end

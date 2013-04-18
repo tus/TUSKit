@@ -21,7 +21,7 @@ typedef enum {
 @property (strong, nonatomic) NSURL *endpoint;
 @property (strong, nonatomic) NSURL *url;
 @property (strong, nonatomic) NSString *fingerprint;
-@property (strong, nonatomic) NSUserDefaults *localStorage;
+@property (strong, nonatomic) NSMutableDictionary *resumableUploads;
 @property (nonatomic) NSInteger offset;
 @property (nonatomic) UploadState state;
 @property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
@@ -29,7 +29,6 @@ typedef enum {
 
 @implementation TUSResumableUpload
 
-// @TODO This is not going to work for very large files as we need a way to stream data from disk without loading it all into memory
 - (id) initWithEndpoint:(NSString *)url data:(TUSData *)data fingerprint:(NSString *)fingerprint progress:(void (^)(NSInteger bytesWritten, NSInteger bytesTotal))progress {
     self = [super init];
     if (self) {
@@ -37,14 +36,19 @@ typedef enum {
         [self setData:data];
         [self setProgress:progress];
         [self setFingerprint:fingerprint];
-        [self setLocalStorage:[NSUserDefaults standardUserDefaults]];
+
+        NSURL* resumableUploadsPath = [self resumableUploadsFilePath];
+        self.resumableUploads = [NSMutableDictionary dictionaryWithContentsOfURL:resumableUploadsPath];
+        if (!self.resumableUploads) {
+            self.resumableUploads = [NSMutableDictionary dictionary];
+        }
     }
     return self;
 }
 
 - (void) start{
     [self progress](0, 0);
-    NSString *myUrl = [[self localStorage] valueForKey:[self fingerprint]];
+    NSString *myUrl = [self.resumableUploads valueForKey:[self fingerprint]];
 
     NSLog(@"fingerprint: %@", [self fingerprint]);
     if (myUrl == nil) {
@@ -122,8 +126,13 @@ typedef enum {
         case CreatingFile: {
             NSString *location = [headers valueForKey:@"Location"];
             [self setUrl:[NSURL URLWithString:location]];
-            [[self localStorage] setValue:location forKey:[self fingerprint]];
-            [[self localStorage] synchronize];            
+            [self.resumableUploads setValue:location forKey:[self fingerprint]];
+            BOOL success = [self.resumableUploads writeToURL:[self resumableUploadsFilePath]
+                                    atomically:YES];
+            if (!success) {
+                NSLog(@"Unable to save resumableUploads file");
+                
+            }
             [self uploadFile];
             break;
         }
@@ -145,5 +154,31 @@ typedef enum {
     }
 
 }
+
+
+- (NSURL*)resumableUploadsFilePath
+{
+    NSFileManager* fileManager = [NSFileManager defaultManager];
+    NSArray* directories = [fileManager URLsForDirectory:NSApplicationSupportDirectory
+                                               inDomains:NSUserDomainMask];
+    NSURL* applicationSupportDirectoryURL = [directories lastObject];
+    NSString* applicationSupportDirectoryPath = [applicationSupportDirectoryURL absoluteString];
+    BOOL isDirectory = NO;
+    if (![fileManager fileExistsAtPath:applicationSupportDirectoryPath
+                           isDirectory:&isDirectory]) {
+        NSError* error = nil;
+        BOOL success = [fileManager createDirectoryAtURL:applicationSupportDirectoryURL
+                             withIntermediateDirectories:YES
+                                              attributes:nil
+                                                   error:&error];
+        if (!success) {
+            NSLog(@"Unable to create %@ directory due to: %@",
+                  applicationSupportDirectoryURL,
+                  error);
+        }
+    }
+    return [applicationSupportDirectoryURL URLByAppendingPathComponent:@"TUSResumableUploads.plist"];
+}
+
 
 @end

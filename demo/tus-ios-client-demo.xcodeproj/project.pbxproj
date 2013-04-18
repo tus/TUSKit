@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		BC27401517204405004E58C3 /* TUSAssetData.m in Sources */ = {isa = PBXBuildFile; fileRef = BC27401417204405004E58C3 /* TUSAssetData.m */; };
 		BC274018172045B4004E58C3 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC274016172045AB004E58C3 /* AssetsLibrary.framework */; };
+		BC27402017204CA1004E58C3 /* TUSDemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC27401E17204CA1004E58C3 /* TUSDemoViewController.m */; };
+		BC27402117204CA1004E58C3 /* TUSDemoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = BC27401F17204CA1004E58C3 /* TUSDemoViewController.xib */; };
 		BC34B0671720314F00858EC2 /* TUSData.m in Sources */ = {isa = PBXBuildFile; fileRef = BC34B0661720314F00858EC2 /* TUSData.m */; };
 		BC34B06A1720317200858EC2 /* NSStream+BoundPair.m in Sources */ = {isa = PBXBuildFile; fileRef = BC34B0691720317200858EC2 /* NSStream+BoundPair.m */; };
 		DCBAE83E1712237100D3D7A0 /* TUSResumableUpload.m in Sources */ = {isa = PBXBuildFile; fileRef = DCBAE83D1712237100D3D7A0 /* TUSResumableUpload.m */; };
@@ -42,6 +44,10 @@
 		BC27401317204405004E58C3 /* TUSAssetData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TUSAssetData.h; path = ../../src/TUSAssetData.h; sourceTree = "<group>"; };
 		BC27401417204405004E58C3 /* TUSAssetData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TUSAssetData.m; path = ../../src/TUSAssetData.m; sourceTree = "<group>"; };
 		BC274016172045AB004E58C3 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
+		BC27401D17204CA1004E58C3 /* TUSDemoViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSDemoViewController.h; sourceTree = "<group>"; };
+		BC27401E17204CA1004E58C3 /* TUSDemoViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSDemoViewController.m; sourceTree = "<group>"; };
+		BC27401F17204CA1004E58C3 /* TUSDemoViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TUSDemoViewController.xib; sourceTree = "<group>"; };
+		BC27402217204FD6004E58C3 /* TUSKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = TUSKit.h; path = ../../src/TUSKit.h; sourceTree = "<group>"; };
 		BC34B0651720314F00858EC2 /* TUSData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TUSData.h; path = ../../src/TUSData.h; sourceTree = "<group>"; };
 		BC34B0661720314F00858EC2 /* TUSData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TUSData.m; path = ../../src/TUSData.m; sourceTree = "<group>"; };
 		BC34B0681720317200858EC2 /* NSStream+BoundPair.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "NSStream+BoundPair.h"; path = "../../src/NSStream+BoundPair.h"; sourceTree = "<group>"; };
@@ -97,6 +103,7 @@
 		DC5B44AF1712243500EE4A0D /* Tus */ = {
 			isa = PBXGroup;
 			children = (
+				BC27402217204FD6004E58C3 /* TUSKit.h */,
 				DCBAE83C1712237100D3D7A0 /* TUSResumableUpload.h */,
 				DCBAE83D1712237100D3D7A0 /* TUSResumableUpload.m */,
 				BC34B0651720314F00858EC2 /* TUSData.h */,
@@ -146,6 +153,9 @@
 				DC5B44AF1712243500EE4A0D /* Tus */,
 				DCCB27A31711CC68000E78B6 /* TusAppDelegate.h */,
 				DCCB27A41711CC68000E78B6 /* TusAppDelegate.m */,
+				BC27401D17204CA1004E58C3 /* TUSDemoViewController.h */,
+				BC27401E17204CA1004E58C3 /* TUSDemoViewController.m */,
+				BC27401F17204CA1004E58C3 /* TUSDemoViewController.xib */,
 				DCCB279B1711CC68000E78B6 /* Supporting Files */,
 			);
 			path = "tus-ios-client-demo";
@@ -260,6 +270,7 @@
 				DCCB27A71711CC69000E78B6 /* Default.png in Resources */,
 				DCCB27A91711CC69000E78B6 /* Default@2x.png in Resources */,
 				DCCB27AB1711CC69000E78B6 /* Default-568h@2x.png in Resources */,
+				BC27402117204CA1004E58C3 /* TUSDemoViewController.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -300,6 +311,7 @@
 				BC34B0671720314F00858EC2 /* TUSData.m in Sources */,
 				BC34B06A1720317200858EC2 /* NSStream+BoundPair.m in Sources */,
 				BC27401517204405004E58C3 /* TUSAssetData.m in Sources */,
+				BC27402017204CA1004E58C3 /* TUSDemoViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

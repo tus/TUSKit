@@ -8,9 +8,11 @@
 
 #import <UIKit/UIKit.h>
 
-@interface TusAppDelegate : UIResponder <UIApplicationDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate, NSURLConnectionDelegate>
+@class TUSDemoViewController;
+
+@interface TusAppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
-@property (strong, nonatomic) UIProgressView *progress;
+@property (strong, nonatomic) TUSDemoViewController *viewController;
 
 @end

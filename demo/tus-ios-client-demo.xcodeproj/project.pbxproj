@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BC27401517204405004E58C3 /* TUSAssetData.m in Sources */ = {isa = PBXBuildFile; fileRef = BC27401417204405004E58C3 /* TUSAssetData.m */; };
+		BC274018172045B4004E58C3 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC274016172045AB004E58C3 /* AssetsLibrary.framework */; };
 		BC34B0671720314F00858EC2 /* TUSData.m in Sources */ = {isa = PBXBuildFile; fileRef = BC34B0661720314F00858EC2 /* TUSData.m */; };
 		BC34B06A1720317200858EC2 /* NSStream+BoundPair.m in Sources */ = {isa = PBXBuildFile; fileRef = BC34B0691720317200858EC2 /* NSStream+BoundPair.m */; };
 		DCBAE83E1712237100D3D7A0 /* TUSResumableUpload.m in Sources */ = {isa = PBXBuildFile; fileRef = DCBAE83D1712237100D3D7A0 /* TUSResumableUpload.m */; };
@@ -37,6 +39,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BC27401317204405004E58C3 /* TUSAssetData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TUSAssetData.h; path = ../../src/TUSAssetData.h; sourceTree = "<group>"; };
+		BC27401417204405004E58C3 /* TUSAssetData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TUSAssetData.m; path = ../../src/TUSAssetData.m; sourceTree = "<group>"; };
+		BC274016172045AB004E58C3 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
 		BC34B0651720314F00858EC2 /* TUSData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TUSData.h; path = ../../src/TUSData.h; sourceTree = "<group>"; };
 		BC34B0661720314F00858EC2 /* TUSData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TUSData.m; path = ../../src/TUSData.m; sourceTree = "<group>"; };
 		BC34B0681720317200858EC2 /* NSStream+BoundPair.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "NSStream+BoundPair.h"; path = "../../src/NSStream+BoundPair.h"; sourceTree = "<group>"; };
@@ -69,6 +74,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BC274018172045B4004E58C3 /* AssetsLibrary.framework in Frameworks */,
 				DCCB27951711CC68000E78B6 /* UIKit.framework in Frameworks */,
 				DCCB27971711CC68000E78B6 /* Foundation.framework in Frameworks */,
 				DCCB27991711CC68000E78B6 /* CoreGraphics.framework in Frameworks */,
@@ -95,6 +101,8 @@
 				DCBAE83D1712237100D3D7A0 /* TUSResumableUpload.m */,
 				BC34B0651720314F00858EC2 /* TUSData.h */,
 				BC34B0661720314F00858EC2 /* TUSData.m */,
+				BC27401317204405004E58C3 /* TUSAssetData.h */,
+				BC27401417204405004E58C3 /* TUSAssetData.m */,
 				BC34B0681720317200858EC2 /* NSStream+BoundPair.h */,
 				BC34B0691720317200858EC2 /* NSStream+BoundPair.m */,
 			);
@@ -123,6 +131,7 @@
 		DCCB27931711CC68000E78B6 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				BC274016172045AB004E58C3 /* AssetsLibrary.framework */,
 				DCCB27941711CC68000E78B6 /* UIKit.framework */,
 				DCCB27961711CC68000E78B6 /* Foundation.framework */,
 				DCCB27981711CC68000E78B6 /* CoreGraphics.framework */,
@@ -290,6 +299,7 @@
 				DCBAE83E1712237100D3D7A0 /* TUSResumableUpload.m in Sources */,
 				BC34B0671720314F00858EC2 /* TUSData.m in Sources */,
 				BC34B06A1720317200858EC2 /* NSStream+BoundPair.m in Sources */,
+				BC27401517204405004E58C3 /* TUSAssetData.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

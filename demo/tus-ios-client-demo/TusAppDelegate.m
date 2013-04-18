@@ -6,18 +6,23 @@
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
 
+#import <AssetsLibrary/AssetsLibrary.h>
+
 #import "TusAppDelegate.h"
 #import "TUSData.h"
+#import "TUSAssetData.h"
 #import "TUSResumableUpload.h"
 
 @interface TusAppDelegate()
     @property (strong, nonatomic) UIViewController *controller;
+    @property (strong, nonatomic) ALAssetsLibrary* assetsLibrary;
 @end
 
 @implementation TusAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    [self setAssetsLibrary:[[ALAssetsLibrary alloc] init]];
     UIViewController *rootController = [[UIViewController alloc] init];
     [self setWindow:[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]]];
     [[self window] setRootViewController:rootController];
@@ -55,20 +60,49 @@
 }
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
-    UIImage *image = [info valueForKey:UIImagePickerControllerOriginalImage];
     [picker dismissViewControllerAnimated:YES completion:nil];
+
+    [self uploadImageFromAsset:info];
+}
+
+- (void)uploadImageFromData:(NSDictionary*)info
+{
+    NSURL *assetUrl = [info valueForKey:UIImagePickerControllerReferenceURL];
+    NSString *fingerprint = [assetUrl absoluteString];
+    UIImage *image = [info valueForKey:UIImagePickerControllerOriginalImage];
     NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
-    
+    TUSData* uploadData = [[TUSData alloc] initWithData:imageData];
+    TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithEndpoint:[self endpoint] data:uploadData fingerprint:fingerprint progress:[self progressBlock]];
+    [upload start];
+}
+
+- (void)uploadImageFromAsset:(NSDictionary*)info
+{
     NSURL *assetUrl = [info valueForKey:UIImagePickerControllerReferenceURL];
     NSString *fingerprint = [assetUrl absoluteString];
 
-    NSString* endpoint = @"http://master.tus.io/files";
-    TUSData* uploadData = [[TUSData alloc] initWithData:imageData];
-    TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithEndpoint:endpoint data:uploadData fingerprint:fingerprint progress:^(NSInteger bytesWritten, NSInteger bytesTotal) {
+    [[self assetsLibrary] assetForURL:assetUrl
+                          resultBlock:^(ALAsset* asset) {
+                              TUSAssetData* uploadData = [[TUSAssetData alloc] initWithAsset:asset];
+                              TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithEndpoint:[self endpoint] data:uploadData fingerprint:fingerprint progress:[self progressBlock]];
+                              [upload start];
+                          }
+                         failureBlock:^(NSError* error) {
+                             NSLog(@"Unable to load asset due to: %@", error);
+                         }];
+}
+
+- (void(^)(NSInteger, NSInteger))progressBlock
+{
+    return ^(NSInteger bytesWritten, NSInteger bytesTotal) {
         float progress = (float)bytesWritten / (float)bytesTotal;
         [self.progress setProgress:progress];
-    }];
-    [upload start];
+    };
+}
+
+- (NSString*)endpoint
+{
+    return @"http://master.tus.io/files";
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application

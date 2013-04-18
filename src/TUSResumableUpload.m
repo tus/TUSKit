@@ -6,6 +6,8 @@
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
 
+#import "TUSData.h"
+
 #import "TUSResumableUpload.h"
 
 typedef enum {
@@ -15,7 +17,7 @@ typedef enum {
 } UploadState;
 
 @interface TUSResumableUpload ()
-@property (strong, nonatomic) NSData *data;
+@property (strong, nonatomic) TUSData *data;
 @property (strong, nonatomic) NSURL *endpoint;
 @property (strong, nonatomic) NSURL *url;
 @property (strong, nonatomic) NSString *fingerprint;
@@ -28,16 +30,20 @@ typedef enum {
 @implementation TUSResumableUpload
 
 // @TODO This is not going to work for very large files as we need a way to stream data from disk without loading it all into memory
-- (id) initWithEndpoint:(NSString *)url data:(NSData *)data fingerprint:(NSString *)fingerprint progress:(void (^)(NSInteger bytesWritten, NSInteger bytesTotal))progress {
-    [self setEndpoint:[NSURL URLWithString:url]];
-    [self setData:data];
-    [self setProgress:progress];
-    [self setFingerprint:fingerprint];
-    [self setLocalStorage:[NSUserDefaults standardUserDefaults]];
+- (id) initWithEndpoint:(NSString *)url data:(TUSData *)data fingerprint:(NSString *)fingerprint progress:(void (^)(NSInteger bytesWritten, NSInteger bytesTotal))progress {
+    self = [super init];
+    if (self) {
+        [self setEndpoint:[NSURL URLWithString:url]];
+        [self setData:data];
+        [self setProgress:progress];
+        [self setFingerprint:fingerprint];
+        [self setLocalStorage:[NSUserDefaults standardUserDefaults]];
+    }
     return self;
 }
 
 - (void) start{
+    [self progress](0, 0);
     NSString *myUrl = [[self localStorage] valueForKey:[self fingerprint]];
 
     NSLog(@"fingerprint: %@", [self fingerprint]);
@@ -82,12 +88,10 @@ typedef enum {
     NSString *contentRange = [NSString stringWithFormat:@"bytes %d-%d/%d",offset,size-1,size];
     NSLog(@"Content-Range: %@", contentRange);
     NSDictionary *headers = @{ @"Content-Range": contentRange} ;
-    
-    NSData *data = [[self data] subdataWithRange:NSMakeRange(offset, size - offset)];
-    
+
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:30];
     [request setHTTPMethod:@"PUT"];
-    [request setHTTPBody:data];
+    [request setHTTPBodyStream:[[self data] dataStream]];
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
     
@@ -133,7 +137,7 @@ typedef enum {
     switch([self state]) {
         case UploadingFile:
             if ([self progress] != nil) {
-                [self progress](totalBytesWritten+[self offset], totalBytesExpectedToWrite+[self offset]);
+                [self progress](totalBytesWritten+[self offset], [[self data] length]+[self offset]);
             }
             break;
         default:

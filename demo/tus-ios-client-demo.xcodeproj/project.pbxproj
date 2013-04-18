@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BC34B0671720314F00858EC2 /* TUSData.m in Sources */ = {isa = PBXBuildFile; fileRef = BC34B0661720314F00858EC2 /* TUSData.m */; };
+		BC34B06A1720317200858EC2 /* NSStream+BoundPair.m in Sources */ = {isa = PBXBuildFile; fileRef = BC34B0691720317200858EC2 /* NSStream+BoundPair.m */; };
 		DCBAE83E1712237100D3D7A0 /* TUSResumableUpload.m in Sources */ = {isa = PBXBuildFile; fileRef = DCBAE83D1712237100D3D7A0 /* TUSResumableUpload.m */; };
 		DCCB27951711CC68000E78B6 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCCB27941711CC68000E78B6 /* UIKit.framework */; };
 		DCCB27971711CC68000E78B6 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCCB27961711CC68000E78B6 /* Foundation.framework */; };
@@ -35,6 +37,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BC34B0651720314F00858EC2 /* TUSData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TUSData.h; path = ../../src/TUSData.h; sourceTree = "<group>"; };
+		BC34B0661720314F00858EC2 /* TUSData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TUSData.m; path = ../../src/TUSData.m; sourceTree = "<group>"; };
+		BC34B0681720317200858EC2 /* NSStream+BoundPair.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "NSStream+BoundPair.h"; path = "../../src/NSStream+BoundPair.h"; sourceTree = "<group>"; };
+		BC34B0691720317200858EC2 /* NSStream+BoundPair.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "NSStream+BoundPair.m"; path = "../../src/NSStream+BoundPair.m"; sourceTree = "<group>"; };
 		DCBAE83C1712237100D3D7A0 /* TUSResumableUpload.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TUSResumableUpload.h; path = ../../src/TUSResumableUpload.h; sourceTree = "<group>"; };
 		DCBAE83D1712237100D3D7A0 /* TUSResumableUpload.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TUSResumableUpload.m; path = ../../src/TUSResumableUpload.m; sourceTree = "<group>"; };
 		DCCB27911711CC68000E78B6 /* tus-ios-client-demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "tus-ios-client-demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -87,6 +93,10 @@
 			children = (
 				DCBAE83C1712237100D3D7A0 /* TUSResumableUpload.h */,
 				DCBAE83D1712237100D3D7A0 /* TUSResumableUpload.m */,
+				BC34B0651720314F00858EC2 /* TUSData.h */,
+				BC34B0661720314F00858EC2 /* TUSData.m */,
+				BC34B0681720317200858EC2 /* NSStream+BoundPair.h */,
+				BC34B0691720317200858EC2 /* NSStream+BoundPair.m */,
 			);
 			name = Tus;
 			sourceTree = "<group>";
@@ -278,6 +288,8 @@
 				DCCB27A11711CC68000E78B6 /* main.m in Sources */,
 				DCCB27A51711CC68000E78B6 /* TusAppDelegate.m in Sources */,
 				DCBAE83E1712237100D3D7A0 /* TUSResumableUpload.m in Sources */,
+				BC34B0671720314F00858EC2 /* TUSData.m in Sources */,
+				BC34B06A1720317200858EC2 /* NSStream+BoundPair.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

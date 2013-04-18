@@ -22,7 +22,7 @@ typedef enum {
 @property (strong, nonatomic) NSURL *url;
 @property (strong, nonatomic) NSString *fingerprint;
 @property (strong, nonatomic) NSMutableDictionary *resumableUploads;
-@property (nonatomic) NSInteger offset;
+@property (nonatomic) long long offset;
 @property (nonatomic) UploadState state;
 @property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
 @end
@@ -87,11 +87,12 @@ typedef enum {
 - (void) uploadFile{
     [self setState:UploadingFile];
     
-    NSUInteger size = [[self data] length];
-    NSInteger offset = [self offset];
-    NSString *contentRange = [NSString stringWithFormat:@"bytes %d-%d/%d",offset,size-1,size];
+    long long size = [[self data] length];
+    long long offset = [self offset];
+    NSString *contentRange = [NSString stringWithFormat:@"bytes %lld-%lld/%lld",
+                              offset, size - 1, size];
     NSLog(@"Content-Range: %@", contentRange);
-    NSDictionary *headers = @{ @"Content-Range": contentRange} ;
+    NSDictionary *headers = @{ @"Content-Range": contentRange };
 
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:30];
     [request setHTTPMethod:@"PUT"];
@@ -102,23 +103,19 @@ typedef enum {
     NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self];
 }
 
+
+#pragma mark - NSURLConnectionDelegate Protocol Delegate Methods
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response{
     NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
     NSDictionary *headers = [httpResponse allHeaderFields];
     
     switch([self state]) {
         case CheckingFile: {
-            NSString *range = [headers valueForKey:@"Range"];
-            NSLog(@"range: %@", range);
-            if (range != nil) {
-                NSArray *parts = [range componentsSeparatedByString:@"bytes="];
-                if ([parts count] == 2) {
-                    NSArray *bytes = [(NSString *)[parts objectAtIndex:1] componentsSeparatedByString:@"-"];
-                    if ([bytes count] >= 2) {
-                        NSInteger offset = [(NSString *)[bytes objectAtIndex:1] integerValue];
-                        [self setOffset:offset];
-                    }
-                }
+            NSString *rangeHeader = [headers valueForKey:@"Range"];
+            if (rangeHeader) {
+                NSLog(@"range: %@", rangeHeader);
+                TUSRange range = [self rangeFromHeader:rangeHeader];
+                [self setOffset:range.first];
             }
             [self uploadFile];
             break;
@@ -131,7 +128,6 @@ typedef enum {
                                     atomically:YES];
             if (!success) {
                 NSLog(@"Unable to save resumableUploads file");
-                
             }
             [self uploadFile];
             break;
@@ -156,6 +152,23 @@ typedef enum {
 }
 
 
+#pragma mark - Private Methods
+- (TUSRange)rangeFromHeader:(NSString*)rangeHeader
+{
+    TUSRange range = TUSMakeRange(NSNotFound, 0);
+    NSLog(@"range: %@", rangeHeader);
+    NSArray *parts = [rangeHeader componentsSeparatedByString:@"bytes="];
+    if ([parts count] == 2) {
+        NSArray *bytes = [(NSString *)[parts objectAtIndex:1] componentsSeparatedByString:@"-"];
+        if ([bytes count] >= 2) {
+            NSUInteger start = [(NSString *)[bytes objectAtIndex:0] integerValue];
+            NSUInteger end = [(NSString *)[bytes objectAtIndex:1] integerValue];
+            range = TUSMakeRange(start, end);
+        }
+    }
+    return range;
+}
+
 - (NSURL*)resumableUploadsFilePath
 {
     NSFileManager* fileManager = [NSFileManager defaultManager];
@@ -179,6 +192,5 @@ typedef enum {
     }
     return [applicationSupportDirectoryURL URLByAppendingPathComponent:@"TUSResumableUploads.plist"];
 }
-
 
 @end

@@ -210,9 +210,9 @@
 		DCCB27891711CC68000E78B6 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				CLASSPREFIX = Tus;
+				CLASSPREFIX = TUS;
 				LastUpgradeCheck = 0460;
-				ORGANIZATIONNAME = "Felix Geisendoerfer";
+				ORGANIZATIONNAME = tus.io;
 			};
 			buildConfigurationList = DCCB278C1711CC68000E78B6 /* Build configuration list for PBXProject "tus-ios-client-demo" */;
 			compatibilityVersion = "Xcode 3.2";

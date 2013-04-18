@@ -1,12 +1,12 @@
 //
-//  Tus.m
+//  TUSResumableUpload.m
 //  tus-ios-client-demo
 //
 //  Created by Felix Geisendoerfer on 07.04.13.
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
 
-#import "TusUpload.h"
+#import "TUSResumableUpload.h"
 
 typedef enum {
     CheckingFile,
@@ -14,7 +14,7 @@ typedef enum {
     UploadingFile,
 } UploadState;
 
-@interface TusUpload ()
+@interface TUSResumableUpload ()
 @property (strong, nonatomic) NSData *data;
 @property (strong, nonatomic) NSURL *endpoint;
 @property (strong, nonatomic) NSURL *url;
@@ -25,7 +25,7 @@ typedef enum {
 @property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
 @end
 
-@implementation TusUpload
+@implementation TUSResumableUpload
 
 // @TODO This is not going to work for very large files as we need a way to stream data from disk without loading it all into memory
 - (id) initWithEndpoint:(NSString *)url data:(NSData *)data fingerprint:(NSString *)fingerprint progress:(void (^)(NSInteger bytesWritten, NSInteger bytesTotal))progress {

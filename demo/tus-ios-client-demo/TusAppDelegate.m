@@ -7,7 +7,7 @@
 //
 
 #import "TusAppDelegate.h"
-#import "TusUpload.h"
+#import "TUSResumableUpload.h"
 
 @interface TusAppDelegate()
     @property (strong, nonatomic) UIViewController *controller;
@@ -61,7 +61,7 @@
     NSURL *assetUrl = [info valueForKey:UIImagePickerControllerReferenceURL];
     NSString *fingerprint = [assetUrl absoluteString];
     
-    TusUpload *upload = [[TusUpload alloc] initWithEndpoint:@"http://master.tus.io/files" data:imageData fingerprint:fingerprint progress:^(NSInteger bytesWritten, NSInteger bytesTotal) {
+    TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithEndpoint:@"http://master.tus.io/files" data:imageData fingerprint:fingerprint progress:^(NSInteger bytesWritten, NSInteger bytesTotal) {
         float progress = (float)bytesWritten / (float)bytesTotal;
         [self.progress setProgress:progress];
     }];

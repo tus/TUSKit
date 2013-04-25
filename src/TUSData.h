@@ -10,6 +10,9 @@
 
 @interface TUSData : NSObject <NSStreamDelegate>
 
+@property (readwrite,copy) void (^failureBlock)(NSError* error);
+@property (readwrite,copy) void (^successBlock)(void);
+
 - (id)initWithData:(NSData*)data;
 - (NSInputStream*)dataStream;
 - (long long)length;

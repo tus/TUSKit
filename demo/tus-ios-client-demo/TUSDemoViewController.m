@@ -53,7 +53,7 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
     UIImage *image = [info valueForKey:UIImagePickerControllerOriginalImage];
     NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
     TUSData* uploadData = [[TUSData alloc] initWithData:imageData];
-    TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithEndpoint:[self endpoint] data:uploadData fingerprint:fingerprint progress:[self progressBlock]];
+    TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithEndpoint:[self endpoint] data:uploadData fingerprint:fingerprint];
     [upload start];
 }
 
@@ -65,7 +65,7 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
     [[self assetsLibrary] assetForURL:assetUrl
                           resultBlock:^(ALAsset* asset) {
                               TUSAssetData* uploadData = [[TUSAssetData alloc] initWithAsset:asset];
-                              TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithEndpoint:[self endpoint] data:uploadData fingerprint:fingerprint progress:[self progressBlock]];
+                              TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithEndpoint:[self endpoint] data:uploadData fingerprint:fingerprint];
                               [upload start];
                           }
                          failureBlock:^(NSError* error) {

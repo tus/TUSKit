@@ -12,7 +12,7 @@
 
 #import "TUSData.h"
 
-#define TUS_BUFSIZE (64*1024)
+#define TUS_BUFSIZE (32*1024)
 
 @interface TUSData ()
 @property (assign) long long offset;
@@ -96,6 +96,9 @@
             if (!length) {
                 [[self outputStream] setDelegate:nil];
                 [[self outputStream] close];
+                if (self.successBlock) {
+                    self.successBlock();
+                }
                 return;
             }
             NSLog(@"Reading %lld bytes from %lld to %lld until %lld"
@@ -120,6 +123,9 @@
         } break;
         case NSStreamEventErrorOccurred: {
             NSLog(@"TUSData stream error %@", [aStream streamError]);
+            if (self.failureBlock) {
+                self.failureBlock([aStream streamError]);
+            }
         } break;
         case NSStreamEventHasBytesAvailable:
         case NSStreamEventEndEncountered:

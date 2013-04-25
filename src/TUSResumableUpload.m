@@ -29,12 +29,12 @@ typedef enum {
 
 @implementation TUSResumableUpload
 
-- (id) initWithEndpoint:(NSString *)url data:(TUSData *)data fingerprint:(NSString *)fingerprint progress:(void (^)(NSInteger bytesWritten, NSInteger bytesTotal))progress {
+- (id) initWithEndpoint:(NSString *)url data:(TUSData *)data fingerprint:(NSString *)fingerprint
+{
     self = [super init];
     if (self) {
         [self setEndpoint:[NSURL URLWithString:url]];
         [self setData:data];
-        [self setProgress:progress];
         [self setFingerprint:fingerprint];
 
         NSURL* resumableUploadsPath = [self resumableUploadsFilePath];
@@ -47,7 +47,9 @@ typedef enum {
 }
 
 - (void) start{
-    [self progress](0, 0);
+    if (self.progressBlock) {
+        self.progressBlock(0, 0);
+    }
     NSString *myUrl = [self.resumableUploads valueForKey:[self fingerprint]];
 
     NSLog(@"fingerprint: %@", [self fingerprint]);
@@ -94,6 +96,23 @@ typedef enum {
     NSLog(@"Content-Range: %@", contentRange);
     NSDictionary *headers = @{ @"Content-Range": contentRange };
 
+    __weak TUSResumableUpload* upload = self;
+    self.data.failureBlock = ^(NSError* error) {
+        if (upload.failureBlock) {
+            upload.failureBlock(error);
+        }
+    };
+    self.data.successBlock = ^() {
+        [upload.resumableUploads removeObjectForKey:[upload fingerprint]];
+        BOOL success = [upload.resumableUploads writeToURL:[upload resumableUploadsFilePath]
+                                              atomically:YES];
+        if (!success) {
+            NSLog(@"Unable to save resumableUploads file");
+        }
+        if (upload.resultBlock) {
+            upload.resultBlock(upload.url);
+        }
+    };
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:30];
     [request setHTTPMethod:@"PUT"];
     [request setHTTPBodyStream:[[self data] dataStream]];
@@ -141,8 +160,8 @@ typedef enum {
 
     switch([self state]) {
         case UploadingFile:
-            if ([self progress] != nil) {
-                [self progress](totalBytesWritten+[self offset], [[self data] length]+[self offset]);
+            if (self.progressBlock) {
+                self.progressBlock(totalBytesWritten+[self offset], [[self data] length]+[self offset]);
             }
             break;
         default:

@@ -8,6 +8,9 @@
 
 #import <Foundation/Foundation.h>
 
+typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
+typedef void (^TUSUploadFailureBlock)(NSError* error);
+typedef void (^TUSUploadProgressBlock)(NSInteger bytesWritten, NSInteger bytesTotal);
 
 typedef struct _TUSRange {
     long long first;
@@ -24,7 +27,14 @@ NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
 @class TUSData;
 
 @interface TUSResumableUpload : NSObject <NSURLConnectionDelegate>
-- (id) initWithEndpoint:(NSString *)url data:(TUSData *)data fingerprint:(NSString *)fingerprint progress:(void (^)(NSInteger bytesWritten, NSInteger bytesTotal))progress;
+
+@property (readwrite, copy) TUSUploadResultBlock resultBlock;
+@property (readwrite, copy) TUSUploadFailureBlock failureBlock;
+@property (readwrite, copy) TUSUploadProgressBlock progressBlock;
+
+- (id) initWithEndpoint:(NSString *)url
+                   data:(TUSData *)data
+            fingerprint:(NSString *)fingerprint;
 - (void) start;
 
 - (TUSRange)rangeFromHeader:(NSString*)rangeHeader;

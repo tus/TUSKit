@@ -12,6 +12,8 @@
 
 @property (strong,nonatomic) IBOutlet UIButton* chooseFileButton;
 @property (strong,nonatomic) IBOutlet UIProgressView* progressBar;
+@property (strong,nonatomic) IBOutlet UILabel* statusLabel;
+@property (strong,nonatomic) IBOutlet UITextView* urlTextView;
 
 - (IBAction)chooseFile:(id)sender;
 @end

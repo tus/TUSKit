@@ -23,6 +23,8 @@
     self.assetsLibrary = [[ALAssetsLibrary alloc] init];
     [self.progressBar setHidden:YES];
     [self.progressBar setProgress:.0];
+    [self.statusLabel setHidden:YES];
+    [self.urlTextView setHidden:YES];
 }
 
 #pragma mark - IBAction Methods
@@ -40,7 +42,10 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
 {
     [self dismissViewControllerAnimated:YES
                              completion:^{
-                                 self.progressBar.hidden = NO;
+                                 [self.statusLabel setText:NSLocalizedString(@"Uploading…",nil)];
+                                 [self.statusLabel setHidden:NO];
+                                 [self.chooseFileButton setEnabled:NO];
+                                 [self.progressBar setHidden:NO];
                                  [self uploadImageFromAsset:info];
                              }];
 }
@@ -54,6 +59,9 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
     NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
     TUSData* uploadData = [[TUSData alloc] initWithData:imageData];
     TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithEndpoint:[self endpoint] data:uploadData fingerprint:fingerprint];
+    upload.progressBlock = [self progressBlock];
+    upload.resultBlock = [self resultBlock];
+    upload.failureBlock = [self failureBlock];
     [upload start];
 }
 
@@ -66,6 +74,9 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
                           resultBlock:^(ALAsset* asset) {
                               TUSAssetData* uploadData = [[TUSAssetData alloc] initWithAsset:asset];
                               TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithEndpoint:[self endpoint] data:uploadData fingerprint:fingerprint];
+                              upload.progressBlock = [self progressBlock];
+                              upload.resultBlock = [self resultBlock];
+                              upload.failureBlock = [self failureBlock];
                               [upload start];
                           }
                          failureBlock:^(NSError* error) {
@@ -73,17 +84,40 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
                          }];
 }
 
-- (void(^)(NSInteger, NSInteger))progressBlock
+- (void(^)(NSInteger bytesWritten, NSInteger bytesTotal))progressBlock
 {
     return ^(NSInteger bytesWritten, NSInteger bytesTotal) {
         float progress = (float)bytesWritten / (float)bytesTotal;
+        NSLog(@"Progress: %d / %d = %f", bytesWritten, bytesTotal, progress);
+        if (isnan(progress)) {
+            progress = .0;
+        }
         [self.progressBar setProgress:progress];
+    };
+}
+
+- (void(^)(NSError* error))failureBlock
+{
+    return ^(NSError* error) {
+        NSLog(@"Failed to upload image due to: %@", error);
+    };
+}
+
+- (void(^)(NSURL* url))resultBlock
+{
+    return ^(NSURL* url) {
+        NSLog(@"File uploaded to: %@", url);
+        [self.chooseFileButton setEnabled:YES];
+        [self.progressBar setHidden:YES];
+        [self.statusLabel setText:NSLocalizedString(@"Uploaded to:",nil)];
+        [self.urlTextView setText:[url absoluteString]];
+        [self.urlTextView setHidden:NO];
     };
 }
 
 - (NSString*)endpoint
 {
-    return @"http://kaori.local:1080/files";
+    return @"http://master.tus.io/files";
 }
 
 @end

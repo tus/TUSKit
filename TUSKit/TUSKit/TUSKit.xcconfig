@@ -1,0 +1,4 @@
+#include "../../Xcode/Framework.xcconfig"
+
+PRODUCT_NAME=TUSKit
+FRAMEWORK_VERSION=0.0.1

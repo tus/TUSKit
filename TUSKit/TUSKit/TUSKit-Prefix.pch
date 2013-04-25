@@ -1,0 +1,7 @@
+//
+// Prefix header for all source files of the 'TUSKit' target in the 'TUSKit' project
+//
+
+#ifdef __OBJC__
+    #import <Foundation/Foundation.h>
+#endif

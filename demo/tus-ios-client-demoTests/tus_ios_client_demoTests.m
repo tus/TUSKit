@@ -6,7 +6,7 @@
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
 
-#import "TUSKit.h"
+#import <TUSKit/TUSKit.h>
 #import "tus_ios_client_demoTests.h"
 
 @implementation tus_ios_client_demoTests
@@ -32,16 +32,16 @@
 
 - (void)test_parseRangeHeader
 {
-    NSUInteger location = 0;
-    NSUInteger length = 99;
-    NSString* rangeHeader = [NSString stringWithFormat:@"Range: bytes=%d-%d",
-                             location, length];
+    long long first = 0;
+    long long last = 99;
+    NSString* rangeHeader = [NSString stringWithFormat:@"Range: bytes=%lld-%lld",
+                             first, last];
     TUSResumableUpload* upload = [[TUSResumableUpload alloc] init];
-    NSRange range = [upload parseRangeHeader:rangeHeader];
-    STAssertEquals(location, range.location, @"Expected location of %d %d",
-                   location, range.location);
-    STAssertEquals(length, range.length, @"Expected length of %d %d",
-                   length, range.length);
+    TUSRange range = [upload rangeFromHeader:rangeHeader];
+    STAssertEquals(first, range.first, @"Expected location of %lld %lld",
+                   first, range.first);
+    STAssertEquals(last, range.last, @"Expected length of %lld %lld",
+                   last, range.last);
 }
 
 @end

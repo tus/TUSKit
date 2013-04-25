@@ -8,7 +8,7 @@
 
 #import <AssetsLibrary/AssetsLibrary.h>
 
-#import "TUSKit.h"
+#import <TUSKit/TUSKit.h>
 #import "TUSDemoViewController.h"
 
 @interface TUSDemoViewController ()

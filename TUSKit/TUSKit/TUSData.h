@@ -16,5 +16,6 @@
 - (id)initWithData:(NSData*)data;
 - (NSInputStream*)dataStream;
 - (long long)length;
+- (void)stop;
 
 @end

@@ -19,6 +19,7 @@
 #define HTTP_BYTES_UNIT @"bytes"
 #define HTTP_RANGE_EQUAL @"="
 #define HTTP_RANGE_DASH @"-"
+#define REQUEST_TIMEOUT 30
 
 typedef NS_ENUM(NSInteger, TUSUploadState) {
     Idle,
@@ -75,7 +76,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 
     NSUInteger size = [[self data] length];
     NSDictionary *headers = @{ HTTP_CONTENT_RANGE: [self contentRangeWithSize:size] } ;
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self endpoint] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:30];
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self endpoint] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_POST];
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
@@ -87,7 +88,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 {
     [self setState:CheckingFile];
     
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:30];
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_HEAD];
     [request setHTTPShouldHandleCookies:NO];
     
@@ -127,7 +128,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 
     NSLog(@"Resuming upload at %@ for fingerprint %@ from offset %lld (%@)",
           [self url], [self fingerprint], offset, contentRange);
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:30];
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_PUT];
     [request setHTTPBodyStream:[[self data] dataStream]];
     [request setHTTPShouldHandleCookies:NO];
@@ -137,7 +138,30 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 }
 
 #pragma mark - NSURLConnectionDelegate Protocol Delegate Methods
-- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response{
+- (void)connection:(NSURLConnection *)connection
+  didFailWithError:(NSError *)error
+{
+    NSLog(@"ERROR: connection did fail due to: %@", error);
+    [connection cancel];
+    [[self data] stop];
+    if (self.failureBlock) {
+        self.failureBlock(error);
+    }
+}
+
+#pragma mark - NSURLConnectionDataDelegate Protocol Delegate Methods
+
+// TODO: Add support to re-initialize dataStream
+- (NSInputStream *)connection:(NSURLConnection *)connection
+            needNewBodyStream:(NSURLRequest *)request
+{
+    NSLog(@"ERROR: connection requested new body stream, which is currently not supported");
+    return nil;
+}
+
+- (void)connection:(NSURLConnection *)connection
+didReceiveResponse:(NSURLResponse *)response
+{
     NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
     NSDictionary *headers = [httpResponse allHeaderFields];
     
@@ -176,8 +200,11 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     }
 }
 
-- (void)connection:(NSURLConnection *)connection didSendBodyData:(NSInteger)bytesWritten totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite {
-
+- (void)connection:(NSURLConnection *)connection
+   didSendBodyData:(NSInteger)bytesWritten
+ totalBytesWritten:(NSInteger)totalBytesWritten
+totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
+{
     switch([self state]) {
         case UploadingFile:
             if (self.progressBlock) {

@@ -59,6 +59,19 @@
     return _inputStream;
 }
 
+- (void)stop
+{
+    [[self outputStream] setDelegate:nil];
+    [[self outputStream] removeFromRunLoop:[NSRunLoop currentRunLoop]
+                                   forMode:NSDefaultRunLoopMode];
+    [[self outputStream] close];
+    [self setOutputStream:nil];
+
+    [[self inputStream] setDelegate:nil];
+    [[self inputStream] close];
+    [self setInputStream:nil];
+}
+
 - (long long)length
 {
     return _data.length;

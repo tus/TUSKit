@@ -24,6 +24,8 @@ NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
     return r;
 }
 
+NS_ENUM(long long, TUSRangeBytes) {TUSInvalidRange = -1};
+
 @class TUSData;
 
 @interface TUSResumableUpload : NSObject <NSURLConnectionDelegate>
@@ -32,9 +34,9 @@ NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
 @property (readwrite, copy) TUSUploadFailureBlock failureBlock;
 @property (readwrite, copy) TUSUploadProgressBlock progressBlock;
 
-- (id) initWithEndpoint:(NSString *)url
-                   data:(TUSData *)data
-            fingerprint:(NSString *)fingerprint;
+- (id)initWithURL:(NSString *)url
+              data:(TUSData *)data
+       fingerprint:(NSString *)fingerprint;
 - (void) start;
 
 - (TUSRange)rangeFromHeader:(NSString*)rangeHeader;

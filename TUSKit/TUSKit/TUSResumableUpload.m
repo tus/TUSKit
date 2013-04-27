@@ -176,18 +176,38 @@ typedef enum {
 #pragma mark - Private Methods
 - (TUSRange)rangeFromHeader:(NSString*)rangeHeader
 {
-    TUSRange range = TUSMakeRange(NSNotFound, 0);
+#define HTTP_BYTES_UNIT @"bytes="
     NSLog(@"range: %@", rangeHeader);
-    NSArray *parts = [rangeHeader componentsSeparatedByString:@"bytes="];
-    if ([parts count] == 2) {
-        NSArray *bytes = [(NSString *)[parts objectAtIndex:1] componentsSeparatedByString:@"-"];
-        if ([bytes count] >= 2) {
-            NSUInteger start = [(NSString *)[bytes objectAtIndex:0] integerValue];
-            NSUInteger end = [(NSString *)[bytes objectAtIndex:1] integerValue];
-            range = TUSMakeRange(start, end);
-        }
+    long long first = NSNotFound;
+    long long last = 0;
+
+    NSScanner* rangeScanner = [NSScanner scannerWithString:rangeHeader];
+    BOOL success = [rangeScanner scanUpToString:HTTP_BYTES_UNIT intoString:NULL];
+    if (!success) {
+        NSLog(@"Failed to scan up to %@", HTTP_BYTES_UNIT);
     }
-    return range;
+
+    success = [rangeScanner scanString:HTTP_BYTES_UNIT intoString:NULL];
+    if (!success) {
+        NSLog(@"Failed to scan %@", HTTP_BYTES_UNIT);
+    }
+
+    success = [rangeScanner scanLongLong:&first];
+    if (!success) {
+        NSLog(@"Failed to first byte");
+    }
+
+    success = [rangeScanner scanString:@"-" intoString:NULL];
+    if (!success) {
+        NSLog(@"Failed to byte-range separatoer");
+    }
+
+    success = [rangeScanner scanLongLong:&last];
+    if (!success) {
+        NSLog(@"Failed to last byte");
+    }
+
+    return TUSMakeRange(first, last);
 }
 
 - (NSURL*)resumableUploadsFilePath

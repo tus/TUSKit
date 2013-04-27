@@ -34,14 +34,11 @@
 {
     long long first = 0;
     long long last = 99;
-    NSString* rangeHeader = [NSString stringWithFormat:@"Range: bytes=%lld-%lld",
-                             first, last];
+    NSString* rangeHeader = [NSString stringWithFormat:@"Range: bytes=%lld-%lld", first, last];
     TUSResumableUpload* upload = [[TUSResumableUpload alloc] init];
     TUSRange range = [upload rangeFromHeader:rangeHeader];
-    STAssertEquals(first, range.first, @"Expected location of %lld %lld",
-                   first, range.first);
-    STAssertEquals(last, range.last, @"Expected length of %lld %lld",
-                   last, range.last);
+    STAssertEquals(range.first, first, @"First byte of given range differs.");
+    STAssertEquals(range.last, last, @"Last byte of given range differs.");
 }
 
 @end

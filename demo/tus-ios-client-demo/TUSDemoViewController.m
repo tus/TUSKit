@@ -24,7 +24,7 @@
     self.assetsLibrary = [[ALAssetsLibrary alloc] init];
     [self.imageOverlay setHidden:YES];
     [self.progressBar setProgress:.0];
-    NSString* text = [NSString stringWithFormat:NSLocalizedString(@"which will be uploaded to:\n%@",nil), [self endpoint]];
+    NSString* text = [NSString stringWithFormat:NSLocalizedString(@"for upload to:\n%@",nil), [self endpoint]];
     [self.urlTextView setText:text];
 }
 
@@ -34,6 +34,9 @@
     UIImagePickerController *imagePicker = [[UIImagePickerController alloc] init];
     imagePicker.mediaTypes = [UIImagePickerController availableMediaTypesForSourceType:imagePicker.sourceType];
     imagePicker.delegate = self;
+    [self.urlTextView setText:nil];
+    [self.imageView setImage:nil];
+    [self.progressBar setProgress:.0];
     [self presentViewController:imagePicker animated:YES completion:nil];
 }
 
@@ -103,6 +106,14 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
 {
     return ^(NSError* error) {
         NSLog(@"Failed to upload image due to: %@", error);
+        [self.chooseFileButton setEnabled:YES];
+        NSString* text = self.urlTextView.text;
+        text = [text stringByAppendingFormat:@"\n%@", [error localizedDescription]];
+        [self.urlTextView setText:text];
+        [self.statusLabel setText:NSLocalizedString(@"Failed!", nil)];
+        [[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Error",nil)
+                                   message:[error localizedDescription]
+                                   delegate:nil cancelButtonTitle:NSLocalizedString(@"OK",nil) otherButtonTitles:nil] show];
     };
 }
 

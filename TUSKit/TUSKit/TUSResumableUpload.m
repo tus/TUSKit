@@ -192,8 +192,8 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 #pragma mark - Private Methods
 - (TUSRange)rangeFromHeader:(NSString*)rangeHeader
 {
-    long long first = NSNotFound;
-    long long last = 0;
+    long long first = TUSInvalidRange;
+    long long last = TUSInvalidRange;
 
     NSString* bytesPrefix = [HTTP_BYTES_UNIT stringByAppendingString:@"="];
     NSScanner* rangeScanner = [NSScanner scannerWithString:rangeHeader];
@@ -220,6 +220,17 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     success = [rangeScanner scanLongLong:&last];
     if (!success) {
         NSLog(@"Failed to last byte from '%@'", rangeHeader);
+    }
+
+    if (first > last) {
+        first = TUSInvalidRange;
+        last = TUSInvalidRange;
+    }
+    if (first < 0) {
+        first = TUSInvalidRange;
+    }
+    if (last < 0) {
+        last = TUSInvalidRange;
     }
 
     return TUSMakeRange(first, last);

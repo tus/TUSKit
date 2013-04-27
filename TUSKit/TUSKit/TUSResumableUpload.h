@@ -24,6 +24,8 @@ NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
     return r;
 }
 
+NS_ENUM(long long, TUSRangeBytes) {TUSInvalidRange = -1};
+
 @class TUSData;
 
 @interface TUSResumableUpload : NSObject <NSURLConnectionDelegate>

@@ -23,6 +23,12 @@
 
 /* Begin PBXBuildFile section */
 		BC5697D9172981470091669D /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC5697D7172981400091669D /* AssetsLibrary.framework */; };
+		BC9CC7D7172BDCDA00E66815 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC9CC7D6172BDCDA00E66815 /* SenTestingKit.framework */; };
+		BC9CC7D9172BDCDA00E66815 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC9CC7D8172BDCDA00E66815 /* UIKit.framework */; };
+		BC9CC7DA172BDCDA00E66815 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BCD7B9C11729584800D0E151 /* Foundation.framework */; };
+		BC9CC7E0172BDCDA00E66815 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = BC9CC7DE172BDCDA00E66815 /* InfoPlist.strings */; };
+		BC9CC7E3172BDCDA00E66815 /* TUSKit_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BC9CC7E2172BDCDA00E66815 /* TUSKit_Tests.m */; };
+		BC9CC7E9172BDD6000E66815 /* libTUSKit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BCD7B9BE1729584800D0E151 /* libTUSKit.a */; };
 		BCD7B9C21729584800D0E151 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BCD7B9C11729584800D0E151 /* Foundation.framework */; };
 		BCD7B9C71729584800D0E151 /* TUSKit.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = BCD7B9C61729584800D0E151 /* TUSKit.h */; };
 		BCFEFDAB1729606B001D2980 /* NSStream+BoundPair.m in Sources */ = {isa = PBXBuildFile; fileRef = BCFEFDA41729606B001D2980 /* NSStream+BoundPair.m */; };
@@ -64,6 +70,14 @@
 
 /* Begin PBXFileReference section */
 		BC5697D7172981400091669D /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
+		BC9CC7D5172BDCDA00E66815 /* TUSKit-Tests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "TUSKit-Tests.octest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC9CC7D6172BDCDA00E66815 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
+		BC9CC7D8172BDCDA00E66815 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
+		BC9CC7DD172BDCDA00E66815 /* TUSKit-Tests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "TUSKit-Tests-Info.plist"; sourceTree = "<group>"; };
+		BC9CC7DF172BDCDA00E66815 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		BC9CC7E1172BDCDA00E66815 /* TUSKit_Tests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TUSKit_Tests.h; sourceTree = "<group>"; };
+		BC9CC7E2172BDCDA00E66815 /* TUSKit_Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TUSKit_Tests.m; sourceTree = "<group>"; };
+		BC9CC7E4172BDCDA00E66815 /* TUSKit-Tests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TUSKit-Tests-Prefix.pch"; sourceTree = "<group>"; };
 		BCD7B9BE1729584800D0E151 /* libTUSKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libTUSKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		BCD7B9C11729584800D0E151 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		BCD7B9C51729584800D0E151 /* TUSKit-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TUSKit-Prefix.pch"; sourceTree = "<group>"; };
@@ -80,6 +94,17 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		BC9CC7D1172BDCDA00E66815 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC9CC7E9172BDD6000E66815 /* libTUSKit.a in Frameworks */,
+				BC9CC7D7172BDCDA00E66815 /* SenTestingKit.framework in Frameworks */,
+				BC9CC7D9172BDCDA00E66815 /* UIKit.framework in Frameworks */,
+				BC9CC7DA172BDCDA00E66815 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BCD7B9BB1729584800D0E151 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -92,10 +117,31 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		BC9CC7DB172BDCDA00E66815 /* TUSKit-Tests */ = {
+			isa = PBXGroup;
+			children = (
+				BC9CC7E1172BDCDA00E66815 /* TUSKit_Tests.h */,
+				BC9CC7E2172BDCDA00E66815 /* TUSKit_Tests.m */,
+				BC9CC7DC172BDCDA00E66815 /* Supporting Files */,
+			);
+			path = "TUSKit-Tests";
+			sourceTree = "<group>";
+		};
+		BC9CC7DC172BDCDA00E66815 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				BC9CC7DD172BDCDA00E66815 /* TUSKit-Tests-Info.plist */,
+				BC9CC7DE172BDCDA00E66815 /* InfoPlist.strings */,
+				BC9CC7E4172BDCDA00E66815 /* TUSKit-Tests-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
 		BCD7B9B51729584800D0E151 = {
 			isa = PBXGroup;
 			children = (
 				BCD7B9C31729584800D0E151 /* TUSKit */,
+				BC9CC7DB172BDCDA00E66815 /* TUSKit-Tests */,
 				BCD7B9C01729584800D0E151 /* Frameworks */,
 				BCD7B9BF1729584800D0E151 /* Products */,
 			);
@@ -105,6 +151,7 @@
 			isa = PBXGroup;
 			children = (
 				BCD7B9BE1729584800D0E151 /* libTUSKit.a */,
+				BC9CC7D5172BDCDA00E66815 /* TUSKit-Tests.octest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -114,6 +161,8 @@
 			children = (
 				BCD7B9C11729584800D0E151 /* Foundation.framework */,
 				BC5697D7172981400091669D /* AssetsLibrary.framework */,
+				BC9CC7D6172BDCDA00E66815 /* SenTestingKit.framework */,
+				BC9CC7D8172BDCDA00E66815 /* UIKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -147,6 +196,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		BC9CC7D4172BDCDA00E66815 /* TUSKit-Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC9CC7E7172BDCDA00E66815 /* Build configuration list for PBXNativeTarget "TUSKit-Tests" */;
+			buildPhases = (
+				BC9CC7D0172BDCDA00E66815 /* Sources */,
+				BC9CC7D1172BDCDA00E66815 /* Frameworks */,
+				BC9CC7D2172BDCDA00E66815 /* Resources */,
+				BC9CC7D3172BDCDA00E66815 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "TUSKit-Tests";
+			productName = "TUSKit-Tests";
+			productReference = BC9CC7D5172BDCDA00E66815 /* TUSKit-Tests.octest */;
+			productType = "com.apple.product-type.bundle";
+		};
 		BCD7B9BD1729584800D0E151 /* TUSKit-Library */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = BCD7B9CC1729584800D0E151 /* Build configuration list for PBXNativeTarget "TUSKit-Library" */;
@@ -188,11 +255,36 @@
 			targets = (
 				BCD7B9BD1729584800D0E151 /* TUSKit-Library */,
 				BCFEFDB517296368001D2980 /* TUSKit-Framework */,
+				BC9CC7D4172BDCDA00E66815 /* TUSKit-Tests */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		BC9CC7D2172BDCDA00E66815 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC9CC7E0172BDCDA00E66815 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXShellScriptBuildPhase section */
+		BC9CC7D3172BDCDA00E66815 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
+		};
 		BCFEFDB017296095001D2980 /* PrepareFramework */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -226,6 +318,14 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		BC9CC7D0172BDCDA00E66815 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC9CC7E3172BDCDA00E66815 /* TUSKit_Tests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BCD7B9BA1729584800D0E151 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -247,7 +347,48 @@
 		};
 /* End PBXTargetDependency section */
 
+/* Begin PBXVariantGroup section */
+		BC9CC7DE172BDCDA00E66815 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BC9CC7DF172BDCDA00E66815 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin XCBuildConfiguration section */
+		BC9CC7E5172BDCDA00E66815 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"$(SDKROOT)/Developer/Library/Frameworks\"",
+					"\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "TUSKit-Tests/TUSKit-Tests-Prefix.pch";
+				INFOPLIST_FILE = "TUSKit-Tests/TUSKit-Tests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = octest;
+			};
+			name = Debug;
+		};
+		BC9CC7E6172BDCDA00E66815 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"$(SDKROOT)/Developer/Library/Frameworks\"",
+					"\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "TUSKit-Tests/TUSKit-Tests-Prefix.pch";
+				INFOPLIST_FILE = "TUSKit-Tests/TUSKit-Tests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = octest;
+			};
+			name = Release;
+		};
 		BCD7B9CA1729584800D0E151 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = BCFEFDAF17296074001D2980 /* TUSKit.xcconfig */;
@@ -350,6 +491,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		BC9CC7E7172BDCDA00E66815 /* Build configuration list for PBXNativeTarget "TUSKit-Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC9CC7E5172BDCDA00E66815 /* Debug */,
+				BC9CC7E6172BDCDA00E66815 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		BCD7B9B91729584800D0E151 /* Build configuration list for PBXProject "TUSKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

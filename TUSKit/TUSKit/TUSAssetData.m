@@ -6,6 +6,7 @@
 //  Copyright (c) 2013 tus.io. All rights reserved.
 //
 
+#import "TusKit.h"
 #import "TUSAssetData.h"
 
 @interface TUSAssetData ()

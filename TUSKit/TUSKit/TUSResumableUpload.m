@@ -6,6 +6,7 @@
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
 
+#import "TUSKit.h"
 #import "TUSData.h"
 
 #import "TUSResumableUpload.h"
@@ -61,7 +62,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 
     NSString *uploadUrl = [[self resumableUploads] valueForKey:[self fingerprint]];
     if (uploadUrl == nil) {
-        NSLog(@"No resumable upload URL for fingerprint %@", [self fingerprint]);
+        TUSLog(@"No resumable upload URL for fingerprint %@", [self fingerprint]);
         [self createFile];
         return;
     }
@@ -106,27 +107,27 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 
     __weak TUSResumableUpload* upload = self;
     self.data.failureBlock = ^(NSError* error) {
-        NSLog(@"Failed to upload to %@ for fingerprint %@", [upload url], [upload fingerprint]);
+        TUSLog(@"Failed to upload to %@ for fingerprint %@", [upload url], [upload fingerprint]);
         if (upload.failureBlock) {
             upload.failureBlock(error);
         }
     };
     self.data.successBlock = ^() {
         [upload setState:Idle];
-        NSLog(@"Finished upload to %@ for fingerprint %@", [upload url], [upload fingerprint]);
+        TUSLog(@"Finished upload to %@ for fingerprint %@", [upload url], [upload fingerprint]);
         NSMutableDictionary* resumableUploads = [upload resumableUploads];
         [resumableUploads removeObjectForKey:[upload fingerprint]];
         BOOL success = [resumableUploads writeToURL:[upload resumableUploadsFilePath]
                                          atomically:YES];
         if (!success) {
-            NSLog(@"Unable to save resumableUploads file");
+            TUSLog(@"Unable to save resumableUploads file");
         }
         if (upload.resultBlock) {
             upload.resultBlock(upload.url);
         }
     };
 
-    NSLog(@"Resuming upload at %@ for fingerprint %@ from offset %lld (%@)",
+    TUSLog(@"Resuming upload at %@ for fingerprint %@ from offset %lld (%@)",
           [self url], [self fingerprint], offset, contentRange);
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_PUT];
@@ -141,7 +142,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 - (void)connection:(NSURLConnection *)connection
   didFailWithError:(NSError *)error
 {
-    NSLog(@"ERROR: connection did fail due to: %@", error);
+    TUSLog(@"ERROR: connection did fail due to: %@", error);
     [connection cancel];
     [[self data] stop];
     if (self.failureBlock) {
@@ -155,7 +156,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 - (NSInputStream *)connection:(NSURLConnection *)connection
             needNewBodyStream:(NSURLRequest *)request
 {
-    NSLog(@"ERROR: connection requested new body stream, which is currently not supported");
+    TUSLog(@"ERROR: connection requested new body stream, which is currently not supported");
     return nil;
 }
 
@@ -171,11 +172,11 @@ didReceiveResponse:(NSURLResponse *)response
             if (rangeHeader) {
                 TUSRange range = [self rangeFromHeader:rangeHeader];
                 [self setOffset:range.last];
-                NSLog(@"Resumable upload at %@ for %@ from %lld (%@)",
+                TUSLog(@"Resumable upload at %@ for %@ from %lld (%@)",
                       [self url], [self fingerprint], [self offset], rangeHeader);
             }
             else {
-                NSLog(@"Restarting upload at %@ for %@", [self url], [self fingerprint]);
+                TUSLog(@"Restarting upload at %@ for %@", [self url], [self fingerprint]);
             }
             [self uploadFile];
             break;
@@ -183,14 +184,14 @@ didReceiveResponse:(NSURLResponse *)response
         case CreatingFile: {
             NSString *location = [headers valueForKey:HTTP_LOCATION];
             [self setUrl:[NSURL URLWithString:location]];
-            NSLog(@"Created resumable upload at %@ for fingerprint %@",
+            TUSLog(@"Created resumable upload at %@ for fingerprint %@",
                   [self url], [self fingerprint]);
             NSURL* fileURL = [self resumableUploadsFilePath];
             NSMutableDictionary* resumableUploads = [self resumableUploads];
             [resumableUploads setValue:location forKey:[self fingerprint]];
             BOOL success = [resumableUploads writeToURL:fileURL atomically:YES];
             if (!success) {
-                NSLog(@"Unable to save resumableUploads file");
+                TUSLog(@"Unable to save resumableUploads file");
             }
             [self uploadFile];
             break;
@@ -228,27 +229,27 @@ totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
     NSScanner* rangeScanner = [NSScanner scannerWithString:rangeHeader];
     BOOL success = [rangeScanner scanUpToString:bytesPrefix intoString:NULL];
     if (!success) {
-        NSLog(@"Failed to scan up to '%@' from '%@'", bytesPrefix, rangeHeader);
+        TUSLog(@"Failed to scan up to '%@' from '%@'", bytesPrefix, rangeHeader);
     }
 
     success = [rangeScanner scanString:bytesPrefix intoString:NULL];
     if (!success) {
-        NSLog(@"Failed to scan '%@' from '%@'", bytesPrefix, rangeHeader);
+        TUSLog(@"Failed to scan '%@' from '%@'", bytesPrefix, rangeHeader);
     }
 
     success = [rangeScanner scanLongLong:&first];
     if (!success) {
-        NSLog(@"Failed to first byte from '%@'", rangeHeader);
+        TUSLog(@"Failed to first byte from '%@'", rangeHeader);
     }
 
     success = [rangeScanner scanString:HTTP_RANGE_DASH intoString:NULL];
     if (!success) {
-        NSLog(@"Failed to byte-range separator from '%@'", rangeHeader);
+        TUSLog(@"Failed to byte-range separator from '%@'", rangeHeader);
     }
 
     success = [rangeScanner scanLongLong:&last];
     if (!success) {
-        NSLog(@"Failed to last byte from '%@'", rangeHeader);
+        TUSLog(@"Failed to last byte from '%@'", rangeHeader);
     }
 
     if (first > last) {
@@ -306,7 +307,7 @@ totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
                                               attributes:nil
                                                    error:&error];
         if (!success) {
-            NSLog(@"Unable to create %@ directory due to: %@",
+            TUSLog(@"Unable to create %@ directory due to: %@",
                   applicationSupportDirectoryURL,
                   error);
         }

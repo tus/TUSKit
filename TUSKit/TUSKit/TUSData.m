@@ -6,8 +6,7 @@
 //  Copyright (c) 2013 tus.io. All rights reserved.
 //
 
-#import "TUSData.h"
-
+#import "TUSKit.h"
 #import "NSStream+BoundPair.h"
 
 #import "TUSData.h"
@@ -98,7 +97,7 @@
 {
     switch (eventCode) {
         case NSStreamEventOpenCompleted: {
-            NSLog(@"TUSData stream opened");
+            TUSLog(@"TUSData stream opened");
         } break;
         case NSStreamEventHasSpaceAvailable: {
             uint8_t buffer[TUS_BUFSIZE];
@@ -114,7 +113,7 @@
                 }
                 return;
             }
-            NSLog(@"Reading %lld bytes from %lld to %lld until %lld"
+            TUSLog(@"Reading %lld bytes from %lld to %lld until %lld"
                   , length, [self offset], [self offset] + length, [self length]);
             NSError* error = NULL;
             NSUInteger bytesRead = [self getBytes:buffer
@@ -122,15 +121,18 @@
                                            length:length
                                             error:&error];
             if (!bytesRead) {
-                NSLog(@"Unable to read bytes due to: %@", error);
+                TUSLog(@"Unable to read bytes due to: %@", error);
+                if (self.failureBlock) {
+                    self.failureBlock(error);
+                }
             } else {
                 NSInteger bytesWritten = [[self outputStream] write:buffer
                                                         maxLength:bytesRead];
                 if (bytesWritten <= 0) {
-                    NSLog(@"Network write error %@", [aStream streamError]);
+                    TUSLog(@"Network write error %@", [aStream streamError]);
                 } else {
                     if (bytesRead != (NSUInteger)bytesWritten) {
-                        NSLog(@"Read %d bytes from buffer but only wrote %d to the network",
+                        TUSLog(@"Read %d bytes from buffer but only wrote %d to the network",
                               bytesRead, bytesWritten);
                     }
                     [self setOffset:[self offset] + bytesWritten];
@@ -138,7 +140,7 @@
             }
         } break;
         case NSStreamEventErrorOccurred: {
-            NSLog(@"TUSData stream error %@", [aStream streamError]);
+            TUSLog(@"TUSData stream error %@", [aStream streamError]);
             if (self.failureBlock) {
                 self.failureBlock([aStream streamError]);
             }

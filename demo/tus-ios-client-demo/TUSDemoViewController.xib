@@ -57,7 +57,7 @@
 						<array class="NSMutableArray" key="NSSubviews">
 							<object class="IBUIProgressView" id="410997118">
 								<reference key="NSNextResponder" ref="255538607"/>
-								<int key="NSvFlags">292</int>
+								<int key="NSvFlags">290</int>
 								<string key="NSFrame">{{8, 7}, {165, 9}}</string>
 								<reference key="NSSuperview" ref="255538607"/>
 								<reference key="NSWindow"/>
@@ -69,7 +69,7 @@
 							</object>
 							<object class="IBUILabel" id="104399836">
 								<reference key="NSNextResponder" ref="255538607"/>
-								<int key="NSvFlags">268</int>
+								<int key="NSvFlags">290</int>
 								<string key="NSFrame">{{-50, 8}, {280, 39}}</string>
 								<reference key="NSSuperview" ref="255538607"/>
 								<reference key="NSWindow"/>
@@ -114,7 +114,7 @@
 					</object>
 					<object class="IBUIButton" id="128999271">
 						<reference key="NSNextResponder" ref="191373211"/>
-						<int key="NSvFlags">292</int>
+						<int key="NSvFlags">290</int>
 						<string key="NSFrame">{{70, 208}, {180, 44}}</string>
 						<reference key="NSSuperview" ref="191373211"/>
 						<reference key="NSWindow"/>
@@ -156,7 +156,6 @@
 						<string key="NSFrame">{{20, 291}, {280, 149}}</string>
 						<reference key="NSSuperview" ref="191373211"/>
 						<reference key="NSWindow"/>
-						<reference key="NSNextKeyView"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<object class="NSColor" key="IBUIBackgroundColor">
 							<int key="NSColorSpace">1</int>
@@ -296,8 +295,8 @@
 						<array class="NSMutableArray" key="children">
 							<reference ref="753284953"/>
 							<reference ref="128999271"/>
-							<reference ref="336768750"/>
 							<reference ref="255538607"/>
+							<reference ref="336768750"/>
 						</array>
 						<reference key="parent" ref="0"/>
 					</object>

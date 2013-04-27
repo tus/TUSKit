@@ -310,6 +310,12 @@
 				GCC_PREFIX_HEADER = "TUSKit/TUSKit-Prefix.pch";
 				OTHER_LDFLAGS = "-ObjC";
 				SKIP_INSTALL = YES;
+				WARNING_CFLAGS = (
+					"-Werror",
+					"-Wall",
+					"-Wextra",
+					"-Wno-unused-parameter",
+				);
 			};
 			name = Debug;
 		};
@@ -320,6 +326,12 @@
 				GCC_PREFIX_HEADER = "TUSKit/TUSKit-Prefix.pch";
 				OTHER_LDFLAGS = "-ObjC";
 				SKIP_INSTALL = YES;
+				WARNING_CFLAGS = (
+					"-Werror",
+					"-Wall",
+					"-Wextra",
+					"-Wno-unused-parameter",
+				);
 			};
 			name = Release;
 		};

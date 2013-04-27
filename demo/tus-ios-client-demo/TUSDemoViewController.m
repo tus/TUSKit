@@ -47,7 +47,9 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
     [self dismissViewControllerAnimated:YES
                              completion:^{
                                  NSString* type = [info valueForKey:UIImagePickerControllerMediaType];
-                                 NSString* text = [NSString stringWithFormat:NSLocalizedString(@"Uploading %@…", nil), UTTypeCopyDescription((__bridge CFStringRef)(type))];
+                                 CFStringRef typeDescription = (UTTypeCopyDescription((__bridge CFStringRef)(type)));
+                                 NSString* text = [NSString stringWithFormat:NSLocalizedString(@"Uploading %@…", nil), typeDescription];
+                                 CFRelease(typeDescription);
                                  [self.statusLabel setText:text];
                                  [self.imageOverlay setHidden:NO];
                                  [self.chooseFileButton setEnabled:NO];

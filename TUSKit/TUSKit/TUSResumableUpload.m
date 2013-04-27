@@ -21,7 +21,6 @@ typedef enum {
 @property (strong, nonatomic) NSURL *endpoint;
 @property (strong, nonatomic) NSURL *url;
 @property (strong, nonatomic) NSString *fingerprint;
-@property (strong, nonatomic) NSMutableDictionary *resumableUploads;
 @property (nonatomic) long long offset;
 @property (nonatomic) UploadState state;
 @property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
@@ -38,12 +37,6 @@ typedef enum {
         [self setEndpoint:[NSURL URLWithString:url]];
         [self setData:data];
         [self setFingerprint:fingerprint];
-
-        NSURL* resumableUploadsPath = [self resumableUploadsFilePath];
-        self.resumableUploads = [NSMutableDictionary dictionaryWithContentsOfURL:resumableUploadsPath];
-        if (!self.resumableUploads) {
-            self.resumableUploads = [NSMutableDictionary dictionary];
-        }
     }
     return self;
 }
@@ -208,6 +201,21 @@ typedef enum {
     }
 
     return TUSMakeRange(first, last);
+}
+
+- (NSMutableDictionary*)resumableUploads
+{
+    static id resumableUploads = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSURL* resumableUploadsPath = [self resumableUploadsFilePath];
+        resumableUploads = [NSMutableDictionary dictionaryWithContentsOfURL:resumableUploadsPath];
+        if (!resumableUploads) {
+            resumableUploads = [[NSMutableDictionary alloc] init];
+        }
+    });
+
+    return resumableUploads;
 }
 
 - (NSURL*)resumableUploadsFilePath

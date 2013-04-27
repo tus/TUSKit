@@ -7,6 +7,7 @@
 //
 
 #import <AssetsLibrary/AssetsLibrary.h>
+#import <MobileCoreServices/MobileCoreServices.h>
 
 #import <TUSKit/TUSKit.h>
 #import "TUSDemoViewController.h"
@@ -21,10 +22,10 @@
 {
     [super viewDidLoad];
     self.assetsLibrary = [[ALAssetsLibrary alloc] init];
-    [self.progressBar setHidden:YES];
+    [self.imageOverlay setHidden:YES];
     [self.progressBar setProgress:.0];
-    [self.statusLabel setHidden:YES];
-    [self.urlTextView setHidden:YES];
+    NSString* text = [NSString stringWithFormat:NSLocalizedString(@"which will be uploaded to:\n%@",nil), [self endpoint]];
+    [self.urlTextView setText:text];
 }
 
 #pragma mark - IBAction Methods
@@ -42,10 +43,11 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
 {
     [self dismissViewControllerAnimated:YES
                              completion:^{
-                                 [self.statusLabel setText:NSLocalizedString(@"Uploading…",nil)];
-                                 [self.statusLabel setHidden:NO];
+                                 NSString* type = [info valueForKey:UIImagePickerControllerMediaType];
+                                 NSString* text = [NSString stringWithFormat:NSLocalizedString(@"Uploading %@…", nil), UTTypeCopyDescription((__bridge CFStringRef)(type))];
+                                 [self.statusLabel setText:text];
+                                 [self.imageOverlay setHidden:NO];
                                  [self.chooseFileButton setEnabled:NO];
-                                 [self.progressBar setHidden:NO];
                                  [self uploadImageFromAsset:info];
                              }];
 }
@@ -72,6 +74,8 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
 
     [[self assetsLibrary] assetForURL:assetUrl
                           resultBlock:^(ALAsset* asset) {
+                              self.imageView.image = [UIImage imageWithCGImage:[asset thumbnail]];
+                              self.imageView.alpha = .5;
                               TUSAssetData* uploadData = [[TUSAssetData alloc] initWithAsset:asset];
                               TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithURL:[self endpoint] data:uploadData fingerprint:fingerprint];
                               upload.progressBlock = [self progressBlock];
@@ -107,10 +111,8 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
     return ^(NSURL* url) {
         NSLog(@"File uploaded to: %@", url);
         [self.chooseFileButton setEnabled:YES];
-        [self.progressBar setHidden:YES];
-        [self.statusLabel setText:NSLocalizedString(@"Uploaded to:",nil)];
-        [self.urlTextView setText:[url absoluteString]];
-        [self.urlTextView setHidden:NO];
+        [self.imageOverlay setHidden:YES];
+        self.imageView.alpha = 1;
     };
 }
 

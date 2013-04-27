@@ -10,6 +10,7 @@
 		BC274018172045B4004E58C3 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC274016172045AB004E58C3 /* AssetsLibrary.framework */; };
 		BC27402017204CA1004E58C3 /* TUSDemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC27401E17204CA1004E58C3 /* TUSDemoViewController.m */; };
 		BC27402117204CA1004E58C3 /* TUSDemoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = BC27401F17204CA1004E58C3 /* TUSDemoViewController.xib */; };
+		BC9CC7EC172BFC6900E66815 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC9CC7EA172BFC5B00E66815 /* MobileCoreServices.framework */; };
 		BCFEFE0A172969A3001D2980 /* TUSKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BCFEFE09172969A3001D2980 /* TUSKit.framework */; };
 		BCFEFE0B172969A3001D2980 /* TUSKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BCFEFE09172969A3001D2980 /* TUSKit.framework */; };
 		BCFEFE0E172970F4001D2980 /* tus_ios_client_demoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BCFEFE0D172970F4001D2980 /* tus_ios_client_demoTests.m */; };
@@ -43,6 +44,7 @@
 		BC27401D17204CA1004E58C3 /* TUSDemoViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSDemoViewController.h; sourceTree = "<group>"; };
 		BC27401E17204CA1004E58C3 /* TUSDemoViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSDemoViewController.m; sourceTree = "<group>"; };
 		BC27401F17204CA1004E58C3 /* TUSDemoViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TUSDemoViewController.xib; sourceTree = "<group>"; };
+		BC9CC7EA172BFC5B00E66815 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		BCFEFE09172969A3001D2980 /* TUSKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = TUSKit.framework; path = ../Frameworks/TUSKit.framework; sourceTree = "<group>"; };
 		BCFEFE0C172970F4001D2980 /* tus_ios_client_demoTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tus_ios_client_demoTests.h; sourceTree = "<group>"; };
 		BCFEFE0D172970F4001D2980 /* tus_ios_client_demoTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = tus_ios_client_demoTests.m; sourceTree = "<group>"; };
@@ -71,6 +73,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BCFEFE0A172969A3001D2980 /* TUSKit.framework in Frameworks */,
+				BC9CC7EC172BFC6900E66815 /* MobileCoreServices.framework in Frameworks */,
 				BC274018172045B4004E58C3 /* AssetsLibrary.framework in Frameworks */,
 				DCCB27951711CC68000E78B6 /* UIKit.framework in Frameworks */,
 				DCCB27971711CC68000E78B6 /* Foundation.framework in Frameworks */,
@@ -115,6 +118,7 @@
 			isa = PBXGroup;
 			children = (
 				BCFEFE09172969A3001D2980 /* TUSKit.framework */,
+				BC9CC7EA172BFC5B00E66815 /* MobileCoreServices.framework */,
 				BC274016172045AB004E58C3 /* AssetsLibrary.framework */,
 				DCCB27941711CC68000E78B6 /* UIKit.framework */,
 				DCCB27961711CC68000E78B6 /* Foundation.framework */,

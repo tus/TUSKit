@@ -168,6 +168,12 @@ didReceiveResponse:(NSURLResponse *)response
     
     switch([self state]) {
         case CheckingFile: {
+            if (httpResponse.statusCode != 200) {
+                NSLog(@"Server responded with %d. Restarting upload",
+                      httpResponse.statusCode);
+                [self createFile];
+                return;
+            }
             NSString *rangeHeader = [headers valueForKey:HTTP_RANGE];
             if (rangeHeader) {
                 TUSRange range = [self rangeFromHeader:rangeHeader];

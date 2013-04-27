@@ -126,6 +126,8 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
         [self.chooseFileButton setEnabled:YES];
         [self.imageOverlay setHidden:YES];
         self.imageView.alpha = 1;
+        NSString* text = [NSString stringWithFormat:NSLocalizedString(@"Remote URL:\n%@",nil), [url absoluteString]];
+        [self.urlTextView setText:text];
     };
 }
 

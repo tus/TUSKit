@@ -17,6 +17,8 @@
 #define HTTP_LOCATION @"Location"
 #define HTTP_CONTENT_RANGE @"Content-Range"
 #define HTTP_BYTES_UNIT @"bytes"
+#define HTTP_RANGE_EQUAL @"="
+#define HTTP_RANGE_DASH @"-"
 
 typedef NS_ENUM(NSInteger, TUSUploadState) {
     Idle,
@@ -195,7 +197,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     long long first = TUSInvalidRange;
     long long last = TUSInvalidRange;
 
-    NSString* bytesPrefix = [HTTP_BYTES_UNIT stringByAppendingString:@"="];
+    NSString* bytesPrefix = [HTTP_BYTES_UNIT stringByAppendingString:HTTP_RANGE_EQUAL];
     NSScanner* rangeScanner = [NSScanner scannerWithString:rangeHeader];
     BOOL success = [rangeScanner scanUpToString:bytesPrefix intoString:NULL];
     if (!success) {
@@ -212,7 +214,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         NSLog(@"Failed to first byte from '%@'", rangeHeader);
     }
 
-    success = [rangeScanner scanString:@"-" intoString:NULL];
+    success = [rangeScanner scanString:HTTP_RANGE_DASH intoString:NULL];
     if (!success) {
         NSLog(@"Failed to byte-range separator from '%@'", rangeHeader);
     }

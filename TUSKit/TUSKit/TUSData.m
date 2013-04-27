@@ -109,14 +109,17 @@
                                            length:length
                                             error:&error];
             if (!bytesRead) {
-                NSLog(@"Unable to read bytes from asset due to: %@", error);
+                NSLog(@"Unable to read bytes due to: %@", error);
             } else {
                 NSInteger bytesWritten = [[self outputStream] write:buffer
                                                         maxLength:bytesRead];
-                NSLog(@"bytesWritten: %d", bytesWritten);
                 if (bytesWritten <= 0) {
                     NSLog(@"Network write error %@", [aStream streamError]);
                 } else {
+                    if (bytesRead != (NSUInteger)bytesWritten) {
+                        NSLog(@"Read %d bytes from buffer but only wrote %d to the network",
+                              bytesRead, bytesWritten);
+                    }
                     [self setOffset:[self offset] + bytesWritten];
                 }
             }

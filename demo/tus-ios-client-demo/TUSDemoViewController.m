@@ -88,7 +88,6 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
 {
     return ^(NSInteger bytesWritten, NSInteger bytesTotal) {
         float progress = (float)bytesWritten / (float)bytesTotal;
-        NSLog(@"Progress: %d / %d = %f", bytesWritten, bytesTotal, progress);
         if (isnan(progress)) {
             progress = .0;
         }

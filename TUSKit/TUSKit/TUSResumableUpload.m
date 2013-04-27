@@ -29,7 +29,9 @@ typedef enum {
 
 @implementation TUSResumableUpload
 
-- (id) initWithEndpoint:(NSString *)url data:(TUSData *)data fingerprint:(NSString *)fingerprint
+- (id)initWithURL:(NSString *)url
+             data:(TUSData *)data
+      fingerprint:(NSString *)fingerprint
 {
     self = [super init];
     if (self) {

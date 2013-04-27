@@ -456,6 +456,7 @@
 					"-Wall",
 					"-Wextra",
 					"-Wno-unused-parameter",
+					"-Wno-arc-performSelector-leaks",
 				);
 			};
 			name = Debug;
@@ -472,6 +473,7 @@
 					"-Wall",
 					"-Wextra",
 					"-Wno-unused-parameter",
+					"-Wno-arc-performSelector-leaks",
 				);
 			};
 			name = Release;

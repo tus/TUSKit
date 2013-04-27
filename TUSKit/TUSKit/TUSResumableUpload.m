@@ -144,7 +144,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
             NSString *rangeHeader = [headers valueForKey:HTTP_RANGE];
             if (rangeHeader) {
                 TUSRange range = [self rangeFromHeader:rangeHeader];
-                [self setOffset:range.first];
+                [self setOffset:range.last];
                 NSLog(@"Resumable upload at %@ for %@ from %lld (%@)",
                       [self url], [self fingerprint], [self offset], rangeHeader);
             }

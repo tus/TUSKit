@@ -8,6 +8,7 @@
 
 #import "TUSDemoViewController.h"
 
+#import "TUSDemoSettingsViewController.h"
 #import "TusAppDelegate.h"
 
 @interface TusAppDelegate()
@@ -18,10 +19,8 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    [self setWindow:[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]]];
-    self.viewController = [[TUSDemoViewController alloc] initWithNibName:@"TUSDemoViewController" bundle:nil];
-    self.window.rootViewController = self.viewController;
-    [self.window makeKeyAndVisible];
+    // Override point for customization after application launch.
+    [[NSUserDefaults standardUserDefaults] registerDefaults:@{TUSRemoteURLDefaultsKey: @"http://master.tus.io/files"}];
     return YES;
 }
 

@@ -9,8 +9,9 @@
 /* Begin PBXBuildFile section */
 		BC274018172045B4004E58C3 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC274016172045AB004E58C3 /* AssetsLibrary.framework */; };
 		BC27402017204CA1004E58C3 /* TUSDemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC27401E17204CA1004E58C3 /* TUSDemoViewController.m */; };
-		BC27402117204CA1004E58C3 /* TUSDemoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = BC27401F17204CA1004E58C3 /* TUSDemoViewController.xib */; };
+		BC45F1E4172E744900850C81 /* TUSDemoSettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC45F1E2172E744900850C81 /* TUSDemoSettingsViewController.m */; };
 		BC9CC7EC172BFC6900E66815 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC9CC7EA172BFC5B00E66815 /* MobileCoreServices.framework */; };
+		BCD5BFC9172E7A5300467000 /* Storyboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BCD5BFC8172E7A5300467000 /* Storyboard.storyboard */; };
 		BCFEFE0A172969A3001D2980 /* TUSKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BCFEFE09172969A3001D2980 /* TUSKit.framework */; };
 		BCFEFE0B172969A3001D2980 /* TUSKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BCFEFE09172969A3001D2980 /* TUSKit.framework */; };
 		BCFEFE0E172970F4001D2980 /* tus_ios_client_demoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BCFEFE0D172970F4001D2980 /* tus_ios_client_demoTests.m */; };
@@ -43,8 +44,10 @@
 		BC274016172045AB004E58C3 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
 		BC27401D17204CA1004E58C3 /* TUSDemoViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSDemoViewController.h; sourceTree = "<group>"; };
 		BC27401E17204CA1004E58C3 /* TUSDemoViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSDemoViewController.m; sourceTree = "<group>"; };
-		BC27401F17204CA1004E58C3 /* TUSDemoViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TUSDemoViewController.xib; sourceTree = "<group>"; };
+		BC45F1E1172E744900850C81 /* TUSDemoSettingsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSDemoSettingsViewController.h; sourceTree = "<group>"; };
+		BC45F1E2172E744900850C81 /* TUSDemoSettingsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSDemoSettingsViewController.m; sourceTree = "<group>"; };
 		BC9CC7EA172BFC5B00E66815 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
+		BCD5BFC8172E7A5300467000 /* Storyboard.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Storyboard.storyboard; sourceTree = "<group>"; };
 		BCFEFE09172969A3001D2980 /* TUSKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = TUSKit.framework; path = ../Frameworks/TUSKit.framework; sourceTree = "<group>"; };
 		BCFEFE0C172970F4001D2980 /* tus_ios_client_demoTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tus_ios_client_demoTests.h; sourceTree = "<group>"; };
 		BCFEFE0D172970F4001D2980 /* tus_ios_client_demoTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = tus_ios_client_demoTests.m; sourceTree = "<group>"; };
@@ -135,7 +138,9 @@
 				DCCB27A41711CC68000E78B6 /* TusAppDelegate.m */,
 				BC27401D17204CA1004E58C3 /* TUSDemoViewController.h */,
 				BC27401E17204CA1004E58C3 /* TUSDemoViewController.m */,
-				BC27401F17204CA1004E58C3 /* TUSDemoViewController.xib */,
+				BC45F1E1172E744900850C81 /* TUSDemoSettingsViewController.h */,
+				BC45F1E2172E744900850C81 /* TUSDemoSettingsViewController.m */,
+				BCD5BFC8172E7A5300467000 /* Storyboard.storyboard */,
 				DCCB279B1711CC68000E78B6 /* Supporting Files */,
 			);
 			path = "tus-ios-client-demo";
@@ -250,7 +255,7 @@
 				DCCB27A71711CC69000E78B6 /* Default.png in Resources */,
 				DCCB27A91711CC69000E78B6 /* Default@2x.png in Resources */,
 				DCCB27AB1711CC69000E78B6 /* Default-568h@2x.png in Resources */,
-				BC27402117204CA1004E58C3 /* TUSDemoViewController.xib in Resources */,
+				BCD5BFC9172E7A5300467000 /* Storyboard.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -288,6 +293,7 @@
 				DCCB27A11711CC68000E78B6 /* main.m in Sources */,
 				DCCB27A51711CC68000E78B6 /* TusAppDelegate.m in Sources */,
 				BC27402017204CA1004E58C3 /* TUSDemoViewController.m in Sources */,
+				BC45F1E4172E744900850C81 /* TUSDemoSettingsViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

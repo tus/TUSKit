@@ -10,6 +10,7 @@
 #import <MobileCoreServices/MobileCoreServices.h>
 
 #import <TUSKit/TUSKit.h>
+#import "TUSDemoSettingsViewController.h"
 #import "TUSDemoViewController.h"
 
 @interface TUSDemoViewController ()
@@ -24,6 +25,11 @@
     self.assetsLibrary = [[ALAssetsLibrary alloc] init];
     [self.imageOverlay setHidden:YES];
     [self.progressBar setProgress:.0];
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
     NSString* text = [NSString stringWithFormat:NSLocalizedString(@"for upload to:\n%@",nil), [self endpoint]];
     [self.urlTextView setText:text];
 }
@@ -133,7 +139,7 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
 
 - (NSString*)endpoint
 {
-    return @"http://master.tus.io/files";
+    return [[NSUserDefaults standardUserDefaults] valueForKey:TUSRemoteURLDefaultsKey];
 }
 
 @end

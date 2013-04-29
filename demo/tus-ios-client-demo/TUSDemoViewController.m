@@ -40,9 +40,6 @@
     UIImagePickerController *imagePicker = [[UIImagePickerController alloc] init];
     imagePicker.mediaTypes = [UIImagePickerController availableMediaTypesForSourceType:imagePicker.sourceType];
     imagePicker.delegate = self;
-    [self.urlTextView setText:nil];
-    [self.imageView setImage:nil];
-    [self.progressBar setProgress:.0];
     [self presentViewController:imagePicker animated:YES completion:nil];
 }
 
@@ -50,6 +47,9 @@
 - (void)imagePickerController:(UIImagePickerController *)picker
 didFinishPickingMediaWithInfo:(NSDictionary *)info
 {
+    [self.urlTextView setText:nil];
+    [self.imageView setImage:nil];
+    [self.progressBar setProgress:.0];
     [self dismissViewControllerAnimated:YES
                              completion:^{
                                  NSString* type = [info valueForKey:UIImagePickerControllerMediaType];

@@ -63,6 +63,42 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
                              }];
 }
 
+#pragma mark - TUSResumableUploadDelegate Methods
+- (void)upload:(TUSResumableUpload *)upload willBeginUploadToURL:(NSURL *)url
+{
+    NSString* text = [NSString stringWithFormat:NSLocalizedString(@"Resumable Upload URL:\n%@",nil), [url absoluteString]];
+    [self.urlTextView setText:text];
+    [self.urlTextView setHidden:NO];
+}
+
+- (void)upload:(TUSResumableUpload*)upload didFinishUploadToURL:(NSURL*)url;
+{
+    NSLog(@"File uploaded to: %@", url);
+    [upload removeObserver:self forKeyPath:@"progress" context:nil];
+    self.progressBar.progress = upload.progress;
+    [self.chooseFileButton setEnabled:YES];
+    [self.imageOverlay setHidden:YES];
+    self.imageView.alpha = 1;
+    NSString* text = [NSString stringWithFormat:NSLocalizedString(@"Resumable Upload URL:\n%@",nil), [url absoluteString]];
+    [self.urlTextView setText:text];
+}
+
+- (void)upload:(TUSResumableUpload*)upload didFailWithError:(NSError*)error;
+{
+    NSLog(@"Failed to upload image due to: %@", error);
+    [upload removeObserver:self forKeyPath:@"progress" context:nil];
+    [self.chooseFileButton setEnabled:YES];
+    NSString* text = self.urlTextView.text;
+    text = [text stringByAppendingFormat:@"\n%@", [error localizedDescription]];
+    [self.urlTextView setText:text];
+    [self.statusLabel setText:NSLocalizedString(@"Failed!", nil)];
+    [[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Error",nil)
+                                message:[error localizedDescription]
+                               delegate:nil cancelButtonTitle:NSLocalizedString(@"OK",nil)
+                      otherButtonTitles:nil] show];
+}
+
+
 #pragma mark - Private Methods
 - (void)uploadImageFromData:(NSDictionary*)info
 {
@@ -72,9 +108,11 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
     NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
     TUSData* uploadData = [[TUSData alloc] initWithData:imageData];
     TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithURL:[self endpoint] data:uploadData fingerprint:fingerprint];
-    upload.progressBlock = [self progressBlock];
-    upload.resultBlock = [self resultBlock];
-    upload.failureBlock = [self failureBlock];
+    upload.delegate = self;
+    [upload addObserver:self
+             forKeyPath:@"progress"
+                options:NSKeyValueObservingOptionNew
+                context:nil];
     [upload start];
 }
 
@@ -89,9 +127,11 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
                               self.imageView.alpha = .5;
                               TUSAssetData* uploadData = [[TUSAssetData alloc] initWithAsset:asset];
                               TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithURL:[self endpoint] data:uploadData fingerprint:fingerprint];
-                              upload.progressBlock = [self progressBlock];
-                              upload.resultBlock = [self resultBlock];
-                              upload.failureBlock = [self failureBlock];
+                              upload.delegate = self;
+                              [upload addObserver:self
+                                       forKeyPath:@"progress"
+                                          options:NSKeyValueObservingOptionNew
+                                          context:nil];
                               [upload start];
                           }
                          failureBlock:^(NSError* error) {
@@ -99,42 +139,14 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
                          }];
 }
 
-- (void(^)(NSInteger bytesWritten, NSInteger bytesTotal))progressBlock
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context
 {
-    return ^(NSInteger bytesWritten, NSInteger bytesTotal) {
-        float progress = (float)bytesWritten / (float)bytesTotal;
-        if (isnan(progress)) {
-            progress = .0;
-        }
-        [self.progressBar setProgress:progress];
-    };
-}
-
-- (void(^)(NSError* error))failureBlock
-{
-    return ^(NSError* error) {
-        NSLog(@"Failed to upload image due to: %@", error);
-        [self.chooseFileButton setEnabled:YES];
-        NSString* text = self.urlTextView.text;
-        text = [text stringByAppendingFormat:@"\n%@", [error localizedDescription]];
-        [self.urlTextView setText:text];
-        [self.statusLabel setText:NSLocalizedString(@"Failed!", nil)];
-        [[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Error",nil)
-                                   message:[error localizedDescription]
-                                   delegate:nil cancelButtonTitle:NSLocalizedString(@"OK",nil) otherButtonTitles:nil] show];
-    };
-}
-
-- (void(^)(NSURL* url))resultBlock
-{
-    return ^(NSURL* url) {
-        NSLog(@"File uploaded to: %@", url);
-        [self.chooseFileButton setEnabled:YES];
-        [self.imageOverlay setHidden:YES];
-        self.imageView.alpha = 1;
-        NSString* text = [NSString stringWithFormat:NSLocalizedString(@"Remote URL:\n%@",nil), [url absoluteString]];
-        [self.urlTextView setText:text];
-    };
+    if ([keyPath isEqualToString:@"progress"]) {
+        self.progressBar.progress = [[change valueForKey:NSKeyValueChangeNewKey] floatValue];
+    }
 }
 
 - (NSString*)endpoint

@@ -34,9 +34,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 @property (strong, nonatomic) NSURL *endpoint;
 @property (strong, nonatomic) NSURL *url;
 @property (strong, nonatomic) NSString *fingerprint;
-@property (nonatomic) long long offset;
-@property (nonatomic) TUSUploadState state;
-@property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
+@property (assign) long long offset;
+@property (assign) TUSUploadState state;
+@property (readwrite, assign) float progress;
 @end
 
 @implementation TUSResumableUpload
@@ -56,9 +56,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 
 - (void) start
 {
-    if (self.progressBlock) {
-        self.progressBlock(0, 0);
-    }
+    self.progress = 0;
 
     NSString *uploadUrl = [[self resumableUploads] valueForKey:[self fingerprint]];
     if (uploadUrl == nil) {
@@ -108,9 +106,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     __weak TUSResumableUpload* upload = self;
     self.data.failureBlock = ^(NSError* error) {
         TUSLog(@"Failed to upload to %@ for fingerprint %@", [upload url], [upload fingerprint]);
-        if (upload.failureBlock) {
-            upload.failureBlock(error);
-        }
+        [upload makeDelegatePerform:@selector(upload:didFailWithError:) withObject:error];
     };
     self.data.successBlock = ^() {
         [upload setState:Idle];
@@ -122,19 +118,19 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         if (!success) {
             TUSLog(@"Unable to save resumableUploads file");
         }
-        if (upload.resultBlock) {
-            upload.resultBlock(upload.url);
-        }
+        [upload makeDelegatePerform:@selector(upload:didFinishUploadToURL:) withObject:[upload url]];
     };
 
     TUSLog(@"Resuming upload at %@ for fingerprint %@ from offset %lld (%@)",
           [self url], [self fingerprint], offset, contentRange);
+
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_PUT];
     [request setHTTPBodyStream:[[self data] dataStream]];
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
     
+    [self makeDelegatePerform:@selector(upload:willBeginUploadToURL:) withObject:[self url]];
     NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self];
 }
 
@@ -145,6 +141,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     TUSLog(@"ERROR: connection did fail due to: %@", error);
     [connection cancel];
     [[self data] stop];
+    [self makeDelegatePerform:@selector(upload:didFailWithError:) withObject:error];
     if (self.failureBlock) {
         self.failureBlock(error);
     }
@@ -213,15 +210,14 @@ didReceiveResponse:(NSURLResponse *)response
 totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
 {
     switch([self state]) {
-        case UploadingFile:
-            if (self.progressBlock) {
-                self.progressBlock(totalBytesWritten+[self offset], [[self data] length]+[self offset]);
-            }
+        case UploadingFile:;
+            float written = (float)(totalBytesWritten + [self offset]);
+            float total = (float)([[self data] length] + [self offset]);
+            self.progress = written / MAX(total, .00001L);
             break;
         default:
             break;
     }
-
 }
 
 
@@ -319,6 +315,13 @@ totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
         }
     }
     return [applicationSupportDirectoryURL URLByAppendingPathComponent:@"TUSResumableUploads.plist"];
+}
+
+- (void)makeDelegatePerform:(SEL)selector withObject:(NSObject*)object
+{
+    if ([_delegate respondsToSelector:selector]) {
+        [_delegate performSelector:selector withObject:self withObject:object];
+    }
 }
 
 @end

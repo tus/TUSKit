@@ -27,12 +27,14 @@ NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
 NS_ENUM(long long, TUSRangeBytes) {TUSInvalidRange = -1};
 
 @class TUSData;
+@protocol TUSResumableUploadDelegate;
 
-@interface TUSResumableUpload : NSObject <NSURLConnectionDelegate>
+@interface TUSResumableUpload : NSObject <NSURLConnectionDelegate, NSURLConnectionDataDelegate>
 
+@property (assign) id<TUSResumableUploadDelegate> delegate;
 @property (readwrite, copy) TUSUploadResultBlock resultBlock;
 @property (readwrite, copy) TUSUploadFailureBlock failureBlock;
-@property (readwrite, copy) TUSUploadProgressBlock progressBlock;
+@property (readonly) float progress;
 
 - (id)initWithURL:(NSString *)url
               data:(TUSData *)data
@@ -40,4 +42,11 @@ NS_ENUM(long long, TUSRangeBytes) {TUSInvalidRange = -1};
 - (void) start;
 
 - (TUSRange)rangeFromHeader:(NSString*)rangeHeader;
+@end
+
+@protocol TUSResumableUploadDelegate <NSObject>
+@optional
+- (void)upload:(TUSResumableUpload*)upload willBeginUploadToURL:(NSURL*)url;
+- (void)upload:(TUSResumableUpload*)upload didFinishUploadToURL:(NSURL*)url;
+- (void)upload:(TUSResumableUpload*)upload didFailWithError:(NSError*)error;
 @end

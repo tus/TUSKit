@@ -8,7 +8,9 @@
 
 #import <UIKit/UIKit.h>
 
-@interface TUSDemoViewController : UIViewController <UINavigationControllerDelegate, UIImagePickerControllerDelegate>
+@protocol TUSResumableUploadDelegate;
+
+@interface TUSDemoViewController : UIViewController <UINavigationControllerDelegate, UIImagePickerControllerDelegate, TUSResumableUploadDelegate>
 
 @property (strong,nonatomic) IBOutlet UIButton* chooseFileButton;
 @property (strong,nonatomic) IBOutlet UIProgressView* progressBar;

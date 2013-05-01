@@ -102,6 +102,9 @@ ExampleViewController.m:
 
 ## Building Framework
 
+If you are hacking on the TUSKit framework itself and need to re-compile it,
+here is how:
+
 * Select TUSKit-Framework/iOS Device target
 * Product -> Build For -> Archiving
 

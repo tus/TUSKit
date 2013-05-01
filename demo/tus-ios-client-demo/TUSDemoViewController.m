@@ -63,21 +63,6 @@ didFinishPickingMediaWithInfo:(NSDictionary *)info
                              }];
 }
 
-#pragma mark - Private Methods
-- (void)uploadImageFromData:(NSDictionary*)info
-{
-    NSURL *assetUrl = [info valueForKey:UIImagePickerControllerReferenceURL];
-    NSString *fingerprint = [assetUrl absoluteString];
-    UIImage *image = [info valueForKey:UIImagePickerControllerOriginalImage];
-    NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
-    TUSData* uploadData = [[TUSData alloc] initWithData:imageData];
-    TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithURL:[self endpoint] data:uploadData fingerprint:fingerprint];
-    upload.progressBlock = [self progressBlock];
-    upload.resultBlock = [self resultBlock];
-    upload.failureBlock = [self failureBlock];
-    [upload start];
-}
-
 - (void)uploadImageFromAsset:(NSDictionary*)info
 {
     NSURL *assetUrl = [info valueForKey:UIImagePickerControllerReferenceURL];

@@ -31,11 +31,9 @@
 		BC9CC7E9172BDD6000E66815 /* libTUSKit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BCD7B9BE1729584800D0E151 /* libTUSKit.a */; };
 		BCD7B9C21729584800D0E151 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BCD7B9C11729584800D0E151 /* Foundation.framework */; };
 		BCD7B9C71729584800D0E151 /* TUSKit.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = BCD7B9C61729584800D0E151 /* TUSKit.h */; };
-		BCFEFDAB1729606B001D2980 /* NSStream+BoundPair.m in Sources */ = {isa = PBXBuildFile; fileRef = BCFEFDA41729606B001D2980 /* NSStream+BoundPair.m */; };
 		BCFEFDAC1729606B001D2980 /* TUSAssetData.m in Sources */ = {isa = PBXBuildFile; fileRef = BCFEFDA61729606B001D2980 /* TUSAssetData.m */; };
 		BCFEFDAD1729606B001D2980 /* TUSData.m in Sources */ = {isa = PBXBuildFile; fileRef = BCFEFDA81729606B001D2980 /* TUSData.m */; };
 		BCFEFDAE1729606B001D2980 /* TUSResumableUpload.m in Sources */ = {isa = PBXBuildFile; fileRef = BCFEFDAA1729606B001D2980 /* TUSResumableUpload.m */; };
-		BCFEFDB117296189001D2980 /* NSStream+BoundPair.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = BCFEFDA31729606B001D2980 /* NSStream+BoundPair.h */; };
 		BCFEFDB217296189001D2980 /* TUSAssetData.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = BCFEFDA51729606B001D2980 /* TUSAssetData.h */; };
 		BCFEFDB317296189001D2980 /* TUSData.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = BCFEFDA71729606B001D2980 /* TUSData.h */; };
 		BCFEFDB417296189001D2980 /* TUSResumableUpload.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = BCFEFDA91729606B001D2980 /* TUSResumableUpload.h */; };
@@ -58,7 +56,6 @@
 			dstPath = "include/${PRODUCT_NAME}";
 			dstSubfolderSpec = 16;
 			files = (
-				BCFEFDB117296189001D2980 /* NSStream+BoundPair.h in CopyFiles */,
 				BCFEFDB217296189001D2980 /* TUSAssetData.h in CopyFiles */,
 				BCFEFDB317296189001D2980 /* TUSData.h in CopyFiles */,
 				BCFEFDB417296189001D2980 /* TUSResumableUpload.h in CopyFiles */,
@@ -82,8 +79,6 @@
 		BCD7B9C11729584800D0E151 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		BCD7B9C51729584800D0E151 /* TUSKit-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TUSKit-Prefix.pch"; sourceTree = "<group>"; };
 		BCD7B9C61729584800D0E151 /* TUSKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TUSKit.h; sourceTree = "<group>"; };
-		BCFEFDA31729606B001D2980 /* NSStream+BoundPair.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSStream+BoundPair.h"; sourceTree = "<group>"; };
-		BCFEFDA41729606B001D2980 /* NSStream+BoundPair.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSStream+BoundPair.m"; sourceTree = "<group>"; };
 		BCFEFDA51729606B001D2980 /* TUSAssetData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSAssetData.h; sourceTree = "<group>"; };
 		BCFEFDA61729606B001D2980 /* TUSAssetData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSAssetData.m; sourceTree = "<group>"; };
 		BCFEFDA71729606B001D2980 /* TUSData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSData.h; sourceTree = "<group>"; };
@@ -177,8 +172,6 @@
 				BCFEFDA81729606B001D2980 /* TUSData.m */,
 				BCFEFDA51729606B001D2980 /* TUSAssetData.h */,
 				BCFEFDA61729606B001D2980 /* TUSAssetData.m */,
-				BCFEFDA31729606B001D2980 /* NSStream+BoundPair.h */,
-				BCFEFDA41729606B001D2980 /* NSStream+BoundPair.m */,
 				BCD7B9C41729584800D0E151 /* Supporting Files */,
 			);
 			path = TUSKit;
@@ -330,7 +323,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BCFEFDAB1729606B001D2980 /* NSStream+BoundPair.m in Sources */,
 				BCFEFDAC1729606B001D2980 /* TUSAssetData.m in Sources */,
 				BCFEFDAD1729606B001D2980 /* TUSData.m in Sources */,
 				BCFEFDAE1729606B001D2980 /* TUSResumableUpload.m in Sources */,
@@ -500,6 +492,7 @@
 				BC9CC7E6172BDCDA00E66815 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		BCD7B9B91729584800D0E151 /* Build configuration list for PBXProject "TUSKit" */ = {
 			isa = XCConfigurationList;

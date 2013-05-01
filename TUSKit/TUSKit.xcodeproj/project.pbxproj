@@ -231,8 +231,9 @@
 		BCD7B9B61729584800D0E151 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				CLASSPREFIX = TUS;
 				LastUpgradeCheck = 0460;
-				ORGANIZATIONNAME = tus.io;
+				ORGANIZATIONNAME = "Transloadit Ltd";
 			};
 			buildConfigurationList = BCD7B9B91729584800D0E151 /* Build configuration list for PBXProject "TUSKit" */;
 			compatibilityVersion = "Xcode 3.2";

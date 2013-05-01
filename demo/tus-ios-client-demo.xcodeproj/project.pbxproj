@@ -226,7 +226,7 @@
 			attributes = {
 				CLASSPREFIX = TUS;
 				LastUpgradeCheck = 0460;
-				ORGANIZATIONNAME = tus.io;
+				ORGANIZATIONNAME = "Transloadit Ltd";
 			};
 			buildConfigurationList = DCCB278C1711CC68000E78B6 /* Build configuration list for PBXProject "tus-ios-client-demo" */;
 			compatibilityVersion = "Xcode 3.2";

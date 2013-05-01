@@ -36,6 +36,7 @@
         // TODO:
         // Handle deferred availability of ALAssetRepresentation,
         // by registering for an ALAssetsLibraryChangedNotification.
+        TUSLog(@"@TODO: Implement support for ALAssetsLibraryChangedNotification to support shared photo stream assets");
         return 0;
     }
 

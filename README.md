@@ -32,6 +32,11 @@ to be written ...
 
 ## UIImagePickerController Example
 
+For a complete working example, open the tus workspace and have a look at the
+tus-ios-client-demo project.
+
+Alternatively have a quick look at the example below:
+
 ExampleViewController.h:
 
 ```objc

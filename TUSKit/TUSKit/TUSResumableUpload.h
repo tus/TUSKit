@@ -39,5 +39,4 @@ NS_ENUM(long long, TUSRangeBytes) {TUSInvalidRange = -1};
        fingerprint:(NSString *)fingerprint;
 - (void) start;
 
-- (TUSRange)rangeFromHeader:(NSString*)rangeHeader;
 @end

@@ -11,15 +11,12 @@
 
 #import "TUSResumableUpload.h"
 
-#define HTTP_PUT @"PUT"
+#define HTTP_PATCH @"PATCH"
 #define HTTP_POST @"POST"
 #define HTTP_HEAD @"HEAD"
-#define HTTP_RANGE @"Range"
+#define HTTP_OFFSET @"Offset"
+#define HTTP_FINAL_LENGTH @"Final-Length"
 #define HTTP_LOCATION @"Location"
-#define HTTP_CONTENT_RANGE @"Content-Range"
-#define HTTP_BYTES_UNIT @"bytes"
-#define HTTP_RANGE_EQUAL @"="
-#define HTTP_RANGE_DASH @"-"
 #define REQUEST_TIMEOUT 30
 
 typedef NS_ENUM(NSInteger, TUSUploadState) {
@@ -76,7 +73,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [self setState:CreatingFile];
 
     NSUInteger size = [[self data] length];
-    NSDictionary *headers = @{ HTTP_CONTENT_RANGE: [self contentRangeWithSize:size] } ;
+    NSDictionary *headers = @{ HTTP_FINAL_LENGTH: [NSString stringWithFormat:@"%u", size] } ;
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self endpoint] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_POST];
     [request setHTTPShouldHandleCookies:NO];
@@ -100,10 +97,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 {
     [self setState:UploadingFile];
     
-    long long size = [[self data] length];
     long long offset = [self offset];
-    NSString *contentRange = [self contentRangeFrom:offset to:size-1 size:size];
-    NSDictionary *headers = @{ HTTP_CONTENT_RANGE: contentRange };
+    NSDictionary *headers = @{ HTTP_OFFSET: [NSString stringWithFormat:@"%lld", offset],
+                               @"Content-Type": @"application/offset+octet-stream"};
 
     __weak TUSResumableUpload* upload = self;
     self.data.failureBlock = ^(NSError* error) {
@@ -127,10 +123,10 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         }
     };
 
-    TUSLog(@"Resuming upload at %@ for fingerprint %@ from offset %lld (%@)",
-          [self url], [self fingerprint], offset, contentRange);
+    TUSLog(@"Resuming upload at %@ for fingerprint %@ from offset %lld",
+          [self url], [self fingerprint], offset);
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:REQUEST_TIMEOUT];
-    [request setHTTPMethod:HTTP_PUT];
+    [request setHTTPMethod:HTTP_PATCH];
     [request setHTTPBodyStream:[[self data] dataStream]];
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
@@ -174,10 +170,27 @@ didReceiveResponse:(NSURLResponse *)response
                 [self createFile];
                 return;
             }
-            NSString *rangeHeader = [headers valueForKey:HTTP_RANGE];
+            NSString *rangeHeader = [headers valueForKey:HTTP_OFFSET];
             if (rangeHeader) {
-                TUSRange range = [self rangeFromHeader:rangeHeader];
-                [self setOffset:range.last];
+                long long size = [rangeHeader longLongValue];
+                if (size >= [self offset]) {
+                  //TODO: we skip file upload, but we mightly verifiy that file?
+                  [self setState:Idle];
+                  TUSLog(@"Skipped upload to %@ for fingerprint %@", [self url], [self fingerprint]);
+                  NSMutableDictionary* resumableUploads = [self resumableUploads];
+                  [resumableUploads removeObjectForKey:[self fingerprint]];
+                  BOOL success = [resumableUploads writeToURL:[self resumableUploadsFilePath]
+                                                   atomically:YES];
+                  if (!success) {
+                    TUSLog(@"Unable to save resumableUploads file");
+                  }
+                  if (self.resultBlock) {
+                    self.resultBlock(self.url);
+                  }
+                  break;
+                } else {
+                  [self setOffset:size];
+                }
                 TUSLog(@"Resumable upload at %@ for %@ from %lld (%@)",
                       [self url], [self fingerprint], [self offset], rangeHeader);
             }
@@ -226,62 +239,6 @@ totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
 
 
 #pragma mark - Private Methods
-- (TUSRange)rangeFromHeader:(NSString*)rangeHeader
-{
-    long long first = TUSInvalidRange;
-    long long last = TUSInvalidRange;
-
-    NSString* bytesPrefix = [HTTP_BYTES_UNIT stringByAppendingString:HTTP_RANGE_EQUAL];
-    NSScanner* rangeScanner = [NSScanner scannerWithString:rangeHeader];
-    BOOL success = [rangeScanner scanUpToString:bytesPrefix intoString:NULL];
-    if (!success) {
-        TUSLog(@"Failed to scan up to '%@' from '%@'", bytesPrefix, rangeHeader);
-    }
-
-    success = [rangeScanner scanString:bytesPrefix intoString:NULL];
-    if (!success) {
-        TUSLog(@"Failed to scan '%@' from '%@'", bytesPrefix, rangeHeader);
-    }
-
-    success = [rangeScanner scanLongLong:&first];
-    if (!success) {
-        TUSLog(@"Failed to first byte from '%@'", rangeHeader);
-    }
-
-    success = [rangeScanner scanString:HTTP_RANGE_DASH intoString:NULL];
-    if (!success) {
-        TUSLog(@"Failed to byte-range separator from '%@'", rangeHeader);
-    }
-
-    success = [rangeScanner scanLongLong:&last];
-    if (!success) {
-        TUSLog(@"Failed to last byte from '%@'", rangeHeader);
-    }
-
-    if (first > last) {
-        first = TUSInvalidRange;
-        last = TUSInvalidRange;
-    }
-    if (first < 0) {
-        first = TUSInvalidRange;
-    }
-    if (last < 0) {
-        last = TUSInvalidRange;
-    }
-
-    return TUSMakeRange(first, last);
-}
-
-- (NSString*)contentRangeFrom:(long long)first to:(long long)last size:(long long)size
-{
-    return [NSString stringWithFormat:@"%@ %lld-%lld/%lld", HTTP_BYTES_UNIT, first, last, size];
-}
-
-- (NSString*)contentRangeWithSize:(long long)size
-{
-    return [NSString stringWithFormat:@"%@ */%lld", HTTP_BYTES_UNIT, size];
-}
-
 - (NSMutableDictionary*)resumableUploads
 {
     static id resumableUploads = nil;

@@ -1,118 +1,41 @@
-# tus-ios-client
+# TUSKit
 
-An iOS client implementing the [tus resumable upload
-protocol](https://github.com/tus/tus-resumable-upload-protocol).
+[![Protoco](http://img.shields.io/badge/tus_protocol-v0.2.2-blue.svg)](http://tus.io/protocols/resumable-upload.html)
+[![Version](https://img.shields.io/cocoapods/v/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit)
+[![License](https://img.shields.io/cocoapods/l/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit)
+[![Platform](https://img.shields.io/cocoapods/p/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit)
 
-This first version will provide a low level API without a GUI. More advanced
-features will follow.
+From [tus.io](http://tus.io):
 
-## Adding tus-ios-client to your project
+  Users want to share more and more photos and videos. But mobile networks are fragile. Platform APIs are a mess. Every project builds its own file uploader. A thousand one week projects that barely work, when all we need is one real project, done right.
 
-### As a framework
+  We are going to do this right. We will solve reliable file uploads for once and for all. A new open protocol for resumable uploads built on HTTP. Simple, cheap, reusable stacks for clients and servers. Any language, any platform, any network.
 
-Clone the the latest version from Github:
+TUSKit is a ready to use tus client for iOS.
 
-```bash
-$ git clone git://github.com/tus/tus-ios-client.git
-```
+## Usage
 
-* Drag and drop the `Frameworks/TUSKit.framework` folder insided the cloned
-  repository onto your project name inside the project navigator
-* Select "Copy items into destination group's folder (if needed)"
-* Make sure your project is selected inside the "Add to targets" list
-* Press "Finish"
+To run the example project, clone the repo, and run `pod install` from the Example directory first.
 
-### Via CocoaPads
+## Requirements
 
-to be written ...
+To test the example project you will need to point the app to a tus friendly server. You can find
+a list of [tus implementations online](http://tus.io/implementations.html). The example project is
+configured to point to http://127.0.0.1:8080/files. You can change this on line 14 of TKViewController.m
 
-### Via Copying
+    static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files";
 
-to be written ...
+You will, of course, need an example file to upload. I like videos cause they cover a few cases. You can find
+[sample videos from Apple on online](http://support.apple.com/kb/HT1425). Grab the .mov file.
 
-## UIImagePickerController Example
+## Installation
 
-For a complete working example, open the tus workspace and have a look at the
-tus-ios-client-demo project.
+TUSKit is available through [CocoaPods](http://cocoapods.org). To install
+it, simply add the following line to your Podfile:
 
-Alternatively have a quick look at the example below:
-
-ExampleViewController.h:
-
-```objc
-#import <UIKit/UIKit.h>
-
-@interface ExampleViewController : UIViewController <UINavigationControllerDelegate, UIImagePickerControllerDelegate>
-- (IBAction)selectFile:(id)sender;
-@end
-```
-
-ExampleViewController.m:
-
-```obj
-#import "ExampleViewController.h"
-#import <AssetsLibrary/AssetsLibrary.h>
-#import <TUSKit/TUSKit.h>
-
-@interface ExampleViewController ()
-@property(strong,nonatomic) ALAssetsLibrary *assetLibrary;
-@end
-
-@implementation ExampleViewController
-
-- (IBAction)selectFile:(id)sender
-{
-    UIImagePickerController *imagePicker = [[UIImagePickerController alloc] init];
-    imagePicker.mediaTypes = [UIImagePickerController availableMediaTypesForSourceType:imagePicker.sourceType];
-    imagePicker.delegate = self;
-    [self presentViewController:imagePicker animated:YES completion:nil];
-}
-
-- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info
-{
-    [self dismissViewControllerAnimated:YES completion:nil];
-    NSURL *assetUrl = [info valueForKey:UIImagePickerControllerReferenceURL];
-
-    if (!self.assetLibrary) {
-        self.assetLibrary = [[ALAssetsLibrary alloc] init];
-    }
-
-    [self.assetLibrary assetForURL:assetUrl
-                       resultBlock:^(ALAsset* asset) {
-                           NSString *uploadUrl = @"http://master.tus.io/files";
-                           NSString *fingerprint = [assetUrl absoluteString];
-                           TUSAssetData* uploadData = [[TUSAssetData alloc] initWithAsset:asset];
-                           TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithURL:uploadUrl data:uploadData fingerprint:fingerprint];
-                           upload.progressBlock = ^(NSInteger bytesWritten, NSInteger bytesTotal){
-                               // Update your progress bar here
-                               NSLog(@"progress: %d / %d", bytesWritten, bytesTotal);
-                           };
-                           upload.resultBlock = ^(NSURL* fileURL){
-                               // Use the upload url
-                               NSLog(@"url: %@", fileURL);
-                           };
-                           upload.failureBlock = ^(NSError* error){
-                               // Handle the error
-                               NSLog(@"error: %@", error);
-                           };
-                           [upload start];
-                       }
-                      failureBlock:^(NSError* error) {
-                          NSLog(@"Unable to load asset due to: %@", error);
-                      }];
-}
-
-@end
-```
-
-## Building Framework
-
-If you are hacking on the TUSKit framework itself and need to re-compile it,
-here is how:
-
-* Select TUSKit-Framework/iOS Device target
-* Product -> Build For -> Archiving
+    pod "TUSKit"
 
 ## License
 
-This project is licensed under the MIT license, see `LICENSE.txt`.
+TUSKit is available under the MIT license. See the LICENSE file for more info.
+

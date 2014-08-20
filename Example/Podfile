@@ -1,0 +1,10 @@
+target 'TUSKit', :exclusive => true do
+  pod "TUSKit", :path => "../"
+end
+
+target 'Tests', :exclusive => true do
+  pod "TUSKit", :path => "../"
+
+  pod 'Specta', '~> 0.2.1'
+  pod 'Expecta'
+end

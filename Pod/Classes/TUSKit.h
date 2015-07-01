@@ -6,16 +6,23 @@
 //  Copyright (c) 2013 tus.io. All rights reserved.
 //
 
+#ifndef HotPoint_TUSKit_h
+#define HotPoint_TUSKit_h
+
+@import Foundation;
+
 #define TUS_LOGGING_ENABLED 1
 #if TUS_LOGGING_ENABLED
-    #define TUSLog( s, ... ) NSLog( @"<%@:(%d)> %@", \
-        [[NSString stringWithUTF8String:__FILE__] lastPathComponent], \
-        __LINE__, \
-        [NSString stringWithFormat:(s), ##__VA_ARGS__])
+#define TUSLog( s, ... ) NSLog( @"<%@:(%d)> %@", \
+[[NSString stringWithUTF8String:__FILE__] lastPathComponent], \
+__LINE__, \
+[NSString stringWithFormat:(s), ##__VA_ARGS__])
 #else
-    #define TUSLog( s, ... ) ;
+#define TUSLog( s, ... ) ;
 #endif
 
 #import "TUSData.h"
 #import "TUSAssetData.h"
 #import "TUSResumableUpload.h"
+
+#endif

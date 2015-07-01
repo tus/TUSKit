@@ -6,7 +6,7 @@
 //  Copyright (c) 2013 tus.io. All rights reserved.
 //
 
-#import <AssetsLibrary/AssetsLibrary.h>
+@import AssetsLibrary;
 
 #import "TUSData.h"
 

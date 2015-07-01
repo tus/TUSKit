@@ -6,15 +6,15 @@
 //  Copyright (c) 2013 tus.io. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
+@import Foundation;
 
 @interface TUSData : NSObject <NSStreamDelegate>
 
-@property (readwrite,copy) void (^failureBlock)(NSError* error);
+@property (readwrite,copy) void (^failureBlock)(NSError *error);
 @property (readwrite,copy) void (^successBlock)(void);
 
-- (id)initWithData:(NSData*)data;
-- (NSInputStream*)dataStream;
+- (id)initWithData:(NSData *)data;
+- (NSInputStream *)dataStream;
 - (long long)length;
 - (void)stop;
 

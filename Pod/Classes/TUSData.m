@@ -19,33 +19,41 @@
 @end
 
 @implementation TUSData
+#pragma mark - Synthesize properties
+@synthesize outputStream = _outputStream;
+@synthesize  inputStream = _inputStream;
+@synthesize offset       = _offset;
+@synthesize data         = _data;
 
+#pragma mark - Object Lifecycle
 - (id)init
 {
     self = [super init];
+    
     if (self) {
-        NSInputStream* inStream = nil;
-        NSOutputStream* outStream = nil;
-        [self createBoundInputStream:&inStream
-                            outputStream:&outStream
-                              bufferSize:TUS_BUFSIZE];
+        
+        NSInputStream  * inStream = nil;
+        NSOutputStream *outStream = nil;
+        [self createBoundInputStream:&inStream outputStream:&outStream bufferSize:TUS_BUFSIZE];
         assert(inStream != nil);
         assert(outStream != nil);
-        self.inputStream = inStream;
-        self.outputStream = outStream;
-        self.outputStream.delegate = self;
-        [self.outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop]
+        _inputStream = inStream;
+        _outputStream = outStream;
+        [_outputStream setDelegate:self ];
+        [_outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop]
                                      forMode:NSDefaultRunLoopMode];
-        [self.outputStream open];
+        [_outputStream open];
+    
     }
+    
     return self;
 }
 
-- (id)initWithData:(NSData*)data
+- (id)initWithData:(NSData *)data
 {
     self = [self init];
     if (self) {
-        self.data = data;
+        _data = data;
     }
     return self;
 }
@@ -63,7 +71,7 @@
                                    forMode:NSDefaultRunLoopMode];
     [[self outputStream] close];
     [self setOutputStream:nil];
-
+    
     [[self inputStream] setDelegate:nil];
     [[self inputStream] close];
     [self setInputStream:nil];
@@ -79,11 +87,11 @@
                 length:(NSUInteger)length
                  error:(NSError **)error
 {
-    NSRange range = NSMakeRange(offset, length);
+    NSRange range = NSMakeRange( (NSUInteger)offset, (NSUInteger) length);
     if (offset + length > _data.length) {
         return 0;
     }
-
+    
     [_data getBytes:buffer range:range];
     return length;
 }
@@ -94,9 +102,11 @@
    handleEvent:(NSStreamEvent)eventCode
 {
     switch (eventCode) {
+            
         case NSStreamEventOpenCompleted: {
             TUSLog(@"TUSData stream opened");
         } break;
+            
         case NSStreamEventHasSpaceAvailable: {
             uint8_t buffer[TUS_BUFSIZE];
             long long length = TUS_BUFSIZE;
@@ -116,7 +126,7 @@
             NSError* error = NULL;
             NSUInteger bytesRead = [self getBytes:buffer
                                        fromOffset:[self offset]
-                                           length:length
+                                           length:(NSUInteger)length
                                             error:&error];
             if (!bytesRead) {
                 TUSLog(@"Unable to read bytes due to: %@", error);
@@ -125,24 +135,25 @@
                 }
             } else {
                 NSInteger bytesWritten = [[self outputStream] write:buffer
-                                                        maxLength:bytesRead];
+                                                          maxLength:bytesRead];
                 if (bytesWritten <= 0) {
                     TUSLog(@"Network write error %@", [aStream streamError]);
                 } else {
                     if (bytesRead != (NSUInteger)bytesWritten) {
-                        TUSLog(@"Read %d bytes from buffer but only wrote %d to the network",
-                              bytesRead, bytesWritten);
+                        TUSLog(@"Read %luu bytes from buffer but only wrote %ld to the network", (unsigned long)bytesRead, (long)bytesWritten);
                     }
                     [self setOffset:[self offset] + bytesWritten];
                 }
             }
         } break;
+            
         case NSStreamEventErrorOccurred: {
             TUSLog(@"TUSData stream error %@", [aStream streamError]);
             if (self.failureBlock) {
                 self.failureBlock([aStream streamError]);
             }
         } break;
+            
         case NSStreamEventHasBytesAvailable:
         case NSStreamEventEndEncountered:
         default:
@@ -159,35 +170,19 @@
 {
     CFReadStreamRef     readStream;
     CFWriteStreamRef    writeStream;
-
+    
     assert( (inputStreamPtr != NULL) || (outputStreamPtr != NULL) );
-
+    
     readStream = NULL;
     writeStream = NULL;
-
-#if defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && (__MAC_OS_X_VERSION_MIN_REQUIRED < 1070)
-#error If you support Mac OS X prior to 10.7, you must re-enable CFStreamCreateBoundPairCompat.
-#endif
-#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && (__IPHONE_OS_VERSION_MIN_REQUIRED < 50000)
-#error If you support iOS prior to 5.0, you must re-enable CFStreamCreateBoundPairCompat.
-#endif
-
-    //    if (NO) {
-    //        CFStreamCreateBoundPairCompat(
-    //                                      NULL,
-    //                                      ((inputStreamPtr  != nil) ? &readStream : NULL),
-    //                                      ((outputStreamPtr != nil) ? &writeStream : NULL),
-    //                                      (CFIndex) bufferSize
-    //                                      );
-    //    } else {
+    
     CFStreamCreateBoundPair(
                             NULL,
                             ((inputStreamPtr  != nil) ? &readStream : NULL),
                             ((outputStreamPtr != nil) ? &writeStream : NULL),
                             (CFIndex) bufferSize
                             );
-    //    }
-
+    
     if (inputStreamPtr != NULL) {
         *inputStreamPtr  = CFBridgingRelease(readStream);
     }

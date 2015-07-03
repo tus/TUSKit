@@ -5,6 +5,9 @@
 //  Created by Felix Geisendoerfer on 07.04.13.
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
+/*
+ Compatibility for tus.io 1.0 developed by HotPoint Social App
+ */
 
 #import "TUSKit.h"
 #import "TUSData.h"

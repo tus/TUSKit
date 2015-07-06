@@ -17,8 +17,8 @@
 #define HTTP_PATCH @"PATCH"
 #define HTTP_POST @"POST"
 #define HTTP_HEAD @"HEAD"
-#define HTTP_OFFSET @"Offset"
-#define HTTP_FINAL_LENGTH @"Final-Length"
+#define HTTP_OFFSET @"Upload-Offset"
+#define HTTP_FINAL_LENGTH @"Upload-Length"
 #define HTTP_LOCATION @"Location"
 #define REQUEST_TIMEOUT 30
 
@@ -190,7 +190,7 @@ didReceiveResponse:(NSURLResponse *)response
     
     switch([self state]) {
         case CheckingFile: {
-            if ([httpResponse statusCode] != 200) {
+            if ([httpResponse statusCode] != 200 ||[httpResponse statusCode] !=  204){
                 TUSLog(@"Server responded with %ld. Restarting upload",
                        (long)httpResponse.statusCode);
                 [self createFile];

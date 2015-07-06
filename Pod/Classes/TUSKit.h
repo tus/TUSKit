@@ -9,8 +9,8 @@
  Compatibility for tus.io 1.0 developed by HotPoint Social App
  */
 
-#ifndef HotPoint_TUSKit_h
-#define HotPoint_TUSKit_h
+#ifndef TUSKit_h
+#define TUSKit_h
 
 @import Foundation;
 

@@ -5,8 +5,11 @@
 //  Created by Felix Geisendoerfer on 07.04.13.
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
+/*
+ Compatibility for tus.io 1.0 developed by HotPoint Social App
+ */
 
-#import <Foundation/Foundation.h>
+@import Foundation;
 
 typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
 typedef void (^TUSUploadFailureBlock)(NSError* error);
@@ -24,8 +27,6 @@ NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
     return r;
 }
 
-NS_ENUM(long long, TUSRangeBytes) {TUSInvalidRange = -1};
-
 @class TUSData;
 
 @interface TUSResumableUpload : NSObject <NSURLConnectionDelegate>
@@ -35,8 +36,10 @@ NS_ENUM(long long, TUSRangeBytes) {TUSInvalidRange = -1};
 @property (readwrite, copy) TUSUploadProgressBlock progressBlock;
 
 - (id)initWithURL:(NSString *)url
-              data:(TUSData *)data
-       fingerprint:(NSString *)fingerprint;
+             data:(TUSData *)data
+      fingerprint:(NSString *)fingerprint
+    uploadHeaders:(NSDictionary *)headers;
+
 - (void) start;
 
 @end

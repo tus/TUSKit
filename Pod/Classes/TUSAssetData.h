@@ -4,9 +4,11 @@
 //
 //  Created by Alexis Hildebrandt on 18-04-2013.
 //  Copyright (c) 2013 tus.io. All rights reserved.
-//
+/*
+Compatibility for tus.io 1.0 developed by HotPoint Social App
+*/
 
-#import <AssetsLibrary/AssetsLibrary.h>
+@import AssetsLibrary;
 
 #import "TUSData.h"
 

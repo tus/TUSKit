@@ -18,6 +18,7 @@
 #define HTTP_POST @"POST"
 #define HTTP_HEAD @"HEAD"
 #define HTTP_OFFSET @"Upload-Offset"
+#define HTTP_TUS @"Tus-Resumable"
 #define HTTP_FINAL_LENGTH @"Upload-Length"
 #define HTTP_LOCATION @"Location"
 #define REQUEST_TIMEOUT 30
@@ -37,7 +38,6 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 @property (nonatomic) long long offset;
 @property (nonatomic) TUSUploadState state;
 @property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
-@property (nonatomic, strong) NSDictionary *uploadHeaders;
 @end
 
 @implementation TUSResumableUpload
@@ -45,14 +45,13 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 - (id)initWithURL:(NSString *)url
              data:(TUSData *)data
       fingerprint:(NSString *)fingerprint
-    uploadHeaders:(NSDictionary *)headers
+
 {
     self = [super init];
     if (self) {
         [self setEndpoint:[NSURL URLWithString:url]];
         [self setData:data];
         [self setFingerprint:fingerprint];
-        [self setUploadHeaders:headers];
     }
     return self;
 }
@@ -81,7 +80,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     NSUInteger size = (NSUInteger)[[self data] length];
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
-    [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
+    [mutableHeader setObject:@"1.0.0" forKey:HTTP_TUS];
     [mutableHeader setObject:[NSString stringWithFormat:@"%lu", (unsigned long)size] forKey:HTTP_FINAL_LENGTH];
     
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
@@ -101,7 +100,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [self setState:CheckingFile];
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
-    [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
+    [mutableHeader setObject:@"1.0.0" forKey:HTTP_TUS];
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
     
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:REQUEST_TIMEOUT];
@@ -120,7 +119,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     long long offset = [self offset];
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
-    [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
+    [mutableHeader setObject:@"1.0.0" forKey:HTTP_TUS];
     [mutableHeader setObject:[NSString stringWithFormat:@"%lld", offset] forKey:HTTP_OFFSET];
     
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
@@ -190,7 +189,7 @@ didReceiveResponse:(NSURLResponse *)response
     
     switch([self state]) {
         case CheckingFile: {
-            if ([httpResponse statusCode] != 200 ||[httpResponse statusCode] !=  204){
+            if ([httpResponse statusCode] != 200 || [httpResponse statusCode] != 204) {
                 TUSLog(@"Server responded with %ld. Restarting upload",
                        (long)httpResponse.statusCode);
                 [self createFile];

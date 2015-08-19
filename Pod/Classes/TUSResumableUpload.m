@@ -15,7 +15,7 @@
 #define HTTP_POST @"POST"
 #define HTTP_HEAD @"HEAD"
 #define HTTP_OFFSET @"Upload-Offset"
-#define HTTP_FINAL_LENGTH @"Upload-Length"
+#define HTTP_UPLOAD_LENGTH  @"Upload-Length"
 #define HTTP_TUS @"Tus-Resumable"
 #define HTTP_TUS_VERSION @"1.0.0"
 
@@ -38,6 +38,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 @property (nonatomic) TUSUploadState state;
 @property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
 @property (nonatomic, strong) NSDictionary *uploadHeaders;
+@property (nonatomic, strong) NSString *fileName;
 @end
 
 @implementation TUSResumableUpload
@@ -46,6 +47,8 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
              data:(TUSData *)data
       fingerprint:(NSString *)fingerprint
     uploadHeaders:(NSDictionary *)headers
+         fileName:(NSString *)fileName
+
 {
     self = [super init];
     if (self) {
@@ -82,10 +85,10 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
-    [mutableHeader setObject:[NSString stringWithFormat:@"%lu", (unsigned long)size] forKey:HTTP_FINAL_LENGTH];
+    [mutableHeader setObject:[NSString stringWithFormat:@"%lu", (unsigned long)size] forKey:HTTP_UPLOAD_LENGTH];
     
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
-    NSString *plainString = @"LongLiveQuontr.mp4";
+    NSString *plainString = _fileName;
     NSMutableString *fileName = [[NSMutableString alloc] initWithString:@"filename "];
     NSData *plainData = [plainString dataUsingEncoding:NSUTF8StringEncoding];
     NSString *base64String = [plainData base64EncodedStringWithOptions:0];

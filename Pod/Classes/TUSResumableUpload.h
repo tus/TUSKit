@@ -35,7 +35,8 @@ NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
 - (id)initWithURL:(NSString *)url
              data:(TUSData *)data
       fingerprint:(NSString *)fingerprint
-    uploadHeaders:(NSDictionary *)headers;
+    uploadHeaders:(NSDictionary *)headers
+      fileName:(NSString *)fileName;
 
 - (void) start;
 

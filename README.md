@@ -13,6 +13,11 @@ From [tus.io](http://tus.io):
 
 TUSKit is a ready to use tus client for iOS.
 
+## tus 1.0 UPDATE
+We are now tus 1.0 compatabile! 
+
+Other updates include a new initialization NSDictionary parameter called 'uploadheaders' which allows for easy HTTP Header passing in case your API requries additional headers.
+
 ## Usage
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.

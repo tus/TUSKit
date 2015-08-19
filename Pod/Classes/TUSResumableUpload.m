@@ -5,9 +5,6 @@
 //  Created by Felix Geisendoerfer on 07.04.13.
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
-/*
- Compatibility for tus.io 1.0 developed by HotPoint Social App
- */
 
 #import "TUSKit.h"
 #import "TUSData.h"
@@ -18,8 +15,10 @@
 #define HTTP_POST @"POST"
 #define HTTP_HEAD @"HEAD"
 #define HTTP_OFFSET @"Upload-Offset"
-#define HTTP_TUS @"Tus-Resumable"
 #define HTTP_FINAL_LENGTH @"Upload-Length"
+#define HTTP_TUS @"Tus-Resumable"
+#define HTTP_TUS_VERSION @"1.0.0"
+
 #define HTTP_LOCATION @"Location"
 #define REQUEST_TIMEOUT 30
 
@@ -38,6 +37,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 @property (nonatomic) long long offset;
 @property (nonatomic) TUSUploadState state;
 @property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
+@property (nonatomic, strong) NSDictionary *uploadHeaders;
 @end
 
 @implementation TUSResumableUpload
@@ -45,13 +45,14 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 - (id)initWithURL:(NSString *)url
              data:(TUSData *)data
       fingerprint:(NSString *)fingerprint
-
+    uploadHeaders:(NSDictionary *)headers
 {
     self = [super init];
     if (self) {
         [self setEndpoint:[NSURL URLWithString:url]];
         [self setData:data];
         [self setFingerprint:fingerprint];
+        [self setUploadHeaders:headers];
     }
     return self;
 }
@@ -80,9 +81,17 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     NSUInteger size = (NSUInteger)[[self data] length];
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
-    [mutableHeader setObject:@"1.0.0" forKey:HTTP_TUS];
+    [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
     [mutableHeader setObject:[NSString stringWithFormat:@"%lu", (unsigned long)size] forKey:HTTP_FINAL_LENGTH];
     
+    [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
+    NSString *plainString = @"LongLiveQuontr.mp4";
+    NSMutableString *fileName = [[NSMutableString alloc] initWithString:@"filename "];
+    NSData *plainData = [plainString dataUsingEncoding:NSUTF8StringEncoding];
+    NSString *base64String = [plainData base64EncodedStringWithOptions:0];
+    //NSString *fulleFilename = [fileName appendString:base64String];
+    
+    [mutableHeader setObject:[fileName stringByAppendingString:base64String] forKey:@"Upload-Metadata"];
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
     
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self endpoint]
@@ -100,7 +109,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [self setState:CheckingFile];
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
-    [mutableHeader setObject:@"1.0.0" forKey:HTTP_TUS];
+    [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
     
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:REQUEST_TIMEOUT];
@@ -119,8 +128,10 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     long long offset = [self offset];
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
-    [mutableHeader setObject:@"1.0.0" forKey:HTTP_TUS];
+    [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
     [mutableHeader setObject:[NSString stringWithFormat:@"%lld", offset] forKey:HTTP_OFFSET];
+    [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
+
     
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
     
@@ -189,7 +200,7 @@ didReceiveResponse:(NSURLResponse *)response
     
     switch([self state]) {
         case CheckingFile: {
-            if ([httpResponse statusCode] != 200 || [httpResponse statusCode] != 204) {
+            if ([httpResponse statusCode] != 200 || [httpResponse statusCode] != 201) {
                 TUSLog(@"Server responded with %ld. Restarting upload",
                        (long)httpResponse.statusCode);
                 [self createFile];
@@ -235,7 +246,7 @@ didReceiveResponse:(NSURLResponse *)response
             
             NSMutableDictionary *resumableUploads = [self resumableUploads];
             [resumableUploads setValue:location forKey:[self fingerprint]];
-                        
+            
             BOOL success = [resumableUploads writeToURL:fileURL atomically:YES];
             if (!success) {
                 TUSLog(@"Unable to save resumableUploads file");

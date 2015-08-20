@@ -6,7 +6,7 @@
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
+@import Foundation;
 
 typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
 typedef void (^TUSUploadFailureBlock)(NSError* error);
@@ -24,8 +24,6 @@ NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
     return r;
 }
 
-NS_ENUM(long long, TUSRangeBytes) {TUSInvalidRange = -1};
-
 @class TUSData;
 
 @interface TUSResumableUpload : NSObject <NSURLConnectionDelegate>
@@ -35,8 +33,11 @@ NS_ENUM(long long, TUSRangeBytes) {TUSInvalidRange = -1};
 @property (readwrite, copy) TUSUploadProgressBlock progressBlock;
 
 - (id)initWithURL:(NSString *)url
-              data:(TUSData *)data
-       fingerprint:(NSString *)fingerprint;
+             data:(TUSData *)data
+      fingerprint:(NSString *)fingerprint
+    uploadHeaders:(NSDictionary *)headers
+      fileName:(NSString *)fileName;
+
 - (void) start;
 
 @end

@@ -13,6 +13,17 @@ From [tus.io](http://tus.io):
 
 TUSKit is a ready to use tus client for iOS.
 
+## tus 1.0 UPDATE
+We are now tus 1.0 compatabile! 
+
+Other updates:
+Two new initialization parameteres.
+
+an NSDictionary called 'uploadheaders' which allows for easy HTTP Header passing in case your API requries additional headers.
+an NSString called 'filename' which allows to change the filename of the upload to the server instead of the old default 'video.mp4'
+
+
+
 ## Usage
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.

@@ -43,9 +43,10 @@ static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:8080/files";
     
     [self.assetLibrary assetForURL:assetUrl resultBlock:^(ALAsset* asset) {
         NSString *fingerprint = [assetUrl absoluteString];
-
+        NSDictionary *headers =  @{@"":@""};
+        
         TUSAssetData *uploadData = [[TUSAssetData alloc] initWithAsset:asset];
-        TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithURL:UPLOAD_ENDPOINT data:uploadData fingerprint:fingerprint];
+        TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithURL:UPLOAD_ENDPOINT data:uploadData fingerprint:fingerprint uploadHeaders:headers fileName:@"video.mp4"];
 
         upload.progressBlock = ^(NSInteger bytesWritten, NSInteger bytesTotal){
            // Update your progress bar here

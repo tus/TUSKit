@@ -6,6 +6,13 @@
 //  Copyright (c) 2013 tus.io. All rights reserved.
 //
 
+/*
+Maintained by Mark R. Masterson
+Edits By  Mark R. Masterson
+2015
+ */
+
+
 #import "TUSKit.h"
 #import "TUSData.h"
 
@@ -75,7 +82,7 @@
 }
 
 - (NSUInteger)getBytes:(uint8_t *)buffer
-            fromOffset:(long long)offset
+            fromOffset:(NSUInteger)offset
                 length:(NSUInteger)length
                  error:(NSError **)error
 {
@@ -130,8 +137,8 @@
                     TUSLog(@"Network write error %@", [aStream streamError]);
                 } else {
                     if (bytesRead != (NSUInteger)bytesWritten) {
-                        TUSLog(@"Read %d bytes from buffer but only wrote %d to the network",
-                              bytesRead, bytesWritten);
+                        TUSLog(@"Read %lu bytes from buffer but only wrote %ld to the network",
+                              (unsigned long)bytesRead, (long)bytesWritten);
                     }
                     [self setOffset:[self offset] + bytesWritten];
                 }

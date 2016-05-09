@@ -58,6 +58,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         [self setData:data];
         [self setFingerprint:fingerprint];
         [self setUploadHeaders:headers];
+        [self setFileName:fileName];
     }
     return self;
 }
@@ -94,7 +95,6 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     NSMutableString *fileName = [[NSMutableString alloc] initWithString:@"filename "];
     NSData *plainData = [plainString dataUsingEncoding:NSUTF8StringEncoding];
     NSString *base64String = [plainData base64EncodedStringWithOptions:0];
-    //NSString *fulleFilename = [fileName appendString:base64String];
     
     [mutableHeader setObject:[fileName stringByAppendingString:base64String] forKey:@"Upload-Metadata"];
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
@@ -136,6 +136,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
     [mutableHeader setObject:[NSString stringWithFormat:@"%lld", offset] forKey:HTTP_OFFSET];
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
+    [mutableHeader setObject:@"application/offset+octet-stream" forKey:@"Content-Type"];
 
     
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
@@ -171,6 +172,8 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [request setHTTPBodyStream:[[self data] dataStream]];
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
+    
+    
     
     NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self];
 }

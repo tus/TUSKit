@@ -5,8 +5,8 @@
 //  Created by Felix Geisendoerfer on 07.04.13.
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
-//  Additions for 1.0.0 Compatibility by Mark Robert Masterson
-//  Copyright (c) 2015 Mark Robert Masterson. All rights reserved.
+//  Additions and Maintenance for TUSKit 1.0.0 and up by Mark Robert Masterson
+//  Copyright (c) 2015-2016 Mark Robert Masterson. All rights reserved.
 
 #import "TUSKit.h"
 #import "TUSData.h"
@@ -41,6 +41,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 @property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
 @property (nonatomic, strong) NSDictionary *uploadHeaders;
 @property (nonatomic, strong) NSString *fileName;
+@property (nonatomic, strong) NSOperationQueue *queue;
 @end
 
 @implementation TUSResumableUpload
@@ -59,6 +60,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         [self setFingerprint:fingerprint];
         [self setUploadHeaders:headers];
         [self setFileName:fileName];
+        [self setQueue:[[NSOperationQueue alloc] init]];
     }
     return self;
 }
@@ -123,7 +125,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
     
-    NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self];
+    NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:FALSE];
+    [connection setDelegateQueue:self.queue];
+    [connection start];
 }
 
 - (void) uploadFile
@@ -175,7 +179,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     
     
     
-    NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self];
+    NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:FALSE];
+    [connection setDelegateQueue:self.queue];
+    [connection start];
 }
 
 #pragma mark - NSURLConnectionDelegate Protocol Delegate Methods

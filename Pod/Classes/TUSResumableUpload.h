@@ -2,11 +2,11 @@
 //  TUSResumableUpload.h
 //  tus-ios-client-demo
 //
-//  Created by Felix Geisendoerfer on 07.04.13.
+//  Originally Created by Felix Geisendoerfer on 07.04.13.
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
-//  Additions for 1.0.0 Compatibility by Mark Robert Masterson
-//  Copyright (c) 2015 Mark Robert Masterson. All rights reserved.
+//  Additions and Maintenance for TUSKit 1.0.0 and up by Mark Robert Masterson
+//  Copyright (c) 2015-2016 Mark Robert Masterson. All rights reserved.
 
 @import Foundation;
 

@@ -72,7 +72,7 @@ A block fired after a failed upload, returning the error. Handle your failure he
 # Todo
 ------
 - Carthage Support
-- Background Uploads
+- ~~Background Uploads~~
 
 # About [tus.io](http://tus.io):
 ------

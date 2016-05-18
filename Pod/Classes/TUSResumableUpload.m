@@ -42,9 +42,11 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 @property (nonatomic, strong) NSDictionary *uploadHeaders;
 @property (nonatomic, strong) NSString *fileName;
 @property (nonatomic, strong) NSOperationQueue *queue;
+@property (nonatomic, assign) UIBackgroundTaskIdentifier backgroundTask;
 @end
 
 @implementation TUSResumableUpload
+@synthesize backgroundTask;
 
 - (id)initWithURL:(NSString *)url
              data:(TUSData *)data
@@ -108,7 +110,12 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
     
-    NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self];
+    NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:FALSE];
+    [connection setDelegateQueue:self.queue];
+    [connection start];
+    self.backgroundTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+        [connection cancel];
+    }];
 }
 
 - (void) checkFile
@@ -128,6 +135,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:FALSE];
     [connection setDelegateQueue:self.queue];
     [connection start];
+    self.backgroundTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+        [connection cancel];
+    }];
 }
 
 - (void) uploadFile
@@ -152,10 +162,13 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
             upload.failureBlock(error);
         }
     };
+    __weak typeof(self) weakSelf = self;
     self.data.successBlock = ^() {
-        [upload setState:Idle];
-        TUSLog(@"Finished upload to %@ for fingerprint %@", [upload url], [upload fingerprint]);
         
+        [upload setState:Idle];
+       
+        TUSLog(@"Finished upload to %@ for fingerprint %@", [upload url], [upload fingerprint]);
+         [[UIApplication sharedApplication] endBackgroundTask:weakSelf.backgroundTask];
         NSMutableDictionary *resumableUploads = [upload resumableUploads];
         [resumableUploads removeObjectForKey:[upload fingerprint]];
         BOOL success = [resumableUploads writeToURL:[upload resumableUploadsFilePath]
@@ -182,6 +195,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:FALSE];
     [connection setDelegateQueue:self.queue];
     [connection start];
+    self.backgroundTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+        [connection cancel];
+    }];
 }
 
 #pragma mark - NSURLConnectionDelegate Protocol Delegate Methods
@@ -194,6 +210,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     if (self.failureBlock) {
         self.failureBlock(error);
     }
+    [[UIApplication sharedApplication] endBackgroundTask:self.backgroundTask];
 }
 
 #pragma mark - NSURLConnectionDataDelegate Protocol Delegate Methods
@@ -223,7 +240,8 @@ didReceiveResponse:(NSURLResponse *)response
             NSString *rangeHeader = [headers valueForKey:HTTP_OFFSET];
             if (rangeHeader) {
                 long long size = [rangeHeader longLongValue];
-                if (size >= [self offset]) {
+                if (size >= [[self data] length]) {
+                    
                     //TODO: we skip file upload, but we mightly verifiy that file?
                     [self setState:Idle];
                     TUSLog(@"Skipped upload to %@ for fingerprint %@", [self url], [self fingerprint]);

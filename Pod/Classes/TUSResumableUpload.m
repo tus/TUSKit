@@ -151,7 +151,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [mutableHeader setObject:[NSString stringWithFormat:@"%lld", offset] forKey:HTTP_OFFSET];
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
     [mutableHeader setObject:@"application/offset+octet-stream" forKey:@"Content-Type"];
-
+    
     
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
     
@@ -166,9 +166,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     self.data.successBlock = ^() {
         
         [upload setState:Idle];
-       
+        
         TUSLog(@"Finished upload to %@ for fingerprint %@", [upload url], [upload fingerprint]);
-         [[UIApplication sharedApplication] endBackgroundTask:weakSelf.backgroundTask];
+        [[UIApplication sharedApplication] endBackgroundTask:weakSelf.backgroundTask];
         NSMutableDictionary *resumableUploads = [upload resumableUploads];
         [resumableUploads removeObjectForKey:[upload fingerprint]];
         BOOL success = [resumableUploads writeToURL:[upload resumableUploadsFilePath]

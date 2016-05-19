@@ -85,26 +85,32 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [self checkFile];
 }
 
-- (NSString *) makeNextCallWithSession:(NSURLSession *)session {
-    switch (self.state) {
-        case CreatingFile:
-            [self preCheckFile:session];
-            break;
-        case CheckingFile:
-            [self preUploadFile:session];
-            break;
-        case UploadingFile:
-            [self completeFile:session];
-            break;
-        case Complete:
-            [self checkFile:session];
-            break;
-        default:
-            break;
+- (NSInteger) makeNextCallWithSession:(NSURLSession *)session
+{
+    // If the process is idle, need to begin at current state
+    if (self.idle) {
+        switch (self.state) {
+            case CreatingFile:
+                [self createFile:session];
+                break;
+            case CheckingFile:
+                [self checkFile:session];
+                break;
+            case UploadingFile:
+                [self uploadFile:session];
+                break;
+            case Complete:
+                [self completeFile:session];
+                break;
+            default:
+                break;
+        }
     }
+    
+    return self.taskId;
 }
 
-- (void) createFile:(NSURLSession *) session
+- (void) createFile:(NSURLSession *)session
 {
     [self setState:CreatingFile];
     
@@ -130,13 +136,19 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
     
+    
+    // Add the dataTask (request) to the session
+    [session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        if (error) {
+            self.failed = YES;
+        }
+    }];
+    
     NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self];
 }
 
 - (void) checkFile:(NSURLSession *) session
 {
-    
-    
     [self setState:CheckingFile];
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
@@ -149,9 +161,24 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
     
-    NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:FALSE];
-    [connection setDelegateQueue:self.queue];
-    [connection start];
+    // Add the uploadTask (request) to the session
+    [session uploadTaskWithRequest:request fromFile:uploadFile];
+    
+//    [session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+//        if (error) {
+//            self.failed = YES;
+//            return;
+//        } else {
+//            NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+//            if ([response statusCode] == ) {
+//                
+//            }
+//        }
+//    }];
+    
+//    NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:FALSE];
+//    [connection setDelegateQueue:self.queue];
+//    [connection start];
 }
 
 - (void) uploadFile:(NSURLSession *) session
@@ -201,7 +228,12 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
     
-    
+    // Add the dataTask (request) to the session
+    [session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        if (error) {
+            self.error = YES;
+        }
+    }]
     
     NSURLConnection *connection __unused = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:FALSE];
     [connection setDelegateQueue:self.queue];
@@ -333,7 +365,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         case CreatingFile: {
             
             if ([httpResponse statusCode] != 200 || [httpResponse statusCode] != 201) {
-                TUSLog(@"Server responded to create request with %ld.",
+                TUSLog(@"Server responded to create request with %ld status code.",
                        (long)httpResponse.statusCode);
                 self.failed = YES;
                 //TODO: Handle error callbacks (lock retrying)
@@ -361,7 +393,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
             if ([httpResponse statusCode] != 204) {
                 self.failed = YES;
                 //TODO: Handle error callbacks (problem on server)
-                TUSLog(@"Server returned unexpected response code to upload- %ld", (long)httpResponse.statusCode);
+                TUSLog(@"Server returned unexpected status code to upload - %ld", (long)httpResponse.statusCode);
                 break;
             }
             
@@ -399,7 +431,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
             break;
     }
     
-    // In Progress will always be false
+    // Upload is now idle
     self.idle = YES;
 }
 

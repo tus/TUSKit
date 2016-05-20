@@ -16,7 +16,7 @@
 
 #import "TUSBackgroundUpload.h"
 #import "TUSFileReader.h"
-#imnport "TUSUploadStore.h"
+#import "TUSUploadStore.h"
 
 #define HTTP_PATCH @"PATCH"
 #define HTTP_POST @"POST"
@@ -68,23 +68,42 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         [self setUploadHeaders:headers];
         [self setFileName:[sourceFile lastPathComponent]];
         [self setQueue:[[NSOperationQueue alloc] init]];
+        [self setId:[self generateUUIDFromStore:store]];
         
         NSString *uploadUrl = [[self resumableUploads] valueForKey:[self fingerprint]];
         if (uploadUrl == nil) {
             TUSLog(@"No resumable upload URL for fingerprint %@", [self fingerprint]);
-            self.state = CreatingFile;
+            [self setState:CreatingFile];
             return self;
         }
         
         [self setUrl:[NSURL URLWithString:uploadUrl]];
-        
-        self.state = CheckingFile;
+        [self setState:CheckingFile];
     }
     
     // Should immediately save itself to store
     [self saveToStore:store];
     
     return self;
+}
+
+- (NSString *)generateUUIDFromStore:(TUSUploadStore *)store
+{
+    BOOL existingUpload = YES;
+    NSString *uniqueId;
+    
+    while (existingUpload)
+    {
+        NSUUID *uuid = [[NSUUID alloc] init];
+        NSDictionary *existingUploadData = [store loadDictionaryForUpload:uuid.UUIDString];
+        
+        if (!existingUploadData) {
+            uniqueId = uuid.UUIDString;
+            existingUpload = NO;
+        }
+    }
+    
+    return uniqueId;
 }
 
 - (BOOL)isComplete
@@ -374,16 +393,27 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 #pragma mark Persistence functions
 +(instancetype)loadUploadWithId:(NSString *)uploadId fromStore:(TUSUploadStore *)store
 {
-    return [[TUSBackgroundUpload alloc] initWithUploadId:uploadId fromStore:store];
-}
-
--(instancetype)initWithUploadId:(NSString *)uploadId fromStore:(TUSUploadStore *)store
-{
     NSDictionary *savedData = [store loadDictionaryForUpload:uploadId];
     
     NSURL *url = [savedData objectForKey:@"uploadUrl"];
     NSURL *sourceFile = [savedData objectForKey:@"sourceFile"];
     NSDictionary *headers = [savedData objectForKey:@"headers"];
+    TUSUploadState state = [savedData objectForKey:@"state"];
+    
+    return [[TUSBackgroundUpload alloc] initWithUploadId:uploadId
+                                           withUploadUrl:url
+                                           withSourceURL:sourceFile
+                                             withHeaders:headers
+                                               withState:state];
+}
+
+-(instancetype)initWithUploadId:(NSString *)uploadId
+                  withUploadUrl:(NSURL *)url
+                  withSourceURL:(NSURL *)sourceFile
+                    withHeaders:(NSDictionary *)headers
+                      withState:(TUSUploadState)state
+{
+
     
     self = [super init];
     if (self) {
@@ -393,6 +423,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         [self setUploadHeaders:headers];
         [self setFileName:[sourceFile lastPathComponent]];
         [self setQueue:[[NSOperationQueue alloc] init]];
+        [self setId:uploadId];
         
         NSString *uploadUrl = [[self resumableUploads] valueForKey:[self fingerprint]];
         if (uploadUrl == nil) {
@@ -402,8 +433,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         }
         
         [self setUrl:[NSURL URLWithString:uploadUrl]];
-        
-        self.state = CheckingFile;
+        [self setState:state];
     }
 
     return self;
@@ -411,19 +441,11 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 
 -(void)saveToStore:(TUSUploadStore *)store
 {
-    // If the object has not been previously saved
-    if (!self.id) {
-        NSString *letters = @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        NSMutableString *uploadId = [[NSMutableString alloc] initWithCapacity:20];
-        
-        for (int i=0; i<20; i++) {
-            [uploadId appendFormat: @"%C", [letters characterAtIndex: arc4random_uniform([letters length])]];
-        }
-        
-        self.id = uploadId;
-    }
-    
-    NSDictionary *uploadData = @{@"uploadId": self.id, @"uploadUrl": self.url, @"sourceFile": self.fingerprint, @"headers": self.uploadHeaders};
+    NSDictionary *uploadData = @{@"uploadId": self.id,
+                                 @"uploadUrl": self.url,
+                                 @"sourceFile": self.fingerprint,
+                                 @"headers": self.uploadHeaders,
+                                 @"state": [[NSNumber alloc] initWithInteger:self.state]};
     
     [store saveDictionaryForUpload:self.id dictionary:uploadData];
 }

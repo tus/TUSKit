@@ -68,7 +68,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         [self setUploadHeaders:headers];
         [self setFileName:[sourceFile lastPathComponent]];
         [self setQueue:[[NSOperationQueue alloc] init]];
-        [self setId:[self generateUUIDFromStore:store]];
+        [self setId:[self generateUUIDForStore:store]];
         
         NSString *uploadUrl = [[self resumableUploads] valueForKey:[self fingerprint]];
         if (uploadUrl == nil) {
@@ -87,7 +87,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     return self;
 }
 
-- (NSString *)generateUUIDFromStore:(TUSUploadStore *)store
+- (NSString *)generateUUIDForStore:(TUSUploadStore *)store
 {
     BOOL existingUpload = YES;
     NSString *uniqueId;
@@ -398,7 +398,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     NSURL *url = [savedData objectForKey:@"uploadUrl"];
     NSURL *sourceFile = [savedData objectForKey:@"sourceFile"];
     NSDictionary *headers = [savedData objectForKey:@"headers"];
-    TUSUploadState state = [savedData objectForKey:@"state"];
+    TUSUploadState state = [[savedData objectForKey:@"state"] integerValue];
     
     return [[TUSBackgroundUpload alloc] initWithUploadId:uploadId
                                            withUploadUrl:url
@@ -413,8 +413,6 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                     withHeaders:(NSDictionary *)headers
                       withState:(TUSUploadState)state
 {
-
-    
     self = [super init];
     if (self) {
         [self setEndpoint:url];
@@ -428,7 +426,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         NSString *uploadUrl = [[self resumableUploads] valueForKey:[self fingerprint]];
         if (uploadUrl == nil) {
             TUSLog(@"No resumable upload URL for fingerprint %@", [self fingerprint]);
-            self.state = CreatingFile;
+            [self setState:CreatingFile];
             return self;
         }
         

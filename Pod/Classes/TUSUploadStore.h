@@ -10,6 +10,8 @@
 
 @interface TUSUploadStore : NSObject
 
+@property (nonatomic, strong) NSMutableDictionary *dataStore;
+
 -(BOOL)saveDictionaryForUpload:(NSString *)uploadId dictionary:(NSDictionary *)data;
 -(NSDictionary *)loadDictionaryForUpload:(NSString *)uploadId;
 

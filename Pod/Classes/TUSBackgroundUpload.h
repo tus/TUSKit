@@ -9,38 +9,34 @@
 //  Copyright (c) 2015-2016 Mark Robert Masterson. All rights reserved.
 
 @import Foundation;
+#import "TUSUploadStore.h"
 
 typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
 typedef void (^TUSUploadFailureBlock)(NSError* error);
-typedef void (^TUSUploadProgressBlock)(NSInteger bytesWritten, NSInteger bytesTotal);
-
-typedef struct _TUSRange {
-    long long first;
-    long long last;
-} TUSRange;
-
-NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
-    TUSRange r;
-    r.first = first;
-    r.last = last;
-    return r;
-}
-
-@class TUSData;
+typedef void (^TUSUploadProgressBlock)(NSUInteger bytesWritten, NSUInteger bytesTotal);
 
 @interface TUSBackgroundUpload : NSObject
 
 @property (readwrite, copy) TUSUploadResultBlock resultBlock;
 @property (readwrite, copy) TUSUploadFailureBlock failureBlock;
 @property (readwrite, copy) TUSUploadProgressBlock progressBlock;
+@property (readonly) NSString *id;
 
-- (id)initWithURL:(NSString *)url
+- (instancetype)initWithURL:(NSString *)url
              data:(TUSData *)data
       fingerprint:(NSString *)fingerprint
     uploadHeaders:(NSDictionary *)headers
       fileName:(NSString *)fileName;
 
-- (void) start;
 - (NSString *) makeNextCallWithSession:(NSURLSession *)session;
 
+/**
+ Recreate a TUSBackgroundUpload from a dictionary
+ */
++(instancetype)loadUploadWithId:(NSString *)uploadId fromStore:(TUSUploadStore *)store;
+
+- (id)initWithURL:(NSURL *)url
+       sourceFile:(NSURL *)sourceFile
+    uploadHeaders:(NSDictionary *)headers
+      uploadStore:(TUSUploadStore *)store;
 @end

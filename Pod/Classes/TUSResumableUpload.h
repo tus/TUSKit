@@ -12,7 +12,7 @@
 
 typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
 typedef void (^TUSUploadFailureBlock)(NSError* error);
-typedef void (^TUSUploadProgressBlock)(NSInteger bytesWritten, NSInteger bytesTotal);
+typedef void (^TUSUploadProgressBlock)(NSUInteger bytesWritten, NSUInteger bytesTotal);
 
 typedef struct _TUSRange {
     long long first;

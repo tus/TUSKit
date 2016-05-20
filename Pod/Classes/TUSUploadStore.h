@@ -9,6 +9,8 @@
 #import <Foundation/Foundation.h>
 
 @interface TUSUploadStore : NSObject
+
 -(BOOL)saveDictionaryForUpload:(NSString *)uploadId dictionary:(NSDictionary *)data;
 -(NSDictionary *)loadDictionaryForUpload:(NSString *)uploadId;
+
 @end

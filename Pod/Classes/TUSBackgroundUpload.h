@@ -22,21 +22,24 @@ typedef void (^TUSUploadProgressBlock)(NSUInteger bytesWritten, NSUInteger bytes
 @property (readwrite, copy) TUSUploadProgressBlock progressBlock;
 @property (readonly) NSString *id;
 
-- (instancetype)initWithURL:(NSString *)url
-             data:(TUSData *)data
-      fingerprint:(NSString *)fingerprint
-    uploadHeaders:(NSDictionary *)headers
-      fileName:(NSString *)fileName;
-
-- (NSString *) makeNextCallWithSession:(NSURLSession *)session;
-
-/**
- Recreate a TUSBackgroundUpload from a dictionary
- */
-+(instancetype)loadUploadWithId:(NSString *)uploadId fromStore:(TUSUploadStore *)store;
-
+//Initializer methods
 - (id)initWithURL:(NSURL *)url
        sourceFile:(NSURL *)sourceFile
     uploadHeaders:(NSDictionary *)headers
       uploadStore:(TUSUploadStore *)store;
+- (instancetype)initWithUploadId:(NSString *)uploadId fromStore:(TUSUploadStore *)store;
++ (instancetype)loadUploadWithId:(NSString *)uploadId fromStore:(TUSUploadStore *)store;
+
+//Delegate Methods
+- (void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
+- (void)dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler;
+- (void)task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error;
+
+
+/**
+ Recreate a TUSBackgroundUpload from a dictionary
+ */
+-(void)saveToStore:(TUSUploadStore *)store;
+
+
 @end

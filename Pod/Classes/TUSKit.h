@@ -21,3 +21,4 @@
 #import "TUSData.h"
 #import "TUSAssetData.h"
 #import "TUSResumableUpload.h"
+#import "TUSErrors.h"

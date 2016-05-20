@@ -10,8 +10,11 @@
 
 @interface TUSFileReader : NSObject
 - (instancetype)initWithURL:(NSURL *)fileUrl;
-- (NSUInteger)length;
 - (NSURL *)getFileFromOffset:(NSUInteger)offset
                        error:(NSError **)error;
-
+/**
+ Clean up the file reader, deleting associated temporary files.  Returns YES if the reader was successfully cleaned up, NO otherwise.
+ */
+- (BOOL)close;
+@property (readonly) NSUInteger length;
 @end

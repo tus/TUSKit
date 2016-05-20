@@ -87,7 +87,8 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     return self;
 }
 
-- (BOOL)isComplete{
+- (BOOL)isComplete
+{
     return self.state == Complete;
 }
 
@@ -166,7 +167,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     return [session downloadTaskWithURL:self.url];
 }
 
-- (NSURLSessionTask *) uploadFile:(NSURLSession *) session
+- (NSURLSessionTask *) uploadFile:(NSURLSession *)session
 {
     self.state = UploadingFile;
     
@@ -334,7 +335,8 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 /**
  Uses the offset from the provided headers to update the state of the upload - used by both check (HEAD) and upload (PATCH) response logic.
  */
--(void)updateStateFromHeaders:(NSDictionary*)headers{
+-(void)updateStateFromHeaders:(NSDictionary*)headers
+{
     NSString *rangeHeader = [headers valueForKey:HTTP_OFFSET];
     if (rangeHeader) {
         long long serverOffset = [rangeHeader longLongValue];

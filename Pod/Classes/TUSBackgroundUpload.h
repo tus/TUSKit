@@ -27,14 +27,25 @@ typedef void (^TUSUploadProgressBlock)(NSUInteger bytesWritten, NSUInteger bytes
        sourceFile:(NSURL *)sourceFile
     uploadHeaders:(NSDictionary *)headers
       uploadStore:(TUSUploadStore *)store;
-- (instancetype)initWithUploadId:(NSString *)uploadId fromStore:(TUSUploadStore *)store;
-+ (instancetype)loadUploadWithId:(NSString *)uploadId fromStore:(TUSUploadStore *)store;
+- (instancetype)initWithUploadId:(NSString *)uploadId
+                       fromStore:(TUSUploadStore *)store;
++ (instancetype)loadUploadWithId:(NSString *)uploadId
+                       fromStore:(TUSUploadStore *)store;
 
 //Delegate Methods
 - (void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
 - (void)dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler;
 - (void)task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error;
 
+//Utility Methods
+- (NSURLSessionTask *) makeNextCallWithSession:(NSURLSession *)session;
+- (void)updateStateFromHeaders:(NSDictionary*)headers;
+- (BOOL) isComplete;
+
+//File actions
+- (NSURLSessionTask *) checkFile:(NSURLSession *)session
+- (NSURLSessionTask *) createFile:(NSURLSession *)session
+- (NSURLSessionTask *) uploadFile:(NSURLSession *)session;
 
 /**
  Recreate a TUSBackgroundUpload from a dictionary

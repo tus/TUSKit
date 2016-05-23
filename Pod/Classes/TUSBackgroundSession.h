@@ -11,6 +11,10 @@
 @interface TUSBackgroundSession : NSObject
 
 @property (nonatomic, strong) NSURLSession *session;
+@property (nonatomic, strong) NSURL *endpoint;
+@property BOOL supports3G;
 
+- (id) initWithEndpoint:(NSURL *)endpoint
+             supports3G:(BOOL)supports3G
 
 @end

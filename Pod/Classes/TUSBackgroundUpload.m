@@ -64,7 +64,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
               uploadHeaders:(NSDictionary *)headers
                 uploadStore:(TUSUploadStore *)store
 {
-    self = [self initWithUploadId:[self generateUUIDForStore:store]
+    return [self initWithUploadId:[self generateUUIDForStore:store]
                      endpoint:url
                     uploadUrl:nil
                     sourceURL:sourceFile
@@ -74,8 +74,6 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                    fileReader:[[TUSFileReader alloc] initWithURL:sourceFile]
                         state:CreatingFile
                       store:store];
-    
-    return self;
 }
 
 -(instancetype)initWithUploadId:(NSString *)uploadId
@@ -155,6 +153,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 - (NSURLSessionTask *) createFile:(NSURLSession *) session
 {
     self.state = CreatingFile;
+    self.failed = NO;
     
     NSUInteger size = [[self fileReader] length];
     
@@ -190,6 +189,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 - (NSURLSessionTask *) checkFile:(NSURLSession *) session
 {
     self.state = CheckingFile;
+    self.failed = NO;
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
@@ -211,6 +211,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 - (NSURLSessionTask *) uploadFile:(NSURLSession *)session
 {
     self.state = UploadingFile;
+    self.failed = NO;
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
@@ -248,6 +249,10 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     }
 
     self.idle = YES;
+    self.failed = YES;
+    
+    //Save to the store
+    [self saveToStore:self.uploadStore];
 }
 
 
@@ -367,9 +372,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     NSURL *endpoint = [savedData objectForKey:@"endpoint"];
     NSURL *uploadUrl = [savedData objectForKey:@"uploadUrl"];
     NSURL *sourceUrl = [savedData objectForKey:@"sourceUrl"];
-    NSDictionary *headers = [savedData objectForKey:@"headers"];
     BOOL idle = [savedData[@"idle"] boolValue];
     BOOL failureStatus = [savedData[@"failed"] boolValue];
+    NSDictionary *headers = [savedData objectForKey:@"headers"];
     NSDictionary *savedFileReader = savedData[@"fileReader"];
     TUSFileReader *fileReader = [TUSFileReader deserializeFromDictionary:savedFileReader];
     TUSUploadState state = [[savedData objectForKey:@"state"] integerValue];
@@ -394,9 +399,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                                  @"endpoint": self.endpoint,
                                  @"uploadUrl": self.url,
                                  @"sourceUrl": self.fingerprint,
-                                 @"headers": self.uploadHeaders,
                                  @"idle": [[NSNumber alloc] initWithBool:self.idle],
                                  @"failed": [[NSNumber alloc] initWithBool:self.failed],
+                                 @"headers": self.uploadHeaders,
                                  @"fileReader": [self.fileReader serialize],
                                  @"state": [[NSNumber alloc] initWithInteger:self.state]};
     

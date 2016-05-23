@@ -59,7 +59,7 @@ const NSString *TEMP_FILE_SUBDIRECTORY = @"TUSKit";
     NSNumber *offset = dictionary[FILE_OFFSET_KEY];
     
     NSURL * fileUrl = [NSURL URLByResolvingBookmarkData:fileUrlData options:0 relativeToURL:nil bookmarkDataIsStale:nil error:nil];
-    NSURL * tempUrl = tempUrlData == [NSNull null]? nil : [NSURL URLByResolvingBookmarkData:tempUrlData options:0 relativeToURL:nil bookmarkDataIsStale:nil error:nil];
+    NSURL * tempUrl = tempUrlData == [NSNull null]? nil : [NSURL URLByResolvingBookmarkData:(NSData *)tempUrlData options:0 relativeToURL:nil bookmarkDataIsStale:nil error:nil];
     
     return [[self alloc] initWithFileURL:fileUrl tempFileURL:tempUrl offset:offset.unsignedIntegerValue];
 }

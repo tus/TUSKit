@@ -37,19 +37,24 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 };
 
 @interface TUSBackgroundUpload ()
+
+@property (readwrite) NSString *id;
 @property (strong, nonatomic) NSURL *endpoint; // Endpoint to create a new file
 @property (strong, nonatomic) NSURL *url; // Upload URL for file
-@property (strong, nonatomic) NSString *fingerprint;
+@property (strong, nonatomic) NSString *fingerprint; // Local URL
 @property (nonatomic) NSUInteger offset;
 @property (nonatomic) TUSUploadState state;
 @property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
 @property (nonatomic, strong) NSDictionary *uploadHeaders;
 @property (nonatomic, strong) NSString *fileName;
 @property (nonatomic, strong) NSOperationQueue *queue;
+
 @property (nonatomic, strong) TUSFileReader *fileReader;
-@property (readwrite) NSString *id;
+@property (nonatomic, strong) TUSUploadStore *uploadStore;
+
 @property BOOL idle;
 @property BOOL failed;
+
 @end
 
 @implementation TUSBackgroundUpload
@@ -59,30 +64,47 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
               uploadHeaders:(NSDictionary *)headers
                 uploadStore:(TUSUploadStore *)store
 {
-    //TODO: Add dictionary parameter for upload metadata as well
+    self = [self initWithUploadId:[self generateUUIDForStore:store]
+                     endpoint:url
+                    uploadUrl:nil
+                    sourceURL:sourceFile
+                   idleStatus:YES
+                    failureStatus:NO
+                      headers:headers
+                   fileReader:[[TUSFileReader alloc] initWithURL:sourceFile]
+                        state:CreatingFile
+                      store:store];
+    
+    return self;
+}
+
+-(instancetype)initWithUploadId:(NSString *)uploadId
+                   endpoint:(NSURL *)endpoint
+                  uploadUrl:(NSURL *)uploadUrl
+                  sourceURL:(NSURL *)sourceFile
+                     idleStatus:(BOOL)idle
+                  failureStatus:(BOOL)failed
+                    headers:(NSDictionary *)headers
+                 fileReader:(TUSFileReader *)fileReader
+                      state:(TUSUploadState)state
+                    store:(TUSUploadStore *)store
+{
     self = [super init];
     if (self) {
-        [self setEndpoint:url];
+        [self setEndpoint:endpoint];
         [self setFileReader:[[TUSFileReader alloc] initWithURL:sourceFile]];
         [self setFingerprint:[sourceFile absoluteString]];
         [self setUploadHeaders:headers];
         [self setFileName:[sourceFile lastPathComponent]];
         [self setQueue:[[NSOperationQueue alloc] init]];
-        [self setId:[self generateUUIDForStore:store]];
-        
-        NSString *uploadUrl = [[self resumableUploads] valueForKey:[self fingerprint]];
-        if (uploadUrl == nil) {
-            TUSLog(@"No resumable upload URL for fingerprint %@", [self fingerprint]);
-            [self setState:CreatingFile];
-            return self;
-        }
-        
-        [self setUrl:[NSURL URLWithString:uploadUrl]];
-        [self setState:CheckingFile];
+        [self setId:uploadId];
+        [self setIdle:idle];
+        [self setFailed:failed];
+        [self setUploadStore:store];
+        [self setState:state];
+        [self setUrl:uploadUrl];
+        [self saveToStore:store];
     }
-    
-    // Should immediately save itself to store
-    [self saveToStore:store];
     
     return self;
 }
@@ -214,48 +236,6 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 
 
 #pragma mark - Private Methods
-- (NSMutableDictionary*)resumableUploads
-{
-    //TODO: Remove this and replace with the data store
-    static id resumableUploads = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        NSURL *resumableUploadsPath = [self resumableUploadsFilePath];
-        resumableUploads = [NSMutableDictionary dictionaryWithContentsOfURL:resumableUploadsPath];
-        if (!resumableUploads) {
-            resumableUploads = [[NSMutableDictionary alloc] init];
-        }
-    });
-    
-    return resumableUploads;
-}
-
-- (NSURL *)resumableUploadsFilePath
-{
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSArray *directories = [fileManager URLsForDirectory:NSApplicationSupportDirectory
-                                               inDomains:NSUserDomainMask];
-    NSURL *applicationSupportDirectoryURL = [directories lastObject];
-    NSString *applicationSupportDirectoryPath = [applicationSupportDirectoryURL absoluteString];
-    
-    BOOL isDirectory = NO;
-    
-    if (![fileManager fileExistsAtPath:applicationSupportDirectoryPath
-                           isDirectory:&isDirectory]) {
-        NSError *error = nil;
-        BOOL success = [fileManager createDirectoryAtURL:applicationSupportDirectoryURL
-                             withIntermediateDirectories:YES
-                                              attributes:nil
-                                                   error:&error];
-        if (!success) {
-            TUSLog(@"Unable to create %@ directory due to: %@",
-                   applicationSupportDirectoryURL,
-                   error);
-        }
-    }
-    return [applicationSupportDirectoryURL URLByAppendingPathComponent:@"TUSResumableUploads.plist"];
-}
-
 - (long long) length {
     return self.fileReader.length;
 }
@@ -315,14 +295,6 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
             
             TUSLog(@"Created resumable upload at %@ for fingerprint %@", [self url], [self fingerprint]);
             
-            NSURL *dictionaryFileUrl = [self resumableUploadsFilePath];
-            NSMutableDictionary *resumableUploads = [self resumableUploads];
-            [resumableUploads setValue:location forKey:[self fingerprint]];
-            BOOL success = [resumableUploads writeToURL:dictionaryFileUrl atomically:YES];
-            if (!success) {
-                TUSLog(@"Unable to save resumableUploads file");
-            }
-            
             self.state = UploadingFile;
             break;
         }
@@ -348,6 +320,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     // Upload is now idle
     self.idle = YES;
     
+    // Save to the store
+    [self saveToStore:self.uploadStore];
+    
     completionHandler(NSURLSessionResponseCancel);
 }
 
@@ -362,13 +337,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         if (serverOffset >= [self length]) {
             //TODO: Should we verify the file?
             TUSLog(@"Upload complete at %@ for fingerprint %@", [self url], [self fingerprint]);
-            NSMutableDictionary *resumableUploads = [self resumableUploads];
-            [resumableUploads removeObjectForKey:[self fingerprint]];
-            BOOL success = [resumableUploads writeToURL:[self resumableUploadsFilePath]
-                                             atomically:YES];
-            if (!success) {
-                TUSLog(@"Unable to save resumableUploads file");
-            }
+    
             if (self.resultBlock) {
                 self.resultBlock(self.url);
             }
@@ -395,54 +364,40 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 {
     NSDictionary *savedData = [store loadDictionaryForUpload:uploadId];
     
-    NSURL *url = [savedData objectForKey:@"uploadUrl"];
-    NSURL *sourceFile = [savedData objectForKey:@"sourceFile"];
+    NSURL *endpoint = [savedData objectForKey:@"endpoint"];
+    NSURL *uploadUrl = [savedData objectForKey:@"uploadUrl"];
+    NSURL *sourceUrl = [savedData objectForKey:@"sourceUrl"];
     NSDictionary *headers = [savedData objectForKey:@"headers"];
+    BOOL idle = [savedData[@"idle"] boolValue];
+    BOOL failureStatus = [savedData[@"failed"] boolValue];
+    NSDictionary *savedFileReader = savedData[@"fileReader"];
+    TUSFileReader *fileReader = [TUSFileReader deserializeFromDictionary:savedFileReader];
     TUSUploadState state = [[savedData objectForKey:@"state"] integerValue];
     
     return [[TUSBackgroundUpload alloc] initWithUploadId:uploadId
-                                           withUploadUrl:url
-                                           withSourceURL:sourceFile
-                                             withHeaders:headers
-                                               withState:state];
+                                            endpoint:endpoint
+                                           uploadUrl:uploadUrl
+                                           sourceURL:sourceUrl
+                                          idleStatus:idle
+                                           failureStatus:failureStatus
+                                             headers:headers
+                                          fileReader:fileReader
+                                               state:state
+                                               store:store];
 }
 
--(instancetype)initWithUploadId:(NSString *)uploadId
-                  withUploadUrl:(NSURL *)url
-                  withSourceURL:(NSURL *)sourceFile
-                    withHeaders:(NSDictionary *)headers
-                      withState:(TUSUploadState)state
-{
-    self = [super init];
-    if (self) {
-        [self setEndpoint:url];
-        [self setFileReader:[[TUSFileReader alloc] initWithURL:sourceFile]];
-        [self setFingerprint:[sourceFile absoluteString]];
-        [self setUploadHeaders:headers];
-        [self setFileName:[sourceFile lastPathComponent]];
-        [self setQueue:[[NSOperationQueue alloc] init]];
-        [self setId:uploadId];
-        
-        NSString *uploadUrl = [[self resumableUploads] valueForKey:[self fingerprint]];
-        if (uploadUrl == nil) {
-            TUSLog(@"No resumable upload URL for fingerprint %@", [self fingerprint]);
-            [self setState:CreatingFile];
-            return self;
-        }
-        
-        [self setUrl:[NSURL URLWithString:uploadUrl]];
-        [self setState:state];
-    }
 
-    return self;
-}
 
 -(void)saveToStore:(TUSUploadStore *)store
 {
     NSDictionary *uploadData = @{@"uploadId": self.id,
+                                 @"endpoint": self.endpoint,
                                  @"uploadUrl": self.url,
-                                 @"sourceFile": self.fingerprint,
+                                 @"sourceUrl": self.fingerprint,
                                  @"headers": self.uploadHeaders,
+                                 @"idle": [[NSNumber alloc] initWithBool:self.idle],
+                                 @"failed": [[NSNumber alloc] initWithBool:self.failed],
+                                 @"fileReader": [self.fileReader serialize],
                                  @"state": [[NSNumber alloc] initWithInteger:self.state]};
     
     [store saveDictionaryForUpload:self.id dictionary:uploadData];

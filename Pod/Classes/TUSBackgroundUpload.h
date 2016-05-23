@@ -27,8 +27,6 @@ typedef void (^TUSUploadProgressBlock)(NSUInteger bytesWritten, NSUInteger bytes
        sourceFile:(NSURL *)sourceFile
     uploadHeaders:(NSDictionary *)headers
       uploadStore:(TUSUploadStore *)store;
-- (instancetype)initWithUploadId:(NSString *)uploadId
-                       fromStore:(TUSUploadStore *)store;
 + (instancetype)loadUploadWithId:(NSString *)uploadId
                        fromStore:(TUSUploadStore *)store;
 

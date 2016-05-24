@@ -7,14 +7,22 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "TUSUploadStore.h"
 
 @interface TUSBackgroundSession : NSObject
 
 @property (nonatomic, strong) NSURLSession *session;
 @property (nonatomic, strong) NSURL *endpoint;
-@property BOOL supports3G;
+@property (nonatomic, strong) NSMutableArray *uploadTasks;
+@property (nonatomic, strong) TUSUploadStore *store;
+@property BOOL allowsCellularAccess;
 
-- (id) initWithEndpoint:(NSURL *)endpoint
-             supports3G:(BOOL)supports3G
+- (instancetype) initWithEndpoint:(NSURL *)endpoint
+             allowsCellularAccess:(BOOL)allowsCellularAccess
+
+- (NSMutableArray *) addBackgroundUploadTasksToSession
+
+- (void) saveUploadTask:(NSURLSessionTask *)uploadTask
+
 
 @end

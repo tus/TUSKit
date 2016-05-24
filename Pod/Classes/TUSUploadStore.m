@@ -7,6 +7,7 @@
 //
 
 #import "TUSUploadStore.h"
+#import "TUSBackgroundUpload.h"
 
 @implementation TUSUploadStore
 
@@ -26,9 +27,29 @@
     return YES;
 }
 
+-(BOOL)saveBackgroundTaskId:(NSNumber *)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId
+{
+    [self.dataStore setObject:backgroundUploadId forKey:backgroundTaskId];
+    
+    return YES;
+}
+
+-(BOOL)saveBackgroundUploadWithId:(TUSBackgroundUpload *)backgroundUpload
+{
+    [self.dataStore setObject:[backgroundUpload serializeObject] forKey:backgroundUpload.id];
+    
+    return YES;
+}
+
+- (NSString *)loadBackgroundUploadId:(NSNumber *)backgroundTaskId
+{
+    return [self.dataStore objectForKey:backgroundTaskId];
+}
+
 -(NSDictionary *)loadDictionaryForUpload:(NSString *)uploadId
 {
     return [self.dataStore objectForKey:uploadId];
 }
+
 
 @end

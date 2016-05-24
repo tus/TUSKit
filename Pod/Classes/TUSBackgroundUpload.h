@@ -39,6 +39,7 @@ typedef void (^TUSUploadProgressBlock)(NSUInteger bytesWritten, NSUInteger bytes
 - (NSURLSessionTask *) makeNextCallWithSession:(NSURLSession *)session;
 - (void)updateStateFromHeaders:(NSDictionary*)headers;
 - (NSString *)generateUUIDFromStore:(TUSUploadStore *)store;
+- (NSDictionary *)serializeObject;
 - (BOOL) isComplete;
 
 //File actions

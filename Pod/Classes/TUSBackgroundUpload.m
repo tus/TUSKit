@@ -256,7 +256,8 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 }
 
 
--(void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
+-(void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
+{
     switch([self state]) {
         case UploadingFile:
             if (self.progressBlock) {
@@ -369,6 +370,11 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 {
     NSDictionary *savedData = [store loadDictionaryForUpload:uploadId];
     
+    // If there is no data associated with the upload ID
+    if (savedData == nil) {
+        return nil;
+    }
+    
     NSURL *endpoint = [savedData objectForKey:@"endpoint"];
     NSURL *uploadUrl = [savedData objectForKey:@"uploadUrl"];
     NSURL *sourceUrl = [savedData objectForKey:@"sourceUrl"];
@@ -391,9 +397,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                                                store:store];
 }
 
-
-
--(void)saveToStore:(TUSUploadStore *)store
+-(NSDictionary *) serializeObject
 {
     NSDictionary *uploadData = @{@"uploadId": self.id,
                                  @"endpoint": self.endpoint,
@@ -404,8 +408,17 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                                  @"headers": self.uploadHeaders,
                                  @"fileReader": [self.fileReader serialize],
                                  @"state": [[NSNumber alloc] initWithInteger:self.state]};
+
     
-    [store saveDictionaryForUpload:self.id dictionary:uploadData];
+    return uploadData;
+
+}
+
+
+
+-(void)saveToStore:(TUSUploadStore *)store
+{
+    [store saveDictionaryForUpload:self.id dictionary:[self serializeObject]];
 }
 
 @end

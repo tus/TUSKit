@@ -22,7 +22,9 @@
 
 - (NSMutableArray *) addBackgroundUploadTasksToSession
 
+- (TUSBackgroundUpload *)loadSavedBackgroundUpload:(NSNumber *)uploadTaskId
 - (void) saveUploadTask:(NSURLSessionTask *)uploadTask
+- (void) initiateBackgroundUpload:(NSURL *)fileUrl
 
 
 @end

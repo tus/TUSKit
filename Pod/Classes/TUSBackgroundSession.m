@@ -60,7 +60,7 @@
     NSMutableArray *backgroundUploads = [];
     
     //For each record in the store, load the background upload and resume
-    for (var i=0; i < uploadTaskIds.length; i++) {
+    for (var i=0; i < [uploadTaskIds count]; i++) {
         TUSBackgroundUpload *backgroundUpload = [self loadSavedBackgroundUpload:uploadTaskIds[i]];
         
         if (backgroundUpload != nil) {
@@ -74,14 +74,12 @@
 
 - (void) resumeUploads:(NSArray *)backgroundUploads
 {
-    for (var i=0; i < backgroundUploads.length; i++) {
+    for (var i=0; i < [backgroundUploads count]; i++) {
         NSURLSessionTask *uploadTask = [backgroundUploads[i] makeNextCallWithSession:self.session];
         
         [uploadTask resume];
     }
 }
-
-
 
 - (void) suspendUpload:(NSURLSessionTask *)uploadTask
 {
@@ -98,7 +96,6 @@
     [self.store saveBackgroundUploadWithId:backgroundUpload];
 }
 
-
 #pragma NSURLSession Delegate methods
 
 -(void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
@@ -111,14 +108,14 @@
 // For a data task (why implemented?)
 -(void)dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler
 {
-    TUSBackgroundUpload *backgroundUpload = [self loadSavedBackgroundUpload:[NSNumber alloc] initWithInteger:dataTask.id]];
+    TUSBackgroundUpload *backgroundUpload = [self loadSavedBackgroundUpload:[[NSNumber alloc] initWithInteger:dataTask.id]];
     
     [backgroundUpload task:dataTask didReceiveResponse:response];
 }
 
 -(void) task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
 {
-    TUSBackgroundUpload *backgroundUpload = [self loadSavedBackgroundUpload:[NSNumber alloc] initWithInteger:task.id]];
+    TUSBackgroundUpload *backgroundUpload = [self loadSavedBackgroundUpload:[[NSNumber alloc] initWithInteger:task.id]];
     
     [backgroundUpload task:task didCompleteWithError:error];
 }

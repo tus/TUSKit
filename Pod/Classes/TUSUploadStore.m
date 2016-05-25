@@ -15,40 +15,59 @@
 {
     self = [super init];
     if (self) {
-        
+        self.backgroundUploadStore = [NSMutableDictionary new];
+        self.uploadTaskStore = [NSMutableDictionary new];
     }
     return self;
 }
 
 -(BOOL)saveDictionaryForUpload:(NSString *)uploadId dictionary:(NSDictionary *)data;
 {
-    [self.dataStore setObject:data forKey:uploadId];
+    [self.backgroundUploadStore setObject:data forKey:uploadId];
     
     return YES;
 }
 
--(BOOL)saveBackgroundTaskId:(NSNumber *)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId
+-(BOOL)saveUploadTaskId:(NSUInteger)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId
 {
-    [self.dataStore setObject:backgroundUploadId forKey:backgroundTaskId];
+    [self.uploadTaskStore setObject:backgroundUploadId forKey:@(backgroundTaskId)];
     
     return YES;
 }
 
--(BOOL)saveBackgroundUploadWithId:(TUSBackgroundUpload *)backgroundUpload
+- (NSString *)loadBackgroundUploadId:(NSUInteger)backgroundTaskId
 {
-    [self.dataStore setObject:[backgroundUpload serializeObject] forKey:backgroundUpload.id];
-    
-    return YES;
-}
-
-- (NSString *)loadBackgroundUploadId:(NSNumber *)backgroundTaskId
-{
-    return [self.dataStore objectForKey:backgroundTaskId];
+    return [self.uploadTaskStore objectForKey:@(backgroundTaskId)];
 }
 
 -(NSDictionary *)loadDictionaryForUpload:(NSString *)uploadId
 {
-    return [self.dataStore objectForKey:uploadId];
+    return [self.backgroundUploadStore objectForKey:uploadId];
+}
+
+-(BOOL)removeUploadTask:(NSUInteger)uploadTaskId
+{
+    [self.uploadTaskStore removeObjectForKey:@(uploadTaskId)];
+    
+    return YES;
+}
+
+-(BOOL)removeBackgroundUpload:(NSString *)uploadId
+{
+    [self.backgroundUploadStore removeObjectForKey:uploadId];
+
+    return YES;
+}
+
+-(NSMutableArray *)loadAllBackgroundIds
+{
+    NSMutableArray *backgroundUploadIds = [NSMutableArray new];
+    
+    for (id backgroundUploadId in self.backgroundUploadStore) {
+        [backgroundUploadIds addObject:backgroundUploadId];
+    }
+    
+    return backgroundUploadIds;
 }
 
 

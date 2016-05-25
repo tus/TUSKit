@@ -348,6 +348,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                 self.resultBlock(self.url);
             }
             self.state = Complete;
+            [self.fileReader close];
             return;
         } else {
             self.offset = (NSUInteger)serverOffset;
@@ -409,9 +410,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                                  @"fileReader": [self.fileReader serialize],
                                  @"state": [[NSNumber alloc] initWithInteger:self.state]};
 
-    
     return uploadData;
-
 }
 
 

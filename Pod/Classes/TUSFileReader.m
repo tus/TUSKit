@@ -16,13 +16,14 @@ const NSString *FILE_URL_KEY = @"fileUrl";
 const NSString *FILE_OFFSET_KEY = @"offset";
 
 // Temporary file subdirectory within Application Support
-const NSString *TEMP_FILE_SUBDIRECTORY = @"TUSKit";
-
+NSString * const TEMP_FILE_SUBDIRECTORY = @"TUSKit";
 
 @interface TUSFileReader()
+
 @property (strong, nonatomic) NSURL * fileUrl; // Nonatomic because it won't change once initialized
 @property (strong, nonatomic) NSURL * tempFileUrl;
 @property NSUInteger offset;
+
 @end
 
 @implementation TUSFileReader{
@@ -31,7 +32,8 @@ const NSString *TEMP_FILE_SUBDIRECTORY = @"TUSKit";
 
 
 // Designated Initializer
-- (instancetype)initWithURL:(NSURL*)fileUrl{
+- (instancetype)initWithURL:(NSURL*)fileUrl
+{
     self = [super init];
     if (self){
         self.fileUrl = fileUrl;
@@ -42,7 +44,8 @@ const NSString *TEMP_FILE_SUBDIRECTORY = @"TUSKit";
 
 - (instancetype)initWithFileURL:(NSURL*)fileUrl
                     tempFileURL:(NSURL*)tempFileUrl
-                         offset:(NSUInteger)offset{
+                         offset:(NSUInteger)offset
+{
     self = [self initWithURL:fileUrl]; // Call the designated initializer
     if (self) {
         self.tempFileUrl = tempFileUrl;
@@ -52,7 +55,8 @@ const NSString *TEMP_FILE_SUBDIRECTORY = @"TUSKit";
 }
 
 
-+(instancetype)deserializeFromDictionary:(NSDictionary *)dictionary{
++ (instancetype)deserializeFromDictionary:(NSDictionary *)dictionary
+{
     // The URLs were saved as bookmarks, not as paths (because paths might change between launches)
     NSData *fileUrlData = dictionary[FILE_URL_KEY];
     NSObject *tempUrlData = dictionary[TEMP_URL_KEY];
@@ -65,7 +69,8 @@ const NSString *TEMP_FILE_SUBDIRECTORY = @"TUSKit";
 }
 
 - (NSURL *)getFileFromOffset:(NSUInteger)offset
-                       error:(NSError **)error{
+                       error:(NSError **)error
+{
     // Special cases
     // Offset is zero, so just return the file url itself
     if (offset == 0){
@@ -120,9 +125,10 @@ const NSString *TEMP_FILE_SUBDIRECTORY = @"TUSKit";
 /**
  Get the temporary file path for this file
  */
-- (NSURL *)tempFileUrl{
+- (NSURL *)tempFileUrl
+{
     if (!_tempFileUrl){
-        NSURL *applicationSupport = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSAllDomainsMask];
+        NSURL *applicationSupport = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSAllDomainsMask][0];
         _tempFileUrl = [[applicationSupport URLByAppendingPathComponent:TEMP_FILE_SUBDIRECTORY isDirectory:YES] URLByAppendingPathComponent:self.fileUrl.filePathURL.lastPathComponent]; // Use filePathURL in case we have a reference URL.
     }
     return _tempFileUrl;
@@ -131,7 +137,8 @@ const NSString *TEMP_FILE_SUBDIRECTORY = @"TUSKit";
 /**
  Get the current length of the file.  Returns 0 if there is no file found.
  */
-- (NSUInteger)length{
+- (NSUInteger)length
+{
     // Attempt to get the file length
     if (_length < 0){
         NSNumber *fileLength = [[[NSFileManager defaultManager] attributesOfItemAtPath:self.fileUrl.path error:nil] objectForKey:NSFileSize];
@@ -144,7 +151,8 @@ const NSString *TEMP_FILE_SUBDIRECTORY = @"TUSKit";
     return (NSUInteger)_length; // Default to NO length if we can't find the file, the key, etc.
 }
 
--(NSDictionary *)serialize{
+- (NSDictionary *)serialize
+{
     // We don't save length because it can be recomputed very easily
     NSObject * tempFileString = [self.tempFileUrl bookmarkDataWithOptions:NSURLBookmarkCreationSuitableForBookmarkFile includingResourceValuesForKeys:nil relativeToURL:nil error:nil] ?: [NSNull null];
     return @{
@@ -154,7 +162,8 @@ const NSString *TEMP_FILE_SUBDIRECTORY = @"TUSKit";
     };
 }
 
--(BOOL)close{
+- (BOOL)close
+{
     if ([[NSFileManager defaultManager] fileExistsAtPath:self.tempFileUrl.path]){
         NSError * error = nil;
         BOOL returnValue = [[NSFileManager defaultManager] removeItemAtURL:self.tempFileUrl error:&error];

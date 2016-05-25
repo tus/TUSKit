@@ -11,12 +11,15 @@
 
 @interface TUSUploadStore : NSObject
 
-@property (nonatomic, strong) NSMutableDictionary *dataStore;
+@property (nonatomic, strong) NSMutableDictionary *backgroundUploadStore;
+@property (nonatomic, strong) NSMutableDictionary *uploadTaskStore;
 
 -(BOOL) saveDictionaryForUpload:(NSString *)uploadId dictionary:(NSDictionary *)data;
 -(NSDictionary *) loadDictionaryForUpload:(NSString *)uploadId;
--(NSString *)loadBackgroundUploadId:(NSNumber *)backgroundTaskId;
--(BOOL)saveBackgroundUploadWithId:(TUSBackgroundUpload *)backgroundUpload;
--(BOOL)saveBackgroundTaskId:(NSNumber *)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId;
+-(NSString *) loadBackgroundUploadId:(NSUInteger)uploadTaskId;
+-(BOOL) saveBackgroundTaskId:(NSUInteger)backgroundTaskId backgroundUploadId:(NSString *)backgroundUploadId;
+-(BOOL) removeUploadTaskId:(NSUInteger)uploadTaskId;
+-(BOOL) removeBackgroundUpload:(NSString *)uploadId;
+-(NSMutableArray *)loadAllBackgroundIds;
 
 @end

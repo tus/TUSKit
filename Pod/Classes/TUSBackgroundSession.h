@@ -9,22 +9,41 @@
 #import <Foundation/Foundation.h>
 #import "TUSUploadStore.h"
 
-@interface TUSBackgroundSession : NSObject
+@interface TUSBackgroundSession : NSObject <NSURLSessionDelegate>
 
-@property (nonatomic, strong) NSURLSession *session;
-@property (nonatomic, strong) NSURL *endpoint;
-@property (nonatomic, strong) NSMutableArray *uploadTasks;
-@property (nonatomic, strong) TUSUploadStore *store;
-@property BOOL allowsCellularAccess;
+/**
+ Initialize
+ */
+- (id)initWithEndpoint:(NSURL *)endpoint
+  allowsCellularAccess:(BOOL)allowsCellularAccess
 
-- (instancetype) initWithEndpoint:(NSURL *)endpoint
-             allowsCellularAccess:(BOOL)allowsCellularAccess
-
-- (NSMutableArray *) addBackgroundUploadTasksToSession
-
-- (TUSBackgroundUpload *)loadSavedBackgroundUpload:(NSNumber *)uploadTaskId
-- (void) saveUploadTask:(NSURLSessionTask *)uploadTask
+/**
+ Begin a background upload
+ */
 - (void) initiateBackgroundUpload:(NSURL *)fileUrl
 
+/**
+ Begin a background upload
+ */
+- (void) saveUploadTask:(NSURLSessionTask *)uploadTask
+
+/**
+ Clean up methods
+ */
+- (void)removeUploadTaskFromStore:(NSUInteger)uploadTaskId
+- (void)removeBackgroundUpload:(NSString *)uploadId
+
+/**
+ NSURLSession Delegate methods
+ */
+- (void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
+- (void)dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler
+- (void)task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
+
+/**
+ NSURLSession task methods
+ */
+- (NSArray *)loadUploads:(NSArray *)uploadTaskIds
+- (void)continueUploads:(NSArray *)uploadTasks
 
 @end

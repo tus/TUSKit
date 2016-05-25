@@ -9,7 +9,15 @@
 #import <Foundation/Foundation.h>
 
 @interface TUSFileReader : NSObject
+
+/**
+ Initialize
+ */
 -(instancetype)initWithURL:(NSURL *)fileUrl;
+
+/**
+ Read a file's offset
+ */
 -(NSURL *)getFileFromOffset:(NSUInteger)offset
                        error:(NSError **)error;
 /**
@@ -27,7 +35,8 @@
  */
 +(instancetype)deserializeFromDictionary:(NSDictionary *)dictionary;
 
-
 // Properties
 @property (readonly) NSUInteger length;
+
+
 @end

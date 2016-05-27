@@ -21,4 +21,7 @@
 #import "TUSData.h"
 #import "TUSAssetData.h"
 #import "TUSResumableUpload.h"
+#import "TUSBackgroundUpload.h"
+#import "TUSUploadStore.h"
+#import "TUSBackgroundSession.h"
 #import "TUSErrors.h"

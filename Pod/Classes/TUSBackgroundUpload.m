@@ -180,10 +180,12 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [request setHTTPMethod:HTTP_POST];
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
+    [request addValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
     
     // Create a download task for the empty post (file to be deleted later)
     // TODO: determine if an NSURLSessionDataTask can run while your app is in the background (docs are unclear)
-    return [session downloadTaskWithURL:self.url];
+    return [session dataTaskWithRequest:request];
 }
 
 - (NSURLSessionTask *) checkFile:(NSURLSession *) session
@@ -205,7 +207,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     
     // Create a download task for the empty post (file to be deleted later)
     // TODO: determine if an NSURLSessionDataTask can run while your app is in the background (docs are unclear)
-    return [session downloadTaskWithURL:self.url];
+    return [session dataTaskWithRequest:request];
 }
 
 - (NSURLSessionTask *) uploadFile:(NSURLSession *)session
@@ -243,7 +245,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 
 #pragma mark - URLSession delegate methods
 
--(void)task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error{
+-(void) task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error{
     if (self.failureBlock) {
         self.failureBlock(error);
     }
@@ -256,7 +258,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 }
 
 
--(void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
+-(void) task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
 {
     switch([self state]) {
         case UploadingFile:
@@ -269,14 +271,14 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     }
 }
 
--(void)dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler{
+-(void) dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler{
     
     NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
     NSDictionary *headers = [httpResponse allHeaderFields];
     
     switch(self.state) {
         case CheckingFile: {
-            if ([httpResponse statusCode] != 200 || [httpResponse statusCode] != 201) {
+            if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
                 TUSLog(@"Server responded to file check with %ld. Restarting upload",
                        (long)httpResponse.statusCode);
                 //TODO: Error callback
@@ -288,7 +290,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
             break;
         }
         case CreatingFile: {
-            if ([httpResponse statusCode] != 200 || [httpResponse statusCode] != 201) {
+            if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
                 TUSLog(@"Server responded to create request with %ld status code.",
                        (long)httpResponse.statusCode);
                 self.failed = YES;
@@ -329,7 +331,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     // Save to the store
     [self saveToStore:self.uploadStore];
     
-    completionHandler(NSURLSessionResponseCancel);
+    completionHandler(NSURLSessionResponseAllow);
 }
 
 /**
@@ -377,7 +379,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     }
     
     NSURL *endpoint = [savedData objectForKey:@"endpoint"];
-    NSURL *uploadUrl = [savedData objectForKey:@"uploadUrl"];
+    NSURL *uploadUrl = [savedData objectForKey:@"uploadUrl"]; // Could be NSNull
     NSURL *sourceUrl = [savedData objectForKey:@"sourceUrl"];
     BOOL idle = [savedData[@"idle"] boolValue];
     BOOL failureStatus = [savedData[@"failed"] boolValue];
@@ -402,13 +404,13 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 {
     NSDictionary *uploadData = @{@"uploadId": self.id,
                                  @"endpoint": self.endpoint,
-                                 @"uploadUrl": self.url,
+                                 @"uploadUrl": self.url ?: [NSNull null],
                                  @"sourceUrl": self.fingerprint,
-                                 @"idle": [[NSNumber alloc] initWithBool:self.idle],
-                                 @"failed": [[NSNumber alloc] initWithBool:self.failed],
+                                 @"idle": @(self.idle),
+                                 @"failed": @(self.failed),
                                  @"headers": self.uploadHeaders,
                                  @"fileReader": [self.fileReader serialize],
-                                 @"state": [[NSNumber alloc] initWithInteger:self.state]};
+                                 @"state": @(self.state)};
 
     return uploadData;
 }

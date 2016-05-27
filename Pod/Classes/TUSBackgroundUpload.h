@@ -9,7 +9,7 @@
 //  Copyright (c) 2015-2016 Mark Robert Masterson. All rights reserved.
 
 @import Foundation;
-#import "TUSUploadStore.h"
+@class TUSUploadStore;
 
 typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
 typedef void (^TUSUploadFailureBlock)(NSError* error);
@@ -22,28 +22,34 @@ typedef void (^TUSUploadProgressBlock)(NSUInteger bytesWritten, NSUInteger bytes
 @property (readwrite, copy) TUSUploadProgressBlock progressBlock;
 @property (readonly) NSString *id;
 
-//Initializer methods
+/**
+Initializer methods
+*/
 - (id)initWithURL:(NSURL *)url
        sourceFile:(NSURL *)sourceFile
     uploadHeaders:(NSDictionary *)headers
       uploadStore:(TUSUploadStore *)store;
 + (instancetype)loadUploadWithId:(NSString *)uploadId
                        fromStore:(TUSUploadStore *)store;
+/**
+Delegate Methods
+*/
+- (void) task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
+- (void) dataTask:(NSURLSessionDataTask *)task didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler;
+- (void) task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error;
 
-//Delegate Methods
-- (void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
-- (void)dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler;
-- (void)task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error;
-
-//Utility Methods
+ /**
+Utility Methods
+*/
 - (NSURLSessionTask *) makeNextCallWithSession:(NSURLSession *)session;
-- (void)updateStateFromHeaders:(NSDictionary*)headers;
-- (NSString *)generateUUIDFromStore:(TUSUploadStore *)store;
-- (NSDictionary *)serializeObject;
+- (void) updateStateFromHeaders:(NSDictionary*)headers;
+- (NSDictionary *) serializeObject;
 - (BOOL) isComplete;
 
-//File actions
-- (NSURLSessionTask *) checkFile:(NSURLSession *)session;
+/**
+File actions
+*/
+ - (NSURLSessionTask *) checkFile:(NSURLSession *)session;
 - (NSURLSessionTask *) createFile:(NSURLSession *)session;
 - (NSURLSessionTask *) uploadFile:(NSURLSession *)session;
 

@@ -15,35 +15,36 @@
  Initialize
  */
 - (id)initWithEndpoint:(NSURL *)endpoint
-  allowsCellularAccess:(BOOL)allowsCellularAccess
+  allowsCellularAccess:(BOOL)allowsCellularAccess;
 
 /**
  Begin a background upload
  */
-- (void) initiateBackgroundUpload:(NSURL *)fileUrl
+- (void)initiateBackgroundUpload:(NSURL *)fileUrl
+                         headers:(NSDictionary *)headers;
 
 /**
- Begin a background upload
+ Save a background upload task
  */
-- (void) saveUploadTask:(NSURLSessionTask *)uploadTask
+- (void)saveUploadTask:(NSURLSessionTask *)uploadTask;
 
 /**
  Clean up methods
  */
-- (void)removeUploadTaskFromStore:(NSUInteger)uploadTaskId
-- (void)removeBackgroundUpload:(NSString *)uploadId
+- (void)removeUploadTaskFromStore:(NSUInteger)uploadTaskId;
+- (void)removeBackgroundUpload:(NSString *)uploadId;
 
 /**
  NSURLSession Delegate methods
  */
-- (void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
-- (void)dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler
-- (void)task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
+- (void) URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
+- (void) URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler;
+- (void) URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error;
 
 /**
  NSURLSession task methods
  */
-- (NSArray *)loadUploads:(NSArray *)uploadTaskIds
-- (void)continueUploads:(NSArray *)uploadTasks
+- (NSArray *)loadUploads:(NSArray *)uploadTaskIds;
+- (void)continueUploads:(NSArray *)uploadTasks;
 
 @end

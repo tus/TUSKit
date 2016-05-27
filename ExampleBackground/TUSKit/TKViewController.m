@@ -11,7 +11,7 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <TUSKit/TUSKit.h>
 
-static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:8080/files";
+static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
 
 @interface TKViewController ()
 
@@ -42,28 +42,31 @@ static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:8080/files";
     }
     
     [self.assetLibrary assetForURL:assetUrl resultBlock:^(ALAsset* asset) {
-        NSString *fingerprint = [assetUrl absoluteString];
         NSDictionary *headers =  @{@"":@""};
+        NSURL *endpoint = [[NSURL alloc] initWithString:UPLOAD_ENDPOINT];
         
-        TUSAssetData *uploadData = [[TUSAssetData alloc] initWithAsset:asset];
-        TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithURL:UPLOAD_ENDPOINT data:uploadData fingerprint:fingerprint uploadHeaders:headers fileName:@"video.mp4"];
-
-        upload.progressBlock = ^(NSUInteger bytesWritten, NSUInteger bytesTotal){
-           // Update your progress bar here
-           NSLog(@"progress: %lu / %lu", (unsigned long)bytesWritten, (unsigned long)bytesTotal);
-        };
-
-        upload.resultBlock = ^(NSURL* fileURL){
-           // Use the upload url
-           NSLog(@"url: %@", fileURL);
-        };
-
-        upload.failureBlock = ^(NSError* error){
-           // Handle the error
-           NSLog(@"error: %@", error);
-        };
-
-        [upload start];
+        // Create a background session
+        TUSBackgroundSession *backgroundSession = [[TUSBackgroundSession alloc] initWithEndpoint:endpoint allowsCellularAccess:YES];
+        
+        // Initiate the background transfer
+        [backgroundSession initiateBackgroundUpload:assetUrl headers:headers];
+        
+//        upload.progressBlock = ^(NSUInteger bytesWritten, NSUInteger bytesTotal){
+//           // Update your progress bar here
+//           NSLog(@"progress: %lu / %lu", (unsigned long)bytesWritten, (unsigned long)bytesTotal);
+//        };
+//
+//        upload.resultBlock = ^(NSURL* fileURL){
+//           // Use the upload url
+//           NSLog(@"url: %@", fileURL);
+//        };
+//
+//        upload.failureBlock = ^(NSError* error){
+//           // Handle the error
+//           NSLog(@"error: %@", error);
+//        };
+//
+//        [upload start];
     } failureBlock:^(NSError* error) {
         NSLog(@"Unable to load asset due to: %@", error);
     }];

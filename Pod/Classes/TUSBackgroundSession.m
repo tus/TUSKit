@@ -157,6 +157,12 @@
     TUSBackgroundUpload *backgroundUpload = [self getUploadForTaskId:dataTask.taskIdentifier];
     
     [backgroundUpload dataTask:dataTask didReceiveResponse:response completionHandler:completionHandler];
+    
+    UIApplicationState appState = [[UIApplication sharedApplication] applicationState];
+    
+    if (appState == UIApplicationStateActive) {
+        [backgroundUpload makeNextCallWithSession:session];
+    }
 }
 
 - (void) URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error

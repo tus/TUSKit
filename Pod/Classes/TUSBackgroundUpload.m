@@ -227,7 +227,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     TUSLog(@"Resuming upload at %@ for fingerprint %@ from offset %lld",
            [self url], [self fingerprint], (long long)self.offset);
     
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:REQUEST_TIMEOUT];
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url]
+                                                                cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
+                                                            timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_PATCH];
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];

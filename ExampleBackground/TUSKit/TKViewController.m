@@ -45,11 +45,27 @@ static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
         NSDictionary *headers =  @{@"":@""};
         NSURL *endpoint = [[NSURL alloc] initWithString:UPLOAD_ENDPOINT];
         
+        ALAssetRepresentation *rep = [asset defaultRepresentation];
+        Byte *buffer = (Byte*)malloc(rep.size);
+        NSUInteger buffered = [rep getBytes:buffer fromOffset:0.0 length:rep.size error:nil];
+        
+        NSData *data = [NSData dataWithBytesNoCopy:buffer length:buffered freeWhenDone:YES];
+        NSURL *documentDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSAllDomainsMask][0];
+        NSURL *fileUrl = [documentDirectory URLByAppendingPathComponent:[[NSUUID alloc] init].UUIDString];
+        
+        NSError *error;
+        if (![data writeToURL:fileUrl options:NSDataWritingAtomic error:&error]) {
+            NSLog(@"%li", (long)error.code);
+        }
+        
         // Create a background session
         TUSBackgroundSession *backgroundSession = [[TUSBackgroundSession alloc] initWithEndpoint:endpoint allowsCellularAccess:YES];
         
+        //Add example metadata here
+        NSDictionary *metadata = @{};
+        
         // Initiate the background transfer
-        [backgroundSession initiateBackgroundUpload:assetUrl headers:headers];
+        [backgroundSession initiateBackgroundUpload:fileUrl headers:headers metadata:metadata];
         
 //        upload.progressBlock = ^(NSUInteger bytesWritten, NSUInteger bytesTotal){
 //           // Update your progress bar here

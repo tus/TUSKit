@@ -158,10 +158,11 @@ NSString * const TEMP_FILE_SUBDIRECTORY = @"TUSKit";
 {
     // We don't save length because it can be recomputed very easily
     NSObject *tempFileString = [self.tempFileUrl bookmarkDataWithOptions:NSURLBookmarkCreationSuitableForBookmarkFile includingResourceValuesForKeys:nil relativeToURL:nil error:nil] ?: [NSNull null];
-        return @{
-             TEMP_URL_KEY: tempFileString,
-             FILE_URL_KEY: [self.fileUrl bookmarkDataWithOptions:NSURLBookmarkCreationSuitableForBookmarkFile includingResourceValuesForKeys:nil relativeToURL:nil error:nil],
-             FILE_OFFSET_KEY: @(self.offset)
+
+    return @{
+        TEMP_URL_KEY: tempFileString,
+        FILE_URL_KEY: [self.fileUrl bookmarkDataWithOptions:NSURLBookmarkCreationSuitableForBookmarkFile includingResourceValuesForKeys:nil relativeToURL:nil error:nil],
+        FILE_OFFSET_KEY: @(self.offset)
     };
 }
 

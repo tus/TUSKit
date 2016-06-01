@@ -28,7 +28,7 @@
     return YES;
 }
 
--(BOOL)saveUploadTaskId:(NSUInteger)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId
+-(BOOL)saveTaskId:(NSUInteger)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId
 {
     [self.uploadTaskStore setObject:backgroundUploadId forKey:@(backgroundTaskId)];
     

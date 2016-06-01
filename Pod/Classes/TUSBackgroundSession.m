@@ -44,23 +44,30 @@
     return self;
 }
 
-- (void)initiateBackgroundUpload:(NSURL *)fileUrl headers:(NSDictionary *)headers
+- (void)initiateBackgroundUpload:(NSURL *)fileUrl headers:(NSDictionary *)headers metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata
 {
     TUSBackgroundUpload *backgroundUpload = [[TUSBackgroundUpload alloc] initWithURL:self.endpoint
                                                                           sourceFile:fileUrl
                                                                        uploadHeaders:headers
+                                                                            metadata:metadata
                                                                          uploadStore:self.store];
-    NSURLSessionTask *uploadTask = [backgroundUpload makeNextCallWithSession:self.session];
+    NSURLSessionTask *downloadTask = [backgroundUpload makeNextCallWithSession:self.session];
     
     // Save in memory
     self.backgroundUploads[backgroundUpload.id] = backgroundUpload;
     
     // Save to the store
-    [self saveUploadTaskToStore:uploadTask backgroundUpload:backgroundUpload];
+    [self saveTaskToStore:downloadTask backgroundUpload:backgroundUpload];
     
     //Task begins in a suspended state, call resume
-    [uploadTask resume];
+    [downloadTask resume];
 }
+
+- (NSURLSession *)getSession
+{
+    return self.session;
+}
+
 
 #pragma mark private methods
 - (TUSBackgroundUpload *)getBackgroundUploadById:(NSString *)uploadId
@@ -125,10 +132,10 @@
     }
 }
 
-- (void)saveUploadTaskToStore:(NSURLSessionTask *)uploadTask backgroundUpload:(TUSBackgroundUpload *)backgroundUpload
+- (void)saveTaskToStore:(NSURLSessionTask *)task backgroundUpload:(TUSBackgroundUpload *)backgroundUpload
 {
     // Save the mappings
-    [self.store saveUploadTaskId:uploadTask.taskIdentifier withBackgroundUploadId:backgroundUpload.id];
+    [self.store saveTaskId:task.taskIdentifier withBackgroundUploadId:backgroundUpload.id];
 }
 
 - (void)removeUploadTaskFromStore:(NSUInteger)uploadTaskId
@@ -145,31 +152,76 @@
 
 #pragma mark NSURLSession Delegate methods
 
-- (void) URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
+//- (void) URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
+//{
+//    TUSBackgroundUpload *backgroundUpload = [self getUploadForTaskId:task.taskIdentifier];
+//    
+//    [backgroundUpload task:task didSendBodyData:bytesSent totalBytesSent:totalBytesSent totalBytesExpectedToSend:totalBytesExpectedToSend];
+//}
+//
+//- (void) URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler
+//{
+//    TUSBackgroundUpload *backgroundUpload = [self getUploadForTaskId:dataTask.taskIdentifier];
+//    
+//    [backgroundUpload dataTask:dataTask didReceiveResponse:response completionHandler:completionHandler];
+//    
+//    UIApplicationState appState = [[UIApplication sharedApplication] applicationState];
+//    
+//    if (appState == UIApplicationStateActive) {
+//        [backgroundUpload makeNextCallWithSession:session];
+//    }
+//}
+
+-(void) URLSession:(NSURLSession *)session
+              task:(NSURLSessionTask *)task
+   didSendBodyData:(int64_t)bytesSent
+    totalBytesSent:(int64_t)totalBytesSent
+totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
 {
     TUSBackgroundUpload *backgroundUpload = [self getUploadForTaskId:task.taskIdentifier];
     
     [backgroundUpload task:task didSendBodyData:bytesSent totalBytesSent:totalBytesSent totalBytesExpectedToSend:totalBytesExpectedToSend];
+
 }
 
-- (void) URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler
-{
-    TUSBackgroundUpload *backgroundUpload = [self getUploadForTaskId:dataTask.taskIdentifier];
-    
-    [backgroundUpload dataTask:dataTask didReceiveResponse:response completionHandler:completionHandler];
-    
-    UIApplicationState appState = [[UIApplication sharedApplication] applicationState];
-    
-    if (appState == UIApplicationStateActive) {
-        [backgroundUpload makeNextCallWithSession:session];
-    }
-}
-
-- (void) URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
+-(void) URLSession:(NSURLSession *)session
+               task:(NSURLSessionTask *)task
+didCompleteWithError:(NSError *)error
 {
     TUSBackgroundUpload *backgroundUpload = [self getUploadForTaskId:task.taskIdentifier];
     
     [backgroundUpload task:task didCompleteWithError:error];
+    
+    UIApplicationState appState = [[UIApplication sharedApplication] applicationState];
+    
+    // Only continue if the application is active - otherwise, a manager (implement) should decide
+    // to when to make the next call
+    if (appState == UIApplicationStateActive) {
+            
+        NSURLSessionTask *task = [backgroundUpload makeNextCallWithSession:self.session];
+            
+        // If complete, task will be nil
+        if (task != nil) {
+            // Save in memory
+            self.backgroundUploads[backgroundUpload.id] = backgroundUpload;
+                
+            // Save to the store
+            [self saveTaskToStore:task backgroundUpload:backgroundUpload];
+                
+            //Task begins in a suspended state, call resume
+            [task resume];
+        } else {
+            // If there are no more uploads to resume, cancel the session
+            [self.session invalidateAndCancel];
+        }
+    }
+}
+
+-(void) URLSession:(NSURLSession *) session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location
+{
+    TUSBackgroundUpload *backgroundUpload = [self getUploadForTaskId:downloadTask.taskIdentifier];
+    
+    [backgroundUpload downloadTask:downloadTask didFinishDownloadingToURL:location];
 }
 
 #pragma mark NSURLSession Delegate methods

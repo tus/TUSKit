@@ -28,14 +28,17 @@ Initializer methods
 - (id)initWithURL:(NSURL *)url
        sourceFile:(NSURL *)sourceFile
     uploadHeaders:(NSDictionary *)headers
+         metadata:(NSDictionary <NSString *, NSString *>* __nullable)metadata
       uploadStore:(TUSUploadStore *)store;
 + (instancetype)loadUploadWithId:(NSString *)uploadId
                        fromStore:(TUSUploadStore *)store;
 /**
 Delegate Methods
 */
+//- (void) task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
+- (void) downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location;
 - (void) task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
-- (void) dataTask:(NSURLSessionDataTask *)task didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler;
+//- (void) dataTask:(NSURLSessionDataTask *)task didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler;
 - (void) task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error;
 
  /**
@@ -49,7 +52,7 @@ Utility Methods
 /**
 File actions
 */
- - (NSURLSessionTask *) checkFile:(NSURLSession *)session;
+- (NSURLSessionTask *) checkFile:(NSURLSession *)session;
 - (NSURLSessionTask *) createFile:(NSURLSession *)session;
 - (NSURLSessionTask *) uploadFile:(NSURLSession *)session;
 

@@ -17,7 +17,7 @@
 -(BOOL) saveDictionaryForUpload:(NSString *)uploadId dictionary:(NSDictionary *)data;
 -(NSDictionary *) loadDictionaryForUpload:(NSString *)uploadId;
 -(NSString *) loadBackgroundUploadId:(NSUInteger)uploadTaskId;
--(BOOL)saveUploadTaskId:(NSUInteger)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId;
+-(BOOL)saveTaskId:(NSUInteger)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId;
 -(BOOL) removeUploadTask:(NSUInteger)uploadTaskId;
 -(BOOL) removeBackgroundUpload:(NSString *)uploadId;
 -(NSMutableArray *)loadAllBackgroundUploadIds;

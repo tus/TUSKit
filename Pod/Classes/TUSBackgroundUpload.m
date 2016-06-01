@@ -52,6 +52,8 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 @property (nonatomic, strong) TUSFileReader *fileReader;
 @property (nonatomic, strong) TUSUploadStore *uploadStore;
 
+@property (nonatomic, strong) NSDictionary <NSString *, NSString *> *metadata;
+
 @property BOOL idle;
 @property BOOL failed;
 
@@ -62,6 +64,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 - (instancetype)initWithURL:(NSURL *)url
                  sourceFile:(NSURL *)sourceFile
               uploadHeaders:(NSDictionary *)headers
+                   metadata:(NSDictionary <NSString *, NSString *>* __nullable)metadata
                 uploadStore:(TUSUploadStore *)store
 {
     return [self initWithUploadId:[self generateUUIDForStore:store]
@@ -71,6 +74,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                    idleStatus:YES
                     failureStatus:NO
                       headers:headers
+                         metadata:metadata
                    fileReader:[[TUSFileReader alloc] initWithURL:sourceFile]
                         state:CreatingFile
                       store:store];
@@ -83,11 +87,13 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                      idleStatus:(BOOL)idle
                   failureStatus:(BOOL)failed
                     headers:(NSDictionary *)headers
+                       metadata:(NSDictionary <NSString *, NSString *>* __nullable)metadata
                  fileReader:(TUSFileReader *)fileReader
                       state:(TUSUploadState)state
                     store:(TUSUploadStore *)store
 {
     self = [super init];
+    
     if (self) {
         [self setEndpoint:endpoint];
         [self setFileReader:[[TUSFileReader alloc] initWithURL:sourceFile]];
@@ -101,6 +107,16 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
         [self setUploadStore:store];
         [self setState:state];
         [self setUrl:uploadUrl];
+        
+        NSMutableDictionary *uploadMetadata = [NSMutableDictionary new];
+        
+        uploadMetadata[@"filename"] = self.fileName;
+        
+        if (metadata){
+            [uploadMetadata addEntriesFromDictionary:metadata];
+        }
+        [self setMetadata:uploadMetadata];
+        
         [self saveToStore:store];
     }
     
@@ -158,12 +174,20 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     NSUInteger size = [[self fileReader] length];
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
-    NSString *plainString = self.fileName;
-    NSMutableString *filenameHeader = [[NSMutableString alloc] initWithString:@"filename "];
-    NSData *plainData = [plainString dataUsingEncoding:NSUTF8StringEncoding];
-    NSString *base64String = [plainData base64EncodedStringWithOptions:0];
     
-    [mutableHeader setObject:[filenameHeader stringByAppendingString:base64String] forKey:@"Upload-Metadata"];
+    // Upload-Metadata is a custom formatted string
+    NSMutableArray <NSString *> *formattedMetadata = [NSMutableArray new];
+    for (NSString *entry in self.metadata) {
+        NSMutableString *formattedEntry = [[NSMutableString alloc] initWithString:entry];
+        [formattedEntry appendString:@" "];
+        
+        NSData *plainData = [self.metadata[entry] dataUsingEncoding:NSUTF8StringEncoding];
+        NSString *base64String = [plainData base64EncodedStringWithOptions:0];
+        [formattedEntry appendString:base64String];
+        [formattedMetadata addObject:formattedEntry];
+    }
+    [mutableHeader setObject:[formattedMetadata componentsJoinedByString:@","] forKey:@"Upload-Metadata"];
+    
     
     // Add custom headers after the filename, as the upload-metadata may be customized
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
@@ -173,19 +197,17 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
     
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
-    
+
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self endpoint]
                                                                 cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
                                                             timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_POST];
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
-    [request addValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
-    [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
     
     // Create a download task for the empty post (file to be deleted later)
     // TODO: determine if an NSURLSessionDataTask can run while your app is in the background (docs are unclear)
-    return [session dataTaskWithRequest:request];
+    return [session downloadTaskWithRequest:request];
 }
 
 - (NSURLSessionTask *) checkFile:(NSURLSession *) session
@@ -207,7 +229,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     
     // Create a download task for the empty post (file to be deleted later)
     // TODO: determine if an NSURLSessionDataTask can run while your app is in the background (docs are unclear)
-    return [session dataTaskWithRequest:request];
+    return [session downloadTaskWithRequest:request];
 }
 
 - (NSURLSessionTask *) uploadFile:(NSURLSession *)session
@@ -247,84 +269,79 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 
 #pragma mark - URLSession delegate methods
 
--(void) task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error{
+- (void) task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
+{
+    NSHTTPURLResponse *httpResponse = task.response;
+    NSLog(@"%li", [httpResponse statusCode]);
+    NSLog(@"%li", totalBytesSent);
+
+}
+
+-(void) task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
+{
     if (self.failureBlock) {
         self.failureBlock(error);
     }
-
-    self.idle = YES;
-    self.failed = YES;
     
-    //Save to the store
-    [self saveToStore:self.uploadStore];
-}
-
-
--(void) task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
-{
-    switch([self state]) {
-        case UploadingFile:
-            if (self.progressBlock) {
-                self.progressBlock((NSUInteger)totalBytesSent + self.offset, self.fileReader.length);
-            }
-            break;
-        default:
-            break;
-    }
-}
-
--(void) dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler{
+    NSHTTPURLResponse *httpResponse = task.response;
+    NSLog(@"%li", [httpResponse statusCode]);
     
-    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-    NSDictionary *headers = [httpResponse allHeaderFields];
-    
-    switch(self.state) {
-        case CheckingFile: {
-            if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
-                TUSLog(@"Server responded to file check with %ld. Restarting upload",
-                       (long)httpResponse.statusCode);
-                //TODO: Error callback
-                //TODO: Deal with gateway timeouts by going back to CheckingFile vs. creating
-                self.state = CreatingFile;
+    if (error == nil) {
+        
+        NSDictionary *headers = [httpResponse allHeaderFields];
+        
+        switch(self.state) {
+            case CheckingFile: {
+                if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
+                    TUSLog(@"Server responded to file check with %ld. Restarting upload",
+                           (long)httpResponse.statusCode);
+                    //TODO: Error callback
+                    //TODO: Deal with gateway timeouts by going back to CheckingFile vs. creating
+                    self.state = CreatingFile;
+                    break;
+                }
+                [self updateStateFromHeaders:headers];
                 break;
             }
-            [self updateStateFromHeaders:headers];
-            break;
-        }
-        case CreatingFile: {
-            if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
-                TUSLog(@"Server responded to create request with %ld status code.",
-                       (long)httpResponse.statusCode);
-                self.failed = YES;
-                //TODO: Handle error callbacks (lock retrying)
+            case CreatingFile: {
+                if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
+                    TUSLog(@"Server responded to create request with %ld status code.",
+                           (long)httpResponse.statusCode);
+                    self.failed = YES;
+                    //TODO: Handle error callbacks (lock retrying)
+                    break;
+                }
+                
+                NSString *location = [headers valueForKey:HTTP_LOCATION];
+                self.url = [NSURL URLWithString:location];
+                
+                TUSLog(@"Created resumable upload at %@ for fingerprint %@", [self url], [self fingerprint]);
+                
+                self.state = UploadingFile;
                 break;
             }
-            
-            NSString *location = [headers valueForKey:HTTP_LOCATION];
-            self.url = [NSURL URLWithString:location];
-            
-            TUSLog(@"Created resumable upload at %@ for fingerprint %@", [self url], [self fingerprint]);
-            
-            self.state = UploadingFile;
-            break;
-        }
-        case UploadingFile: {
-            if ([httpResponse statusCode] != 204) {
-                self.failed = YES;
-                self.state = CheckingFile;
-                //TODO: Handle error callbacks (problem on server)
-                TUSLog(@"Server returned unexpected status code to upload - %ld", (long)httpResponse.statusCode);
+            case UploadingFile: {
+                if ([httpResponse statusCode] != 204) {
+                    self.failed = YES;
+                    self.state = CheckingFile;
+                    //TODO: Handle error callbacks (problem on server)
+                    TUSLog(@"Server returned unexpected status code to upload - %ld", (long)httpResponse.statusCode);
+                    break;
+                }
+                [self updateStateFromHeaders:headers];
                 break;
             }
-            [self updateStateFromHeaders:headers];
-            break;
+            case Complete: {
+                TUSLog(@"Unexpected response from server in complete state for upload at %@ for fingerprint %@", self.url, self.fingerprint);
+                break;
+            }
+            default:
+                break;
         }
-        case Complete: {
-            TUSLog(@"Unexpected response from server in complete state for upload at %@ for fingerprint %@", self.url, self.fingerprint);
-            break;
-        }
-        default:
-            break;
+    
+    } else {
+        NSLog(@"%li", (long)error.code);
+        self.failed = YES;
     }
     
     // Upload is now idle
@@ -332,9 +349,90 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     
     // Save to the store
     [self saveToStore:self.uploadStore];
-    
-    completionHandler(NSURLSessionResponseAllow);
 }
+
+-(void) downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location
+{
+    // Delete the downloaded response
+    NSError *error;
+    [[NSFileManager defaultManager] removeItemAtPath:location error:&error];
+}
+
+//-(void) task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
+//{
+//    switch([self state]) {
+//        case UploadingFile:
+//            if (self.progressBlock) {
+//                self.progressBlock((NSUInteger)totalBytesSent + self.offset, self.fileReader.length);
+//            }
+//            break;
+//        default:
+//            break;
+//    }
+//}
+
+//-(void) dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler{
+//    
+//    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+//    NSDictionary *headers = [httpResponse allHeaderFields];
+//    
+//    switch(self.state) {
+//        case CheckingFile: {
+//            if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
+//                TUSLog(@"Server responded to file check with %ld. Restarting upload",
+//                       (long)httpResponse.statusCode);
+//                //TODO: Error callback
+//                //TODO: Deal with gateway timeouts by going back to CheckingFile vs. creating
+//                self.state = CreatingFile;
+//                break;
+//            }
+//            [self updateStateFromHeaders:headers];
+//            break;
+//        }
+//        case CreatingFile: {
+//            if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
+//                TUSLog(@"Server responded to create request with %ld status code.",
+//                       (long)httpResponse.statusCode);
+//                self.failed = YES;
+//                //TODO: Handle error callbacks (lock retrying)
+//                break;
+//            }
+//            
+//            NSString *location = [headers valueForKey:HTTP_LOCATION];
+//            self.url = [NSURL URLWithString:location];
+//            
+//            TUSLog(@"Created resumable upload at %@ for fingerprint %@", [self url], [self fingerprint]);
+//            
+//            self.state = UploadingFile;
+//            break;
+//        }
+//        case UploadingFile: {
+//            if ([httpResponse statusCode] != 204) {
+//                self.failed = YES;
+//                self.state = CheckingFile;
+//                //TODO: Handle error callbacks (problem on server)
+//                TUSLog(@"Server returned unexpected status code to upload - %ld", (long)httpResponse.statusCode);
+//                break;
+//            }
+//            [self updateStateFromHeaders:headers];
+//            break;
+//        }
+//        case Complete: {
+//            TUSLog(@"Unexpected response from server in complete state for upload at %@ for fingerprint %@", self.url, self.fingerprint);
+//            break;
+//        }
+//        default:
+//            break;
+//    }
+//    
+//    // Upload is now idle
+//    self.idle = YES;
+//    
+//    // Save to the store
+//    [self saveToStore:self.uploadStore];
+//    
+//    completionHandler(NSURLSessionResponseAllow);
+//}
 
 /**
  Uses the offset from the provided headers to update the state of the upload - used by both check (HEAD) and upload (PATCH) response logic.
@@ -386,6 +484,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     BOOL idle = [savedData[@"idle"] boolValue];
     BOOL failureStatus = [savedData[@"failed"] boolValue];
     NSDictionary *headers = [savedData objectForKey:@"headers"];
+    NSDictionary <NSString *, NSString *> *metadata = [savedData objectForKey:@"uploadMetadata"];
     NSDictionary *savedFileReader = savedData[@"fileReader"];
     TUSFileReader *fileReader = [TUSFileReader deserializeFromDictionary:savedFileReader];
     TUSUploadState state = [[savedData objectForKey:@"state"] integerValue];
@@ -397,7 +496,8 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                                           idleStatus:idle
                                            failureStatus:failureStatus
                                              headers:headers
-                                          fileReader:fileReader
+                                                metadata:metadata
+                                              fileReader:fileReader
                                                state:state
                                                store:store];
 }
@@ -410,6 +510,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
                                  @"sourceUrl": self.fingerprint,
                                  @"idle": @(self.idle),
                                  @"failed": @(self.failed),
+                                 @"uploadMetadata": self.metadata,
                                  @"headers": self.uploadHeaders,
                                  @"fileReader": [self.fileReader serialize],
                                  @"state": @(self.state)};

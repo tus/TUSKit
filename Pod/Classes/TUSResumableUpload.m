@@ -231,7 +231,7 @@ didReceiveResponse:(NSURLResponse *)response
     
     switch([self state]) {
         case CheckingFile: {
-            if ([httpResponse statusCode] != 200 || [httpResponse statusCode] != 201) {
+            if ([httpResponse statusCode] < 200 || [httpResponse statusCode] > 204) {
                 TUSLog(@"Server responded with %ld. Restarting upload",
                        (long)httpResponse.statusCode);
                 [self createFile];

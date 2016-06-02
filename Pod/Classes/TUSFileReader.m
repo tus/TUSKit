@@ -94,6 +94,7 @@ NSString * const TEMP_FILE_SUBDIRECTORY = @"TUSKit";
         return nil;
     }
     
+    [[NSData data] writeToURL:self.tempFileUrl atomically:YES];
     NSFileHandle *targetFile = [NSFileHandle fileHandleForWritingToURL:self.tempFileUrl error:&fhError];
     if (fhError){
         if (error){
@@ -101,9 +102,6 @@ NSString * const TEMP_FILE_SUBDIRECTORY = @"TUSKit";
         }
         return nil;
     }
-    
-    // Truncate target file.  We reuse the same temporary file.
-    [targetFile truncateFileAtOffset:0];
     
     @try {
         // Read into target file
@@ -129,9 +127,13 @@ NSString * const TEMP_FILE_SUBDIRECTORY = @"TUSKit";
 {
     if (!_tempFileUrl){
         NSString *uuid = [[NSUUID alloc] init].UUIDString;
-        NSURL *applicationSupport = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSAllDomainsMask][0];
-        
-        _tempFileUrl = [[applicationSupport URLByAppendingPathComponent:TEMP_FILE_SUBDIRECTORY isDirectory:YES] URLByAppendingPathComponent:uuid];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSURL *applicationSupport = [fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSAllDomainsMask][0];
+        NSURL *tempDirectoryUrl = [applicationSupport URLByAppendingPathComponent:TEMP_FILE_SUBDIRECTORY isDirectory:YES];
+        if (![fileManager fileExistsAtPath:[tempDirectoryUrl path]]){
+            [[NSFileManager defaultManager] createDirectoryAtURL:tempDirectoryUrl withIntermediateDirectories:YES attributes:nil error:nil];
+        }
+        _tempFileUrl = [tempDirectoryUrl URLByAppendingPathComponent:uuid];
     }
     
     return _tempFileUrl;

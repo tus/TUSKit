@@ -217,6 +217,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
+    [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
     
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url]
@@ -272,8 +273,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 - (void) task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
 {
     NSHTTPURLResponse *httpResponse = task.response;
-    NSLog(@"%li", [httpResponse statusCode]);
-    NSLog(@"%li", totalBytesSent);
+
+    NSLog(@"Response Code %li, Sent %li, Expected %li, State %li", [httpResponse statusCode], totalBytesSent, totalBytesExpectedToSend, task.state);
+
 
 }
 
@@ -286,64 +288,65 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     NSHTTPURLResponse *httpResponse = task.response;
     NSLog(@"%li", [httpResponse statusCode]);
     
-    if (error == nil) {
         
-        NSDictionary *headers = [httpResponse allHeaderFields];
-        
-        switch(self.state) {
-            case CheckingFile: {
-                if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
-                    TUSLog(@"Server responded to file check with %ld. Restarting upload",
-                           (long)httpResponse.statusCode);
-                    //TODO: Error callback
-                    //TODO: Deal with gateway timeouts by going back to CheckingFile vs. creating
-                    self.state = CreatingFile;
-                    break;
-                }
-                [self updateStateFromHeaders:headers];
+    NSDictionary *headers = [httpResponse allHeaderFields];
+    
+    switch(self.state) {
+        case CheckingFile: {
+            if (httpResponse == nil){
+                TUSLog(@"No response during attempt to check file, retrying");
+                break;
+            } else if ([httpResponse statusCode] < 200 && [httpResponse statusCode] > 204) {
+                TUSLog(@"Server responded to file check with %ld. Restarting upload",
+                       (long)httpResponse.statusCode);
+                //TODO: Error callback
+                //TODO: Deal with gateway timeouts by going back to CheckingFile vs. creating
+                self.state = CreatingFile;
                 break;
             }
-            case CreatingFile: {
-                if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
-                    TUSLog(@"Server responded to create request with %ld status code.",
-                           (long)httpResponse.statusCode);
-                    self.failed = YES;
-                    //TODO: Handle error callbacks (lock retrying)
-                    break;
-                }
-                
-                NSString *location = [headers valueForKey:HTTP_LOCATION];
-                self.url = [NSURL URLWithString:location];
-                
-                TUSLog(@"Created resumable upload at %@ for fingerprint %@", [self url], [self fingerprint]);
-                
-                self.state = UploadingFile;
-                break;
-            }
-            case UploadingFile: {
-                if ([httpResponse statusCode] != 204) {
-                    self.failed = YES;
-                    self.state = CheckingFile;
-                    //TODO: Handle error callbacks (problem on server)
-                    TUSLog(@"Server returned unexpected status code to upload - %ld", (long)httpResponse.statusCode);
-                    break;
-                }
-                [self updateStateFromHeaders:headers];
-                break;
-            }
-            case Complete: {
-                TUSLog(@"Unexpected response from server in complete state for upload at %@ for fingerprint %@", self.url, self.fingerprint);
-                break;
-            }
-            default:
-                break;
+            [self updateStateFromHeaders:headers];
+            break;
         }
-    
-    } else {
-        NSLog(@"%li", (long)error.code);
-        self.failed = YES;
+        case CreatingFile: {
+            if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
+                TUSLog(@"Server responded to create request with %ld status code.",
+                       (long)httpResponse.statusCode);
+                self.failed = YES;
+                //TODO: Handle error callbacks (lock retrying)
+                break;
+            }
+            
+            NSString *location = [headers valueForKey:HTTP_LOCATION];
+            self.url = [NSURL URLWithString:location];
+            
+            TUSLog(@"Created resumable upload at %@ for fingerprint %@", [self url], [self fingerprint]);
+            
+            self.state = UploadingFile;
+            break;
+        }
+        case UploadingFile: {
+            if (httpResponse == nil){
+                TUSLog(@"No response during attempt to upload, so checking file");
+                self.state = CheckingFile; // No response, so check file again as some bytes may have been received
+                break;
+            } else if ([httpResponse statusCode] != 204) {
+                self.failed = YES;
+                self.state = CheckingFile;
+                //TODO: Handle error callbacks (problem on server)
+                TUSLog(@"Server returned unexpected status code to upload - %ld", (long)httpResponse.statusCode);
+                break;
+            }
+            [self updateStateFromHeaders:headers];
+            break;
+        }
+        case Complete: {
+            TUSLog(@"Unexpected response from server in complete state for upload at %@ for fingerprint %@", self.url, self.fingerprint);
+            break;
+        }
+        default:
+            break;
     }
-    
+
     // Upload is now idle
     self.idle = YES;
     

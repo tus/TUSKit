@@ -159,18 +159,10 @@
 //    [backgroundUpload task:task didSendBodyData:bytesSent totalBytesSent:totalBytesSent totalBytesExpectedToSend:totalBytesExpectedToSend];
 //}
 //
-//- (void) URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler
-//{
-//    TUSBackgroundUpload *backgroundUpload = [self getUploadForTaskId:dataTask.taskIdentifier];
-//    
-//    [backgroundUpload dataTask:dataTask didReceiveResponse:response completionHandler:completionHandler];
-//    
-//    UIApplicationState appState = [[UIApplication sharedApplication] applicationState];
-//    
-//    if (appState == UIApplicationStateActive) {
-//        [backgroundUpload makeNextCallWithSession:session];
-//    }
-//}
+- (void) URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler
+{
+    NSLog(@"Received response from task", ((NSHTTPURLResponse *)response).statusCode);
+}
 
 -(void) URLSession:(NSURLSession *)session
               task:(NSURLSessionTask *)task
@@ -181,12 +173,10 @@ totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
     TUSBackgroundUpload *backgroundUpload = [self getUploadForTaskId:task.taskIdentifier];
     
     [backgroundUpload task:task didSendBodyData:bytesSent totalBytesSent:totalBytesSent totalBytesExpectedToSend:totalBytesExpectedToSend];
-
+    
 }
 
--(void) URLSession:(NSURLSession *)session
-               task:(NSURLSessionTask *)task
-didCompleteWithError:(NSError *)error
+-(void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
 {
     TUSBackgroundUpload *backgroundUpload = [self getUploadForTaskId:task.taskIdentifier];
     

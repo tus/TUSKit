@@ -14,7 +14,7 @@
 #import "TUSKit.h"
 #import "TUSData.h"
 
-#import "TUSBackgroundUpload.h"
+#import "TUSResumableUpload2.h"
 #import "TUSFileReader.h"
 #import "TUSUploadStore.h"
 
@@ -36,7 +36,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     Complete
 };
 
-@interface TUSBackgroundUpload ()
+@interface TUSResumableUpload2 ()
 
 @property (readwrite) NSString *id;
 @property (strong, nonatomic) NSURL *endpoint; // Endpoint to create a new file
@@ -56,10 +56,37 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 
 @property BOOL idle;
 @property BOOL failed;
+@property (readonly) BOOL isComplete;
+
+
+#pragma mark private method headers
+
+/**
+ Perform the TUS actions specified and return the Task
+ */
+- (NSURLSessionTask *) checkFile:(NSURLSession *)session;
+- (NSURLSessionTask *) createFile:(NSURLSession *)session;
+- (NSURLSessionTask *) uploadFile:(NSURLSession *)session;
+
+/**
+ Update the state of the upload from the server response headers
+ */
+- (void) updateStateFromHeaders:(NSDictionary*)headers;
+
+/**
+ Serialize this resumable upload for saving
+ */
+- (NSDictionary *) serializeUpload;
+
+
+/**
+ Save this TUSResumableUpload2 to the store for later recovery
+ */
+-(void)saveToStore:(TUSUploadStore *)store;
 
 @end
 
-@implementation TUSBackgroundUpload
+@implementation TUSResumableUpload2
 
 - (instancetype)initWithURL:(NSURL *)url
                  sourceFile:(NSURL *)sourceFile
@@ -492,7 +519,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     TUSFileReader *fileReader = [TUSFileReader deserializeFromDictionary:savedFileReader];
     TUSUploadState state = [[savedData objectForKey:@"state"] integerValue];
     
-    return [[TUSBackgroundUpload alloc] initWithUploadId:uploadId
+    return [[TUSResumableUpload2 alloc] initWithUploadId:uploadId
                                             endpoint:endpoint
                                            uploadUrl:uploadUrl
                                            sourceURL:sourceUrl

@@ -7,7 +7,7 @@
 //
 
 #import "TUSUploadStore.h"
-#import "TUSBackgroundUpload.h"
+#import "TUSResumableUpload2.h"
 
 @implementation TUSUploadStore
 

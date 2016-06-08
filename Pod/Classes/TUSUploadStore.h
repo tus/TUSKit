@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "TUSBackgroundUpload.h"
+#import "TUSResumableUpload2.h"
 
 @interface TUSUploadStore : NSObject
 
@@ -20,6 +20,6 @@
 -(BOOL)saveTaskId:(NSUInteger)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId;
 -(BOOL) removeUploadTask:(NSUInteger)uploadTaskId;
 -(BOOL) removeBackgroundUpload:(NSString *)uploadId;
--(NSMutableArray *)loadAllBackgroundUploadIds;
+-(NSArray *)allUploadIds;
 
 @end

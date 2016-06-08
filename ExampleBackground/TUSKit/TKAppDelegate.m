@@ -7,7 +7,7 @@
 //
 
 #import "TKAppDelegate.h"
-#import "TUSBackgroundSession.h"
+#import "TUSSession.h"
 
 static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
 
@@ -16,7 +16,7 @@ static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
 //- (void) applicationDidBecomeActive:(UIApplication *)application
 //{
 //    NSURL *endpoint = [[NSURL alloc] initWithString:UPLOAD_ENDPOINT];
-//    TUSBackgroundSession *backgroundSession = [[TUSBackgroundSession alloc] initWithEndpoint:endpoint allowsCellularAccess:YES];
+//    TUSSession *backgroundSession = [[TUSSession alloc] initWithEndpoint:endpoint allowsCellularAccess:YES];
 //    
 //    self.session = backgroundSession;
 //}
@@ -42,11 +42,11 @@ static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
 //        
 //        // For each of the tasks, get the associated background task, and persist it to disk
 //        for (int i=0; i < [dataTasks count]; i++) {
-//            TUSBackgroundUpload *backgroundUpload = [self.session getStore];
+//            TUSResumableUpload2 *backgroundUpload = [self.session getStore];
 //        }
 //        
 //        for (int i=0; i < [uploadTasks count]; i++) {
-//            TUSBackgroundUpload *backgroundUpload = [uploadTask[i] ]
+//            TUSResumableUpload2 *backgroundUpload = [uploadTask[i] ]
 //        }
 //    }];
 //}

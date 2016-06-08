@@ -59,7 +59,7 @@ static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
         }
         
         // Create a background session
-        TUSBackgroundSession *backgroundSession = [[TUSBackgroundSession alloc] initWithEndpoint:endpoint allowsCellularAccess:YES];
+        TUSSession *backgroundSession = [[TUSSession alloc] initWithEndpoint:endpoint allowsCellularAccess:YES];
         
         //Add example metadata here
         NSDictionary *metadata = @{};

@@ -21,5 +21,6 @@
 -(BOOL) removeUploadTask:(NSUInteger)uploadTaskId;
 -(BOOL) removeBackgroundUpload:(NSString *)uploadId;
 -(NSArray *)allUploadIds;
+-(BOOL) containsUploadId:(NSString *)uploadId;
 
 @end

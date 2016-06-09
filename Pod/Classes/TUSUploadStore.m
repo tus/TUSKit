@@ -70,5 +70,8 @@
     return backgroundUploadIds;
 }
 
+-(BOOL)containsUploadId:(NSString *)uploadId{
+    return self.backgroundUploadStore[uploadId] != nil;
+}
 
 @end

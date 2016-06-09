@@ -29,6 +29,11 @@
 @property (readonly) NSURLSession * _Nullable session;
 
 /**
+ The URL that is used to create a file on the server
+ */
+@property (readonly) NSURL * _Nonnull createUploadURL;
+
+/**
  The datastore that should be used to save the details about this upload
  */
 @required
@@ -57,7 +62,7 @@
  Initializer methods
  */
 - (instancetype _Nullable)initWithFile:(NSURL * _Nonnull)fileUrl
-                              delegate:(NSObject <TUSResumableUpload2Delegate> * _Nonnull)delegate
+                              delegate:(id <TUSResumableUpload2Delegate> _Nonnull)delegate
                          uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
                               metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata;
 

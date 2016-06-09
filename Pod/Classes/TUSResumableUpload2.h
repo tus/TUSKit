@@ -7,29 +7,39 @@
 //
 //  Additions and Maintenance for TUSKit 1.0.0 and up by Mark Robert Masterson
 //  Copyright (c) 2015-2016 Mark Robert Masterson. All rights reserved.
+//
+//  Additions and changes for TUSSession completed by Findyr
+//  Copyright (c) 2016 Findyr
 
 @import Foundation;
-@class TUSUploadStore;
 
-typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
-typedef void (^TUSUploadFailureBlock)(NSError* error);
-typedef void (^TUSUploadProgressBlock)(NSUInteger bytesWritten, NSUInteger bytesTotal);
+typedef NS_ENUM(NSInteger, TUSUploadState) {
+    CreatingFile,
+    CheckingFile,
+    UploadingFile,
+    Complete
+};
 
 @interface TUSResumableUpload2 : NSObject
-
-@property (atomic, readwrite, copy) TUSUploadResultBlock resultBlock;
-@property (atomic, readwrite, copy) TUSUploadFailureBlock failureBlock;
-@property (atomic, readwrite, copy) TUSUploadProgressBlock progressBlock;
 @property (readonly) NSString *id;
 
 /**
-Utility Methods
+ The upload is complete if the file has been completely uploaded to the TUS server
 */
-- (BOOL) isComplete;
+ @property (readonly) BOOL complete;
+ 
+
+/**
+ The upload is idle if no HTTP tasks are currently outstanding for it
+ */
+@property (readonly) BOOL idle;
+
+/**
+ The current state of the upload
+ */
+@property (readonly) TUSUploadState state;
+
 - (BOOL) cancel;
-- (BOOL) pause;
 - (BOOL) resume;
-
-
 @end
 

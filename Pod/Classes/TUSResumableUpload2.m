@@ -14,9 +14,10 @@
 #import "TUSKit.h"
 #import "TUSData.h"
 
-#import "TUSResumableUpload2.h"
+#import "TUSResumableUpload2+Private.h"
 #import "TUSFileReader.h"
 #import "TUSUploadStore.h"
+#import "TUSSession.h"
 
 #define HTTP_PATCH @"PATCH"
 #define HTTP_POST @"POST"
@@ -29,35 +30,22 @@
 #define HTTP_LOCATION @"Location"
 #define REQUEST_TIMEOUT 30
 
-typedef NS_ENUM(NSInteger, TUSUploadState) {
-    CreatingFile,
-    CheckingFile,
-    UploadingFile,
-    Complete
-};
+
 
 @interface TUSResumableUpload2 ()
 
-@property (readwrite) NSString *id;
-@property (strong, nonatomic) NSURL *endpoint; // Endpoint to create a new file
-@property (strong, nonatomic) NSURL *url; // Upload URL for file
-@property (strong, nonatomic) NSString *fingerprint; // Local URL
-@property (nonatomic) NSUInteger offset;
-@property (nonatomic) TUSUploadState state;
-@property (strong, nonatomic) void (^progress)(NSInteger bytesWritten, NSInteger bytesTotal);
+// Readwrite versions of properties in the header
+@property (readwrite, strong) NSString *id;
+@property (readwrite) BOOL idle;
+@property (readwrite) TUSUploadState state;
+
+// Internal state
+@property (nonatomic, weak) id<TUSResumableUpload2Delegate> delegate; // Current upload offset
+@property (nonatomic) NSUInteger offset; // Current upload offset
+@property (nonatomic, strong) NSURL *uploadUrl; // Target URL for file
 @property (nonatomic, strong) NSDictionary *uploadHeaders;
-@property (nonatomic, strong) NSString *fileName;
-@property (nonatomic, strong) NSOperationQueue *queue;
-
-@property (nonatomic, strong) TUSFileReader *fileReader;
-@property (nonatomic, strong) TUSUploadStore *uploadStore;
-
 @property (nonatomic, strong) NSDictionary <NSString *, NSString *> *metadata;
-
-@property BOOL idle;
-@property BOOL failed;
-@property (readonly) BOOL isComplete;
-
+@property (nonatomic, strong) TUSData *data;
 
 #pragma mark private method headers
 
@@ -82,94 +70,61 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 /**
  Save this TUSResumableUpload2 to the store for later recovery
  */
--(void)saveToStore:(TUSUploadStore *)store;
+-(void)saveToStore;
+
+/**
+ Generate a UUID that will be unique for the specified datastore
+ */
+-(NSString *)generateUUIDForStore:(TUSUploadStore *)store;
+
 
 @end
 
 @implementation TUSResumableUpload2
 
-- (instancetype)initWithURL:(NSURL *)url
-                 sourceFile:(NSURL *)sourceFile
-              uploadHeaders:(NSDictionary *)headers
-                   metadata:(NSDictionary <NSString *, NSString *>* __nullable)metadata
-                uploadStore:(TUSUploadStore *)store
-{
-    return [self initWithUploadId:[self generateUUIDForStore:store]
-                     endpoint:url
-                    uploadUrl:nil
-                    sourceURL:sourceFile
-                   idleStatus:YES
-                    failureStatus:NO
-                      headers:headers
-                         metadata:metadata
-                   fileReader:[[TUSFileReader alloc] initWithURL:sourceFile]
-                        state:CreatingFile
-                      store:store];
-}
+- (instancetype _Nullable)initWithFile:(NSURL * _Nonnull)fileUrl
+                              delegate:(id <TUSResumableUpload2Delegate> _Nonnull)delegate
+                         uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
+                              metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata
 
--(instancetype)initWithUploadId:(NSString *)uploadId
-                   endpoint:(NSURL *)endpoint
-                  uploadUrl:(NSURL *)uploadUrl
-                  sourceURL:(NSURL *)sourceFile
-                     idleStatus:(BOOL)idle
-                  failureStatus:(BOOL)failed
-                    headers:(NSDictionary *)headers
-                       metadata:(NSDictionary <NSString *, NSString *>* __nullable)metadata
-                 fileReader:(TUSFileReader *)fileReader
-                      state:(TUSUploadState)state
-                    store:(TUSUploadStore *)store
 {
     self = [super init];
     
     if (self) {
-        [self setEndpoint:endpoint];
-        [self setFileReader:[[TUSFileReader alloc] initWithURL:sourceFile]];
-        [self setFingerprint:[sourceFile absoluteString]];
-        [self setUploadHeaders:headers];
-        [self setFileName:[sourceFile lastPathComponent]];
-        [self setQueue:[[NSOperationQueue alloc] init]];
-        [self setId:uploadId];
-        [self setIdle:idle];
-        [self setFailed:failed];
-        [self setUploadStore:store];
-        [self setState:state];
-        [self setUrl:uploadUrl];
+        _delegate = delegate;
+        _uploadHeaders = headers;
+        _state = CheckingFile;
+        _idle = YES;
+        _id = [self generateUUIDForStore:delegate.store];
         
+        // TODO: Set up file NSData
+        
+        // Set up metadata with filename if there is one
         NSMutableDictionary *uploadMetadata = [NSMutableDictionary new];
-        
-        uploadMetadata[@"filename"] = self.fileName;
+        if (fileUrl.isFileURL) {
+            uploadMetadata[@"filename"] = fileUrl.lastPathComponent;
+        }
         
         if (metadata){
             [uploadMetadata addEntriesFromDictionary:metadata];
         }
-        [self setMetadata:uploadMetadata];
+        _metadata = uploadMetadata;
         
-        [self saveToStore:store];
+        [self saveToStore];
     }
-    
     return self;
 }
 
-- (NSString *)generateUUIDForStore:(TUSUploadStore *)store
++ (NSString *)generateUUIDForStore:(TUSUploadStore *)store
 {
-    BOOL existingUpload = YES;
-    NSString *uniqueId;
-    
-    while (existingUpload)
-    {
+    while(1) {
         NSUUID *uuid = [[NSUUID alloc] init];
-        NSDictionary *existingUploadData = [store loadDictionaryForUpload:uuid.UUIDString];
-        
-        if (!existingUploadData) {
-            uniqueId = uuid.UUIDString;
-            existingUpload = NO;
-        }
+        if(![store containsUploadId:uuid.UUIDString])
+            return uuid.UUIDString;
     }
-    
-    return uniqueId;
 }
 
-- (BOOL)isComplete
+- (BOOL)complete
 {
     return self.state == Complete;
 }
@@ -196,9 +151,8 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 - (NSURLSessionTask *) createFile:(NSURLSession *) session
 {
     self.state = CreatingFile;
-    self.failed = NO;
     
-    NSUInteger size = [[self fileReader] length];
+    long long size = self.data.length;
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
     
@@ -220,12 +174,12 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
     
     // Set the version & length last as they are determined by the uploader
-    [mutableHeader setObject:[NSString stringWithFormat:@"%lu", (unsigned long)size] forKey:HTTP_UPLOAD_LENGTH];
+    [mutableHeader setObject:[NSString stringWithFormat:@"%ll", size] forKey:HTTP_UPLOAD_LENGTH];
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
     
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
 
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self endpoint]
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.delegate.createUploadURL
                                                                 cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
                                                             timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_POST];
@@ -234,13 +188,13 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
     
     // Create a download task for the empty post (file to be deleted later)
     // TODO: determine if an NSURLSessionDataTask can run while your app is in the background (docs are unclear)
-    return [session downloadTaskWithRequest:request];
+    
+    return [self.delegate.session dataTaskWithRequest:request];
 }
 
 - (NSURLSessionTask *) checkFile:(NSURLSession *) session
 {
     self.state = CheckingFile;
-    self.failed = NO;
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];

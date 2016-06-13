@@ -40,6 +40,9 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 @property (readonly) TUSUploadState state;
 
 - (BOOL) cancel;
+/**
+ Resume the upload if it was cancelled or not yet started
+ */
 - (BOOL) resume;
 @end
 

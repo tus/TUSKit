@@ -18,6 +18,7 @@
 #import "TUSFileReader.h"
 #import "TUSUploadStore.h"
 #import "TUSSession.h"
+#import "TUSFileData.h"
 
 #define HTTP_PATCH @"PATCH"
 #define HTTP_POST @"POST"
@@ -30,31 +31,46 @@
 #define HTTP_LOCATION @"Location"
 #define REQUEST_TIMEOUT 30
 
+// Keys used in serialization
+#define STORE_KEY_ID @"id"
+#define STORE_KEY_UPLOAD_URL @"uploadUrl"
+#define STORE_KEY_DELEGATE_ENDPOINT @"delegateEndpoint" // For checking that the delegate matches
+#define STORE_KEY_FILE_URL @"fileUrl"
+#define STORE_KEY_UPLOAD_HEADERS @"uploadHeaders"
+#define STORE_KEY_METADATA @"metadata"
+#define STORE_KEY_LENGTH @"uploadLength"
+#define STORE_KEY_LAST_STATE @"lastState"
 
+
+typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error);
 
 @interface TUSResumableUpload2 ()
 
 // Readwrite versions of properties in the header
-@property (readwrite, strong) NSString *id;
+@property (readwrite, strong) NSString *uploadId;
 @property (readwrite) BOOL idle;
 @property (readwrite) TUSUploadState state;
 
 // Internal state
+@property (nonatomic) BOOL cancelled;
 @property (nonatomic, weak) id<TUSResumableUpload2Delegate> delegate; // Current upload offset
-@property (nonatomic) NSUInteger offset; // Current upload offset
+@property (nonatomic) long long offset; // Current upload offset
 @property (nonatomic, strong) NSURL *uploadUrl; // Target URL for file
 @property (nonatomic, strong) NSDictionary *uploadHeaders;
 @property (nonatomic, strong) NSDictionary <NSString *, NSString *> *metadata;
 @property (nonatomic, strong) TUSData *data;
+@property (nonatomic, strong) NSURLSessionTask *currentTask; // Nonatomic because we know we will assign it, then start the thread that will remove it.
+@property (nonatomic, strong) NSURL *fileUrl; // File URL for saving if we created our own TUSData
+@property (readonly) long long length;
 
 #pragma mark private method headers
 
 /**
  Perform the TUS actions specified and return the Task
  */
-- (NSURLSessionTask *) checkFile:(NSURLSession *)session;
-- (NSURLSessionTask *) createFile:(NSURLSession *)session;
-- (NSURLSessionTask *) uploadFile:(NSURLSession *)session;
+- (BOOL) checkFile;
+- (BOOL) createFile;
+- (BOOL) uploadFile;
 
 /**
  Update the state of the upload from the server response headers
@@ -62,10 +78,14 @@
 - (void) updateStateFromHeaders:(NSDictionary*)headers;
 
 /**
- Serialize this resumable upload for saving
+ Serialize this resumable upload for reloading if the app is closed.  Note that the state will not necessarily be the same on restoring the upload.
  */
-- (NSDictionary *) serializeUpload;
+- (NSDictionary *) serialize;
 
+/**
+ Make the next call on this upload
+ */
+- (BOOL) continueUpload;
 
 /**
  Save this TUSResumableUpload2 to the store for later recovery
@@ -77,6 +97,17 @@
  */
 -(NSString *)generateUUIDForStore:(TUSUploadStore *)store;
 
+/**
+ Private designated initializer
+ No parameters are modified or checked in any way except for state.
+ */
+- (instancetype _Nullable) initWithUploadId:(NSString *)uploadId
+                                       file:(NSURL* _Nullable)fileUrl
+                                   delegate:(id<TUSResumableUpload2Delegate> _Nonnull)delegate
+                              uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
+                              finalMetadata:(NSDictionary <NSString *, NSString *>* _Nonnull)metadata
+                                      state:(TUSUploadState)state
+                                  uploadUrl:(NSURL * _Nullable)uploadUrl;
 
 @end
 
@@ -88,32 +119,65 @@
                               metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata
 
 {
-    self = [super init];
+    if (!fileUrl.fileURL){
+        NSLog(@"URL provided to TUSResumableUpload2 is not a file URL: %@", fileUrl);
+        return nil;
+    }
     
+    // Set up metadata with filename
+    NSMutableDictionary *uploadMetadata = [NSMutableDictionary new];
+    uploadMetadata[@"filename"] = fileUrl.filePathURL.lastPathComponent;
+    if (metadata){
+        [uploadMetadata addEntriesFromDictionary:metadata];
+    }
+    
+    return [self initWithUploadId:[self generateUUIDForStore:delegate.store]
+                             file:fileUrl
+                         delegate:delegate
+                    uploadHeaders:headers
+                    finalMetadata:uploadMetadata
+                            state:CreatingFile
+                        uploadUrl:nil];
+    
+}
+
+
+/**
+ Private designated initializer
+ No parameters are modified or checked in any way except for state.
+ */
+- (instancetype _Nullable) initWithUploadId:(NSString *)uploadId
+                                       file:(NSURL* _Nullable)fileUrl
+                                   delegate:(id<TUSResumableUpload2Delegate> _Nonnull)delegate
+                              uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
+                              finalMetadata:(NSDictionary <NSString *, NSString *>* _Nonnull)metadata
+                                      state:(TUSUploadState)state
+                                  uploadUrl:(NSURL * _Nullable)uploadUrl
+{
+    self = [super init];
     if (self) {
+        _uploadId = uploadId;
+        _fileUrl = fileUrl;
         _delegate = delegate;
         _uploadHeaders = headers;
-        _state = CheckingFile;
+        _metadata = metadata;
+        _state = state;
+        _uploadUrl = uploadUrl;
         _idle = YES;
-        _id = [self generateUUIDForStore:delegate.store];
         
-        // TODO: Set up file NSData
-        
-        // Set up metadata with filename if there is one
-        NSMutableDictionary *uploadMetadata = [NSMutableDictionary new];
-        if (fileUrl.isFileURL) {
-            uploadMetadata[@"filename"] = fileUrl.lastPathComponent;
+        if (_state != Complete){
+            _data = [[TUSFileData alloc] initWithFileURL:fileUrl];
+            if (!_data){
+                NSLog(@"Error creating TUSFileData object with url %@", fileUrl);
+                return nil;
+            }
         }
-        
-        if (metadata){
-            [uploadMetadata addEntriesFromDictionary:metadata];
-        }
-        _metadata = uploadMetadata;
         
         [self saveToStore];
     }
     return self;
 }
+
 
 + (NSString *)generateUUIDForStore:(TUSUploadStore *)store
 {
@@ -124,31 +188,40 @@
     }
 }
 
-- (BOOL)complete
+-(BOOL)cancel
 {
-    return self.state == Complete;
+    self.cancelled = YES;
+    if (self.currentTask){
+        [self.currentTask cancel];
+    }
 }
 
-- (NSURLSessionTask *) makeNextCallWithSession:(NSURLSession *)session
+- (BOOL)resume
+{
+    self.cancelled = NO; // Un-cancel
+    return [self continueUpload];
+}
+
+-(BOOL)continueUpload
 {
     // If the process is idle, need to begin at current state
-    if (self.idle) {
+    if (self.idle && !self.cancelled) {
         switch (self.state) {
             case CreatingFile:
-                return [self createFile:session];
+                return [self createFile];
             case CheckingFile:
-                return [self checkFile:session];
+                return [self checkFile];
             case UploadingFile:
-                return [self uploadFile:session];
+                return [self uploadFile];
             case Complete:
             default:
-                return nil;
+                return NO;
         }
     }
-    return nil;
+    return NO;
 }
 
-- (NSURLSessionTask *) createFile:(NSURLSession *) session
+- (BOOL)createFile
 {
     self.state = CreatingFile;
     
@@ -189,10 +262,44 @@
     // Create a download task for the empty post (file to be deleted later)
     // TODO: determine if an NSURLSessionDataTask can run while your app is in the background (docs are unclear)
     
-    return [self.delegate.session dataTaskWithRequest:request];
+    __weak TUSResumableUpload2 * weakself = self;
+    
+    self.currentTask = [self.delegate.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error){
+        if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
+            [weakself.delegate removeTask:weakself.currentTask];
+            weakself.currentTask = nil;
+        }
+        NSHTTPURLResponse * httpResponse;
+        if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+            httpResponse = (NSHTTPURLResponse *)response;
+        }
+        if (error != nil || httpResponse == nil){
+            TUSLog(@"Error or no response during attempt to create file, retrying");
+        } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
+            TUSLog(@"Server responded to create file with %ld. Trying again",
+                   (long)httpResponse.statusCode);
+        } else {
+            // Got a valid status code, so update url
+            NSString *location = [headers valueForKey:HTTP_LOCATION];
+            self.uploadUrl = [NSURL URLWithString:location];
+            if (self.uploadUrl) {
+                // If we got a valid URL, set the new state to uploading.  Otherwise, will try creating again.k
+                TUSLog(@"Created resumable upload at %@ for id %@", self.uploadUrl, self.uploadId);
+                self.state = UploadingFile;
+            }
+        }
+        //TODO: Thread safety?
+        weakself.idle = YES;
+        [self saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
+    }];
+    [self.delegate addTask:self.currentTask forUpload:self];
+    self.idle = NO;
+    [self.currentTask resume]; // Now everything done on currentTask will be done in the callbacks.
+    return YES;
 }
 
-- (NSURLSessionTask *) checkFile:(NSURLSession *) session
+- (BOOL) checkFile
 {
     self.state = CheckingFile;
     
@@ -201,7 +308,7 @@
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
     
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url]
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.uploadUrl
                                                                 cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
                                                             timeoutInterval:REQUEST_TIMEOUT];
     
@@ -209,214 +316,109 @@
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
     
-    // Create a download task for the empty post (file to be deleted later)
-    // TODO: determine if an NSURLSessionDataTask can run while your app is in the background (docs are unclear)
-    return [session downloadTaskWithRequest:request];
+    __weak TUSResumableUpload2 * weakself = self;
+    
+    self.currentTask = [self.delegate.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error){
+        if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
+            [weakself.delegate removeTask:weakself.currentTask];
+            weakself.currentTask = nil;
+        }
+        NSHTTPURLResponse * httpResponse;
+        if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+            httpResponse = (NSHTTPURLResponse *)response;
+        }
+        if (error != nil || httpResponse == nil){
+            TUSLog(@"Error or no response during attempt to check file, retrying");
+        } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
+            TUSLog(@"Server responded to file check with %ld. Creating file",
+                   (long)httpResponse.statusCode);
+            //TODO: Deal with gateway timeouts and server locks by going back to CheckingFile vs. creating
+            self.state = CreatingFile;
+        } else {
+            // Got a valid status code, so update state and continue upload.
+            [weakself updateStateFromHeaders:headers];
+        }
+        weakself.idle = YES;
+        [self saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        
+        //TODO: Dispatch on new thread
+        [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
+    }];
+    [self.delegate addTask:self.currentTask forUpload:self];
+    self.idle = NO;
+    [self.currentTask resume]; // Now everything done on currentTask will be done in the callbacks.
+    return YES;
 }
 
-- (NSURLSessionTask *) uploadFile:(NSURLSession *)session
+- (BOOL)uploadFile
 {
     self.state = UploadingFile;
-    self.failed = NO;
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
-    [mutableHeader setObject:[NSString stringWithFormat:@"%lld", (long long)self.offset] forKey:HTTP_OFFSET];
+    [mutableHeader setObject:[NSString stringWithFormat:@"%lld", self.offset] forKey:HTTP_OFFSET];
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
     [mutableHeader setObject:@"application/offset+octet-stream" forKey:@"Content-Type"];
 
     
     NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
     
-    TUSLog(@"Resuming upload at %@ for fingerprint %@ from offset %lld",
-           [self url], [self fingerprint], (long long)self.offset);
+    TUSLog(@"Resuming upload to %@ with id %@ from offset %lld",
+           self.uploadUrl, self.uploadId, self.offset);
     
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[self url]
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.uploadUrl
                                                                 cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
                                                             timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_PATCH];
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:headers];
+    [self.data setOffset:self.offset]; // Advance the offset of data to the expected value
+    [request setHTTPBodyStream:self.data];
     
-    // Add the uploadTask (request) to the session
-    NSError *error = nil;
-    return [session uploadTaskWithRequest:request fromFile:[self.fileReader getFileFromOffset:self.offset error:&error]];
+    
+    __weak TUSResumableUpload2 * weakself = self;
+    
+    self.currentTask = [self.delegate.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error){
+        if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
+            [weakself.delegate removeTask:weakself.currentTask];
+            weakself.currentTask = nil;
+        }
+        NSHTTPURLResponse * httpResponse;
+        if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+            httpResponse = (NSHTTPURLResponse *)response;
+        }
+        if (error != nil){
+            TUSLog(@"Error during attempt to upload, checking state");
+            weakself.state = CheckingFile;
+        } else if (httpResponse == nil || httpResponse.statusCode != 204){
+            TUSLog(@"No response or invalid status code during attempt to upload, checking state");
+            weakself.state = CheckingFile;
+        } else {
+            [weakself updateStateFromHeaders:headers];
+        }
+        weakself.idle = YES;
+        [self saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
+    }];
+    [self.delegate addTask:self.currentTask forUpload:self];
+    self.idle = NO;
+    [self.currentTask resume]; // Now everything done on currentTask will be done in the callbacks.
+    return YES;
 }
 
 
-#pragma mark - Private Methods
+#pragma mark - Property Getters and Setters
 - (long long) length {
-    return self.fileReader.length;
+    return self.data.length;
 }
 
-#pragma mark - URLSession delegate methods
-
-- (void) task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
+- (BOOL)complete
 {
-    NSHTTPURLResponse *httpResponse = task.response;
-
-    NSLog(@"Response Code %li, Sent %li, Expected %li, State %li", [httpResponse statusCode], totalBytesSent, totalBytesExpectedToSend, task.state);
-
-
+    return self.state == Complete;
 }
 
--(void) task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
-{
-    if (self.failureBlock) {
-        self.failureBlock(error);
-    }
-    
-    NSHTTPURLResponse *httpResponse = task.response;
-    NSLog(@"%li", [httpResponse statusCode]);
-    
-        
-    NSDictionary *headers = [httpResponse allHeaderFields];
-    
-    switch(self.state) {
-        case CheckingFile: {
-            if (httpResponse == nil){
-                TUSLog(@"No response during attempt to check file, retrying");
-                break;
-            } else if ([httpResponse statusCode] < 200 && [httpResponse statusCode] > 204) {
-                TUSLog(@"Server responded to file check with %ld. Restarting upload",
-                       (long)httpResponse.statusCode);
-                //TODO: Error callback
-                //TODO: Deal with gateway timeouts by going back to CheckingFile vs. creating
-                self.state = CreatingFile;
-                break;
-            }
-            [self updateStateFromHeaders:headers];
-            break;
-        }
-        case CreatingFile: {
-            if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
-                TUSLog(@"Server responded to create request with %ld status code.",
-                       (long)httpResponse.statusCode);
-                self.failed = YES;
-                //TODO: Handle error callbacks (lock retrying)
-                break;
-            }
-            
-            NSString *location = [headers valueForKey:HTTP_LOCATION];
-            self.url = [NSURL URLWithString:location];
-            
-            TUSLog(@"Created resumable upload at %@ for fingerprint %@", [self url], [self fingerprint]);
-            
-            self.state = UploadingFile;
-            break;
-        }
-        case UploadingFile: {
-            if (httpResponse == nil){
-                TUSLog(@"No response during attempt to upload, so checking file");
-                self.state = CheckingFile; // No response, so check file again as some bytes may have been received
-                break;
-            } else if ([httpResponse statusCode] != 204) {
-                self.failed = YES;
-                self.state = CheckingFile;
-                //TODO: Handle error callbacks (problem on server)
-                TUSLog(@"Server returned unexpected status code to upload - %ld", (long)httpResponse.statusCode);
-                break;
-            }
-            [self updateStateFromHeaders:headers];
-            break;
-        }
-        case Complete: {
-            TUSLog(@"Unexpected response from server in complete state for upload at %@ for fingerprint %@", self.url, self.fingerprint);
-            break;
-        }
-        default:
-            break;
-    }
+#pragma mark NSURLSessionTask Callback
 
-    // Upload is now idle
-    self.idle = YES;
-    
-    // Save to the store
-    [self saveToStore:self.uploadStore];
-}
-
--(void) downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location
-{
-    // Delete the downloaded response
-    NSError *error;
-    [[NSFileManager defaultManager] removeItemAtPath:location error:&error];
-}
-
-//-(void) task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
-//{
-//    switch([self state]) {
-//        case UploadingFile:
-//            if (self.progressBlock) {
-//                self.progressBlock((NSUInteger)totalBytesSent + self.offset, self.fileReader.length);
-//            }
-//            break;
-//        default:
-//            break;
-//    }
-//}
-
-//-(void) dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler{
-//    
-//    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-//    NSDictionary *headers = [httpResponse allHeaderFields];
-//    
-//    switch(self.state) {
-//        case CheckingFile: {
-//            if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
-//                TUSLog(@"Server responded to file check with %ld. Restarting upload",
-//                       (long)httpResponse.statusCode);
-//                //TODO: Error callback
-//                //TODO: Deal with gateway timeouts by going back to CheckingFile vs. creating
-//                self.state = CreatingFile;
-//                break;
-//            }
-//            [self updateStateFromHeaders:headers];
-//            break;
-//        }
-//        case CreatingFile: {
-//            if ([httpResponse statusCode] != 200 && [httpResponse statusCode] != 201) {
-//                TUSLog(@"Server responded to create request with %ld status code.",
-//                       (long)httpResponse.statusCode);
-//                self.failed = YES;
-//                //TODO: Handle error callbacks (lock retrying)
-//                break;
-//            }
-//            
-//            NSString *location = [headers valueForKey:HTTP_LOCATION];
-//            self.url = [NSURL URLWithString:location];
-//            
-//            TUSLog(@"Created resumable upload at %@ for fingerprint %@", [self url], [self fingerprint]);
-//            
-//            self.state = UploadingFile;
-//            break;
-//        }
-//        case UploadingFile: {
-//            if ([httpResponse statusCode] != 204) {
-//                self.failed = YES;
-//                self.state = CheckingFile;
-//                //TODO: Handle error callbacks (problem on server)
-//                TUSLog(@"Server returned unexpected status code to upload - %ld", (long)httpResponse.statusCode);
-//                break;
-//            }
-//            [self updateStateFromHeaders:headers];
-//            break;
-//        }
-//        case Complete: {
-//            TUSLog(@"Unexpected response from server in complete state for upload at %@ for fingerprint %@", self.url, self.fingerprint);
-//            break;
-//        }
-//        default:
-//            break;
-//    }
-//    
-//    // Upload is now idle
-//    self.idle = YES;
-//    
-//    // Save to the store
-//    [self saveToStore:self.uploadStore];
-//    
-//    completionHandler(NSURLSessionResponseAllow);
-//}
 
 /**
  Uses the offset from the provided headers to update the state of the upload - used by both check (HEAD) and upload (PATCH) response logic.
@@ -426,87 +428,145 @@
     NSString *rangeHeader = [headers valueForKey:HTTP_OFFSET];
     if (rangeHeader) {
         long long serverOffset = [rangeHeader longLongValue];
-        if (serverOffset >= [self length]) {
-            //TODO: Should we verify the file?
-            TUSLog(@"Upload complete at %@ for fingerprint %@", [self url], [self fingerprint]);
-    
-            if (self.resultBlock) {
-                self.resultBlock(self.url);
-            }
+        if (serverOffset >= self.length) {
+            TUSLog(@"Upload complete at %@ for id %@", self.uploadUrl, self.uploadId);
             self.state = Complete;
-            [self.fileReader close];
-            return;
+            //TODO: Close file/data
         } else {
-            self.offset = (NSUInteger)serverOffset;
+            TUSLog(@"Resumable upload at %@ for %@ from %lld (%@)",
+                   self.uploadUrl, self.uploadId, serverOffset, rangeHeader);
+            self.offset = serverOffset;
             self.state = UploadingFile;
         }
-        TUSLog(@"Resumable upload at %@ for %@ from %lld (%@)",
-               [self url], [self fingerprint], (long long)self.offset, rangeHeader);
-        return;
-    }
-    else {
-        TUSLog(@"Restarting upload at %@ for %@", [self url], [self fingerprint]);
+    } else {
+        TUSLog(@"No header received during request for %@, so checking file", self.uploadUrl);
         // We didn't get an offset header, so we need to run the check again
         self.state = CheckingFile;
-        return;
     }
 }
 
 #pragma mark Persistence functions
-+(instancetype)loadUploadWithId:(NSString *)uploadId fromStore:(TUSUploadStore *)store
+
+
+
+-(NSDictionary *) serialize
 {
+    /*
+     // Readwrite versions of properties in the header
+     @property (readwrite, strong) NSString *id;
+
+     */
+    
+    NSObject *fileUrlData = [NSNull null];
+    if (self.fileUrl){
+        NSError *error;
+        NSData *bookmarkData = [self.fileUrl bookmarkDataWithOptions:NSURLBookmarkCreationMinimalBookmark includingResourceValuesForKeys:nil relativeToURL:nil error:&error];
+        if (error != nil){
+            NSLog(@"Error creating bookmark data for URL %@", error);
+        } else {
+            fileUrlData = bookmarkData;
+        }
+    }
+    
+    return @{STORE_KEY_ID: self.uploadId,
+             STORE_KEY_DELEGATE_ENDPOINT: self.delegate.createUploadURL.absoluteString,
+             STORE_KEY_UPLOAD_URL:  self.state == CreatingFile? [NSNull null] : self.uploadUrl.absoluteString, //If we are creating the file, there is no upload URL
+             STORE_KEY_LENGTH: @(self.length),
+             STORE_KEY_LAST_STATE: @(self.state),
+             STORE_KEY_METADATA: self.metadata,
+             STORE_KEY_UPLOAD_HEADERS: self.uploadHeaders,
+             STORE_KEY_FILE_URL: fileUrlData};
+    
+}
+
+
+
++(instancetype)loadUploadWithId:(NSString *)uploadId delegate:(id<TUSResumableUpload2Delegate> _Nonnull)delegate fromStore:(TUSUploadStore *)store
+{
+    /*
+     // Readwrite versions of properties in the header
+     @property (readwrite, strong) NSString *id;
+     @property (readwrite) BOOL idle;
+     @property (readwrite) TUSUploadState state;
+     
+     // Internal state
+     @property (nonatomic, weak) id<TUSResumableUpload2Delegate> delegate; // Current upload offset
+     @property (nonatomic) NSUInteger offset; // Current upload offset
+     @property (nonatomic, strong) NSURL *uploadUrl; // Target URL for file
+     @property (nonatomic, strong) NSDictionary *uploadHeaders;
+     @property (nonatomic, strong) NSDictionary <NSString *, NSString *> *metadata;
+     @property (nonatomic, strong) TUSData *data;
+     @property (nonatomic, strong) NSURLSessionTask *currentTask; // Nonatomic because we know we will assign it, then start the thread that will remove it.
+     @property (readonly) long long length;
+     // File URL
+     */
     NSDictionary *savedData = [store loadDictionaryForUpload:uploadId];
     
     // If there is no data associated with the upload ID
     if (savedData == nil) {
         return nil;
+    } else if (![savedData[STORE_KEY_ID] isEqualToString:uploadId]){ // Sanity check
+        NSLog(@"ID in stored dictionary for %@ does not match (%@)", uploadId, savedData[STORE_KEY_ID]);
+        return nil;
+    } else if (![[NSURL URLWithString:savedData[STORE_KEY_DELEGATE_ENDPOINT]] isEqual:delegate.createUploadURL.absoluteString]){ // Check saved delegate endpoint
+        NSLog(@"Delegate URL in stored dictionary for %@ (%@) does not match the one in the passed-in delegate %@", uploadId, savedDelegateEndpoint, delegate.createUploadURL);
+        return nil;
     }
     
-    NSURL *endpoint = [savedData objectForKey:@"endpoint"];
-    NSURL *uploadUrl = [savedData objectForKey:@"uploadUrl"]; // Could be NSNull
-    NSURL *sourceUrl = [savedData objectForKey:@"sourceUrl"];
-    BOOL idle = [savedData[@"idle"] boolValue];
-    BOOL failureStatus = [savedData[@"failed"] boolValue];
-    NSDictionary *headers = [savedData objectForKey:@"headers"];
-    NSDictionary <NSString *, NSString *> *metadata = [savedData objectForKey:@"uploadMetadata"];
-    NSDictionary *savedFileReader = savedData[@"fileReader"];
-    TUSFileReader *fileReader = [TUSFileReader deserializeFromDictionary:savedFileReader];
-    TUSUploadState state = [[savedData objectForKey:@"state"] integerValue];
+    // Get parameters
+    //UploadID
+    NSNumber *expectedLength = savedData[STORE_KEY_LENGTH];
+    NSNumber *stateObj = savedData[STORE_KEY_LAST_STATE];
+    TUSUploadState state = stateObj.unsignedIntegerValue;
+    NSDictionary *metadata = savedData[STORE_KEY_METADATA];
+    NSDictionary *headers = savedData[STORE_KEY_UPLOAD_HEADERS];
+    NSDictionary *uploadUrl = [NSURL URLWithString:savedData[STORE_KEY_UPLOAD_URL]];
+    NSURL *fileUrl = nil;
+    if(savedData[STORE_KEY_FILE_URL] != [NSNull null]){
+        NSError *error;
+        fileUrl = [NSURL URLByResolvingBookmarkData:savedData[STORE_KEY_FILE_URL] options:0 relativeToURL:nil bookmarkDataIsStale:nil error:&error];
+        if (error != nil){ // Assuming fileUrl must be non-nil if there is no error
+            NSLog(@"Error loading file URL from stored data for upload %@", uploadId);
+            return nil;
+        }
+        // Check file length
+        NSDictionary *fileAttributes = [[NSFileManager defaultManager] attributesOfItemAtPath:fileUrl.filePathURL error:&error];
+        if (error != nil){
+            NSLog(@"Error loading details for file for saved at %@ when restoring upload %@", fileUrl, uploadId);
+            return nil;
+        }
+        NSNumber *fileSize = fileAttributes[NSFileSize];
+        if (fileSize.unsignedLongLongValue != expectedLength.unsignedLongLongValue){
+            NSLog(@"Expected file size (%ulld) for saved upload %@ does not match actual file size (%ulld)", fileSize.unsignedLongLongValue, uploadId, expectedLength.unsignedLongLongValue);
+            return nil;
+        }
+    } else if (state != Complete) { // If we do not have a file url and the upload isn't complete, then we were reloading using the wrong method.
+        NSLog(@"Attempt to reload non-file upload using file-based upload restore method");
+        //TODO: Implement code to resume a non-file-based upload
+        return nil;
+    }
     
-    return [[TUSResumableUpload2 alloc] initWithUploadId:uploadId
-                                            endpoint:endpoint
-                                           uploadUrl:uploadUrl
-                                           sourceURL:sourceUrl
-                                          idleStatus:idle
-                                           failureStatus:failureStatus
-                                             headers:headers
-                                                metadata:metadata
-                                              fileReader:fileReader
-                                               state:state
-                                               store:store];
+    // If the upload was previously uploading, we need to do a check before we can continue.
+    if (state == UploadingFile){
+        state = CheckingFile;
+    }
+    
+    return [[self alloc] initWithFile:fileUrl
+                              delgate:delegate
+                   finalUploadHeaders:headers
+                             metadata:metadata
+                                state:state
+                            uploadUrl:uploadUrl];
+    
+    
 }
 
--(NSDictionary *) serializeObject
-{
-    NSDictionary *uploadData = @{@"uploadId": self.id,
-                                 @"endpoint": self.endpoint,
-                                 @"uploadUrl": self.url ?: [NSNull null],
-                                 @"sourceUrl": self.fingerprint,
-                                 @"idle": @(self.idle),
-                                 @"failed": @(self.failed),
-                                 @"uploadMetadata": self.metadata,
-                                 @"headers": self.uploadHeaders,
-                                 @"fileReader": [self.fileReader serialize],
-                                 @"state": @(self.state)};
-
-    return uploadData;
-}
 
 
 
 -(void)saveToStore:(TUSUploadStore *)store
 {
-    [store saveDictionaryForUpload:self.id dictionary:[self serializeObject]];
+    [store saveDictionaryForUpload:self.uploadId dictionary:[self serialize]];
 }
 
 @end

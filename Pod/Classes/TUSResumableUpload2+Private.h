@@ -67,8 +67,9 @@
                               metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata;
 
 
-+ (instancetype _Nullable)loadUploadWithId:(NSString * _Nonnull)uploadId
-                                 fromStore:(TUSUploadStore * _Nonnull)store;
++(instancetype _Nullable)loadUploadWithId:(NSString *)uploadId
+                                 delegate:(id<TUSResumableUpload2Delegate> _Nonnull)delegate
+                                fromStore:(TUSUploadStore * _Nonnull)store;
 
 @end
 

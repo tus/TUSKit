@@ -19,5 +19,6 @@
 - (NSInputStream*)dataStream;
 - (long long)length;
 - (void)stop;
+- (void)setOffset:(long long)offset;
 
 @end

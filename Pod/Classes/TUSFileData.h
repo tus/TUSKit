@@ -5,8 +5,6 @@
 //  Copyright (c) 2016 Findyr
 
 
-#import <AssetsLibrary/AssetsLibrary.h>
-
 #import "TUSData.h"
 
 @interface TUSFileData : TUSData

@@ -81,10 +81,7 @@
                                headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
                               metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata
 {
-    TUSResumableUpload2 *upload = [[TUSResumableUpload2 alloc]  initWithFile:fileURL
-                                                                  TUSSession:self
-                                                               uploadHeaders:headers
-                                                                    metadata:metadata];
+    TUSResumableUpload2 *upload = [[TUSResumableUpload2 alloc]  initWithFile:fileURL delegate:self uploadHeaders:headers metadata:metadata];
     
     self.uploads[upload.id] = upload; // Save the upload by ID for later
     return upload;
@@ -97,12 +94,12 @@
 - (TUSResumableUpload2 *) restoreUpload:(NSString *)uploadId{
     TUSResumableUpload2 * restoredUpload = self.uploads[uploadId];
     if (restoredUpload == nil) {
-        restoredUpload = [TUSResumableUpload2 loadUploadWithId:uploadId forSession:(TUSSession *)session];
+        restoredUpload = [TUSResumableUpload2 loadUploadWithId:uploadId delegate:self];
         if (restoredUpload != nil){
             self.uploads[uploadId] = restoredUpload; // Save the upload if we can find it in the data store
         }
     }
-    return restoredUpload
+    return restoredUpload;
 }
 
 /**

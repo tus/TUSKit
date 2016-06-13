@@ -13,11 +13,11 @@
 
 @import Foundation;
 
-typedef NS_ENUM(NSInteger, TUSUploadState) {
-    CreatingFile,
-    CheckingFile,
-    UploadingFile,
-    Complete
+typedef NS_ENUM(NSInteger, TUSSessionUploadState) {
+    TUSSessionUploadStateCreatingFile,
+    TUSSessionUploadStateCheckingFile,
+    TUSSessionUploadStateUploadingFile,
+    TUSSessionUploadStateComplete
 };
 
 @interface TUSResumableUpload2 : NSObject
@@ -37,7 +37,7 @@ typedef NS_ENUM(NSInteger, TUSUploadState) {
 /**
  The current state of the upload
  */
-@property (readonly) TUSUploadState state;
+@property (readonly) TUSSessionUploadState state;
 
 - (BOOL) cancel;
 /**

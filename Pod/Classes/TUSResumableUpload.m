@@ -8,7 +8,7 @@
 //  Additions and Maintenance for TUSKit 1.0.0 and up by Mark Robert Masterson
 //  Copyright (c) 2015-2016 Mark Robert Masterson. All rights reserved.
 
-#import "TUSData.h"
+#import "TUSKit.h"
 
 #import "TUSResumableUpload.h"
 

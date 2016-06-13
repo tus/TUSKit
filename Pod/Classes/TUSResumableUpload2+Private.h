@@ -68,8 +68,7 @@
 
 
 +(instancetype _Nullable)loadUploadWithId:(NSString *)uploadId
-                                 delegate:(id<TUSResumableUpload2Delegate> _Nonnull)delegate
-                                fromStore:(TUSUploadStore * _Nonnull)store;
+                                 delegate:(id<TUSResumableUpload2Delegate> _Nonnull)delegate;
 
 @end
 

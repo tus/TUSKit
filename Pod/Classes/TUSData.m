@@ -199,6 +199,11 @@
     }
 }
 
+-(void)close{}
+-(BOOL)open
+{
+    return YES;
+}
 
 @end
 

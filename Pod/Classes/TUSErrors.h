@@ -11,5 +11,6 @@
 FOUNDATION_EXPORT NSString *const TUSErrorDomain;
 
 typedef enum TUSErrorCode : NSInteger {
-    TUSFileReaderCopyError
+    TUSFileDataErrorClosed,
+    TUSFileDataErrorCannotOpen
 };

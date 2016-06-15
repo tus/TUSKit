@@ -140,6 +140,7 @@
                 }
             }
         } break;
+        case NSStreamEventEndEncountered:
         case NSStreamEventErrorOccurred: {
             TUSLog(@"TUSData stream error %@", [aStream streamError]);
             if (self.failureBlock) {
@@ -147,7 +148,6 @@
             }
         } break;
         case NSStreamEventHasBytesAvailable:
-        case NSStreamEventEndEncountered:
         default:
             assert(NO);     // should never happen for the output stream
             break;

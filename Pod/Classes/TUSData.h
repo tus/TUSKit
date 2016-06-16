@@ -14,9 +14,10 @@
 
 @property (readwrite,copy) void (^failureBlock)(NSError* error);
 @property (readwrite,copy) void (^successBlock)(void);
+@property (readonly) NSInputStream* dataStream;
 
 - (id)initWithData:(NSData*)data;
-- (NSInputStream*)dataStream;
+
 - (long long)length;
 - (void)stop;
 - (void)setOffset:(long long)offset;

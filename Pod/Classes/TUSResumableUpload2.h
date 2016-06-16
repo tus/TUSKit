@@ -21,7 +21,7 @@ typedef NS_ENUM(NSInteger, TUSSessionUploadState) {
 };
 
 @interface TUSResumableUpload2 : NSObject
-@property (readonly) NSString *id;
+@property (readonly) NSString *uploadId;
 
 /**
  The upload is complete if the file has been completely uploaded to the TUS server

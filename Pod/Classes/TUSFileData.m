@@ -93,6 +93,8 @@
             }
         }
         self.closed = NO;
+        return YES;
     }
+    
 }
 @end

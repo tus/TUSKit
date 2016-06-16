@@ -11,15 +11,22 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <TUSKit/TUSKit.h>
 
-static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
+static NSString* const UPLOAD_ENDPOINT = @"http://192.168.5.80:1080/files/";
 
 @interface TKViewController ()
 
 @property (strong,nonatomic) ALAssetsLibrary *assetLibrary;
+@property (strong, nonatomic) TUSSession *tusSession;
 
 @end
 
 @implementation TKViewController
+
+-(void)viewDidLoad
+{
+    
+    self.tusSession = [[TUSSession alloc] initWithEndpoint:[[NSURL alloc] initWithString:UPLOAD_ENDPOINT] dataStore:[[TUSUploadStore alloc] init] allowsCellularAccess:YES];
+}
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
@@ -42,8 +49,7 @@ static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
     }
     
     [self.assetLibrary assetForURL:assetUrl resultBlock:^(ALAsset* asset) {
-        NSDictionary *headers =  @{@"":@""};
-        NSURL *endpoint = [[NSURL alloc] initWithString:UPLOAD_ENDPOINT];
+
         
         ALAssetRepresentation *rep = [asset defaultRepresentation];
         Byte *buffer = (Byte*)malloc(rep.size);
@@ -58,14 +64,10 @@ static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
             NSLog(@"%li", (long)error.code);
         }
         
-        // Create a background session
-        TUSSession *backgroundSession = [[TUSSession alloc] initWithEndpoint:endpoint allowsCellularAccess:YES];
-        
-        //Add example metadata here
-        NSDictionary *metadata = @{};
         
         // Initiate the background transfer
-        [backgroundSession initiateBackgroundUpload:fileUrl headers:headers metadata:metadata];
+        TUSResumableUpload2 *upload = [self.tusSession createUploadFromFile:fileUrl headers:@{} metadata:@{}];
+        [upload resume];
         
 //        upload.progressBlock = ^(NSUInteger bytesWritten, NSUInteger bytesTotal){
 //           // Update your progress bar here

@@ -92,11 +92,6 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 -(void)saveToStore;
 
 /**
- Generate a UUID that will be unique for the specified datastore
- */
--(NSString *)generateUUIDForStore:(TUSUploadStore *)store;
-
-/**
  Private designated initializer
  No parameters are modified or checked in any way except for state.
  */
@@ -109,6 +104,18 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                                   uploadUrl:(NSURL * _Nullable)uploadUrl;
 
 @end
+
+/**
+ Generate a UUID that will be unique for the specified datastore
+ */
+static NSString * generateUUIDForStore(TUSUploadStore * store)
+{
+    while(1) {
+        NSUUID *uuid = [[NSUUID alloc] init];
+        if(![store containsUploadId:uuid.UUIDString])
+            return uuid.UUIDString;
+    }
+}
 
 @implementation TUSResumableUpload2
 
@@ -130,7 +137,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         [uploadMetadata addEntriesFromDictionary:metadata];
     }
     
-    return [self initWithUploadId:[self generateUUIDForStore:delegate.store]
+    return [self initWithUploadId:generateUUIDForStore(delegate.store)
                              file:fileUrl
                          delegate:delegate
                     uploadHeaders:headers
@@ -177,16 +184,6 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     return self;
 }
 
-
-+ (NSString *)generateUUIDForStore:(TUSUploadStore *)store
-{
-    while(1) {
-        NSUUID *uuid = [[NSUUID alloc] init];
-        if(![store containsUploadId:uuid.UUIDString])
-            return uuid.UUIDString;
-    }
-}
-
 -(BOOL)cancel
 {
     self.cancelled = YES;
@@ -224,6 +221,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 - (BOOL)createFile
 {
     self.state = TUSSessionUploadStateCreatingFile;
+    self.offset = 0; // Reset the offset to zero if we're creating a new file.
     
     long long size = self.data.length;
     
@@ -247,20 +245,15 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
     
     // Set the version & length last as they are determined by the uploader
-    [mutableHeader setObject:[NSString stringWithFormat:@"%ll", size] forKey:HTTP_UPLOAD_LENGTH];
+    [mutableHeader setObject:[NSString stringWithFormat:@"%lld", size] forKey:HTTP_UPLOAD_LENGTH];
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
     
-    NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
-
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.delegate.createUploadURL
                                                                 cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
                                                             timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_POST];
     [request setHTTPShouldHandleCookies:NO];
-    [request setAllHTTPHeaderFields:headers];
-    
-    // Create a download task for the empty post (file to be deleted later)
-    // TODO: determine if an NSURLSessionDataTask can run while your app is in the background (docs are unclear)
+    [request setAllHTTPHeaderFields:mutableHeader];
     
     __weak TUSResumableUpload2 * weakself = self;
     
@@ -280,17 +273,16 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                    (long)httpResponse.statusCode);
         } else {
             // Got a valid status code, so update url
-            NSString *location = [headers valueForKey:HTTP_LOCATION];
-            self.uploadUrl = [NSURL URLWithString:location];
-            if (self.uploadUrl) {
+            NSString *location = [httpResponse.allHeaderFields valueForKey:HTTP_LOCATION];
+            weakself.uploadUrl = [NSURL URLWithString:location];
+            if (weakself.uploadUrl) {
                 // If we got a valid URL, set the new state to uploading.  Otherwise, will try creating again.k
-                TUSLog(@"Created resumable upload at %@ for id %@", self.uploadUrl, self.uploadId);
-                self.state = TUSSessionUploadStateUploadingFile;
+                TUSLog(@"Created resumable upload at %@ for id %@", weakself.uploadUrl, weakself.uploadId);
+                weakself.state = TUSSessionUploadStateUploadingFile;
             }
         }
-        //TODO: Thread safety?
         weakself.idle = YES;
-        [self saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        [weakself saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
         [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
     }];
     [self.delegate addTask:self.currentTask forUpload:self];
@@ -299,6 +291,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     return YES;
 }
 
+
+
 - (BOOL) checkFile
 {
     self.state = TUSSessionUploadStateCheckingFile;
@@ -306,7 +300,6 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
-    NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
     
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.uploadUrl
                                                                 cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
@@ -314,7 +307,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     
     [request setHTTPMethod:HTTP_HEAD];
     [request setHTTPShouldHandleCookies:NO];
-    [request setAllHTTPHeaderFields:headers];
+    [request setAllHTTPHeaderFields:mutableHeader];
     
     __weak TUSResumableUpload2 * weakself = self;
     
@@ -323,26 +316,42 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
             [weakself.delegate removeTask:weakself.currentTask];
             weakself.currentTask = nil;
         }
+        NSUInteger delayTime = 0; // No delay
         NSHTTPURLResponse * httpResponse;
         if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
             httpResponse = (NSHTTPURLResponse *)response;
         }
         if (error != nil || httpResponse == nil){
             TUSLog(@"Error or no response during attempt to check file, retrying");
+        } else if (httpResponse.statusCode == 423) {
+            TUSLog(@"File is locked, waiting and retrying");
+            delayTime = 5; // Delay 5 seconds to wait for locks.
+        } else if (httpResponse.statusCode == 503 || httpResponse.statusCode == 504) {
+            TUSLog(@"Gateway timeout or service is down, waiting and retrying");
+            delayTime = 60; // Delay 60 seconds to wait for service to resume.
+            //TODO: Fail for other 500 errors
         } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
             TUSLog(@"Server responded to file check with %ld. Creating file",
                    (long)httpResponse.statusCode);
-            //TODO: Deal with gateway timeouts and server locks by going back to CheckingFile vs. creating
-            self.state = TUSSessionUploadStateCreatingFile;
+            weakself.state = TUSSessionUploadStateCreatingFile;
         } else {
             // Got a valid status code, so update state and continue upload.
-            [weakself updateStateFromHeaders:headers];
+            [weakself updateStateFromHeaders:httpResponse.allHeaderFields];
         }
         weakself.idle = YES;
-        [self saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        [weakself saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
         
-        //TODO: Dispatch on new thread
-        [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
+        if (delayTime > 0) {
+            __weak NSOperationQueue *weakQueue = [NSOperationQueue currentQueue];
+            // Delay some time before we try again.  We use a weak queue pointer because if the queue goes away, presumably the session has too (the session should have a strong pointer to the queue).
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [weakQueue addOperationWithBlock:^{
+                    [weakself continueUpload]; // Continue upload on the queue we were previously on.
+                }];
+            });
+        } else {
+            [weakself continueUpload]; // Continue upload on the queue we were previously on.
+        }
     }];
     [self.delegate addTask:self.currentTask forUpload:self];
     self.idle = NO;
@@ -360,9 +369,6 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
     [mutableHeader setObject:@"application/offset+octet-stream" forKey:@"Content-Type"];
 
-    
-    NSDictionary *headers = [NSDictionary dictionaryWithDictionary:mutableHeader];
-    
     TUSLog(@"Resuming upload to %@ with id %@ from offset %lld",
            self.uploadUrl, self.uploadId, self.offset);
     
@@ -371,9 +377,9 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                                                             timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_PATCH];
     [request setHTTPShouldHandleCookies:NO];
-    [request setAllHTTPHeaderFields:headers];
+    [request setAllHTTPHeaderFields:mutableHeader];
     [self.data setOffset:self.offset]; // Advance the offset of data to the expected value
-    [request setHTTPBodyStream:self.data];
+    request.HTTPBodyStream = self.data.dataStream;
     
     
     __weak TUSResumableUpload2 * weakself = self;
@@ -394,10 +400,10 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
             TUSLog(@"No response or invalid status code during attempt to upload, checking state");
             weakself.state = TUSSessionUploadStateCheckingFile;
         } else {
-            [weakself updateStateFromHeaders:headers];
+            [weakself updateStateFromHeaders:httpResponse.allHeaderFields];
         }
         weakself.idle = YES;
-        [self saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        [weakself saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
         [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
     }];
     [self.delegate addTask:self.currentTask forUpload:self];
@@ -549,9 +555,9 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 
 
 
--(void)saveToStore:(TUSUploadStore *)store
+-(void)saveToStore
 {
-    [store saveDictionaryForUpload:self.uploadId dictionary:[self serialize]];
+    [self.delegate.store saveDictionaryForUpload:self.uploadId dictionary:[self serialize]];
 }
 
 @end

@@ -9,7 +9,6 @@
 #import "TKAppDelegate.h"
 #import "TUSSession.h"
 
-static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
 
 @implementation TKAppDelegate
 

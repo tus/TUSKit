@@ -16,8 +16,6 @@
  */
 @interface TUSSession : NSObject
 @property BOOL allowsCellularAccess;
-@property (nonatomic, strong, readonly) NSURLSession *session;
-@property (nonatomic, strong, readonly) NSURL *endpoint;
 
 /**
  Initialize
@@ -26,13 +24,12 @@
                        dataStore:(TUSUploadStore *)store
             allowsCellularAccess:(BOOL)allowsCellularAccess;
 
-
 /**
  Create an upload, but do not start it
  */
-- (TUSResumableUpload2 *) createUpload:(NSURL *)fileURL
-                               headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
-                              metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata;
+- (TUSResumableUpload2 *) createUploadFromFile:(NSURL *)fileURL
+                                       headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
+                                      metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata;
 
 /**
  Restore an upload, but do not start it.  Uploads must be restored by ID because file URLs can change between launch.

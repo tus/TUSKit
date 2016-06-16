@@ -15,6 +15,7 @@
 @property (nonatomic, strong) NSURL *createUploadURL;
 @property (nonatomic, strong) TUSUploadStore *store; // Data store to save upload status in
 @property (nonatomic, strong) NSMutableDictionary <NSString *, TUSResumableUpload2 *>* uploads;
+@property (nonatomic, strong) NSMutableDictionary <NSURLSessionTask *, TUSResumableUpload2 *>* tasks;
 
 #pragma mark TUSResumableUpload2Delegate methods
 /**
@@ -31,6 +32,7 @@
 @end
 
 @implementation TUSSession
+
 
 #pragma mark properties
 /**
@@ -54,7 +56,7 @@
     if (_session == nil){
         NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
         sessionConfiguration.allowsCellularAccess = self.allowsCellularAccess;
-        _session = [NSURLSession sessionWithConfiguration:sessionConfiguration];
+        _session = [NSURLSession sessionWithConfiguration:sessionConfiguration delegate:nil delegateQueue:[NSOperationQueue mainQueue]];
     }
     return _session;
 }
@@ -69,7 +71,7 @@
     
     if (self) {
         _store = store; // TODO: Load uploads from store
-        _endpoint = endpoint;
+        _createUploadURL = endpoint;
         _uploads = [NSMutableDictionary new];
         _allowsCellularAccess = allowsCellularAccess; // Bypass accessor because we have code that acts "on value changed"
     }
@@ -77,13 +79,13 @@
 }
 
 #pragma mark public methods
-- (TUSResumableUpload2 *) createUpload:(NSURL *)fileURL
-                               headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
-                              metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata
+- (TUSResumableUpload2 *) createUploadFromFile:(NSURL *)fileURL
+                                       headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
+                                      metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata
 {
     TUSResumableUpload2 *upload = [[TUSResumableUpload2 alloc]  initWithFile:fileURL delegate:self uploadHeaders:headers metadata:metadata];
     
-    self.uploads[upload.id] = upload; // Save the upload by ID for later
+    self.uploads[upload.uploadId] = upload; // Save the upload by ID for later
     return upload;
 }
 
@@ -143,11 +145,11 @@
 
 #pragma mark delegate methods
 -(void)addTask:(NSURLSessionTask *)task forUpload:(TUSResumableUpload2 *)upload{
-    @throw @"Not implemented";
+    self.tasks[task] = upload;
 }
 
 -(void)removeTask:(NSURLSessionTask *)task{
-    @throw @"Not implemented";
+    [self.tasks removeObjectForKey:task];
 }
 
 @end

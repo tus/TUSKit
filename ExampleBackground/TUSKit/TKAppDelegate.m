@@ -41,11 +41,11 @@
 //        
 //        // For each of the tasks, get the associated background task, and persist it to disk
 //        for (int i=0; i < [dataTasks count]; i++) {
-//            TUSResumableUpload2 *backgroundUpload = [self.session getStore];
+//            TUSResumableUpload *backgroundUpload = [self.session getStore];
 //        }
 //        
 //        for (int i=0; i < [uploadTasks count]; i++) {
-//            TUSResumableUpload2 *backgroundUpload = [uploadTask[i] ]
+//            TUSResumableUpload *backgroundUpload = [uploadTask[i] ]
 //        }
 //    }];
 //}

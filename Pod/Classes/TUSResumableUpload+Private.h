@@ -1,15 +1,15 @@
 //
-//  TUSResumableUpload2+Private.h
+//  TUSResumableUpload+Private.h
 //  Pods
 //
 //  Created by Findyr on 6/7/16.
 //
 //
 
-#ifndef TUSResumableUpload2_Private_h
-#define TUSResumableUpload2_Private_h
+#ifndef TUSResumableUpload_Private_h
+#define TUSResumableUpload_Private_h
 @import Foundation;
-#import "TUSResumableUpload2.h"
+#import "TUSResumableUpload.h"
 
 // Circular references
 @class TUSUploadStore;
@@ -18,9 +18,9 @@
 
 
 /**
- Delegate that provides additional functionality and data that TUSResumableUpload2 needs.
+ Delegate that provides additional functionality and data that TUSResumableUpload needs.
  */
-@protocol TUSResumableUpload2Delegate <NSObject>
+@protocol TUSResumableUploadDelegate <NSObject>
 
 /**
  The session that should be used for all HTTP requests by this upload
@@ -43,7 +43,7 @@
  Add an NSURLSessionTask that should be associated with this upload
  */
 @required
--(void)addTask:(NSURLSessionTask * _Nonnull)task forUpload:(TUSResumableUpload2 * _Nonnull)upload;
+-(void)addTask:(NSURLSessionTask * _Nonnull)task forUpload:(TUSResumableUpload * _Nonnull)upload;
 
 /**
  Stop tracking an NSURLSessionTask
@@ -54,22 +54,22 @@
 
 
 /**
- Module-internal methods for TUSResumableUpload2
+ Module-internal methods for TUSResumableUpload
  */
-@interface TUSResumableUpload2(Internal)
+@interface TUSResumableUpload(Internal)
 @property (nonatomic, weak) NSURLSession * __nullable session;
 /**
  Initializer methods
  */
 - (instancetype _Nullable)initWithFile:(NSURL * _Nonnull)fileUrl
-                              delegate:(id <TUSResumableUpload2Delegate> _Nonnull)delegate
+                              delegate:(id <TUSResumableUploadDelegate> _Nonnull)delegate
                          uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
                               metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata;
 
 
 +(instancetype _Nullable)loadUploadWithId:(NSString *)uploadId
-                                 delegate:(id<TUSResumableUpload2Delegate> _Nonnull)delegate;
+                                 delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate;
 
 @end
 
-#endif /* TUSResumableUpload2_Private_h */
+#endif /* TUSResumableUpload_Private_h */

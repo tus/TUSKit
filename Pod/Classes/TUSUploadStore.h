@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "TUSResumableUpload2.h"
+#import "TUSResumableUpload.h"
 
 @interface TUSUploadStore : NSObject
 

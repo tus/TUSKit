@@ -66,7 +66,7 @@ static NSString* const UPLOAD_ENDPOINT = @"http://192.168.5.80:1080/files/";
         
         
         // Initiate the background transfer
-        TUSResumableUpload2 *upload = [self.tusSession createUploadFromFile:fileUrl headers:@{} metadata:@{}];
+        TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl headers:@{} metadata:@{}];
         [upload resume];
         
 //        upload.progressBlock = ^(NSUInteger bytesWritten, NSUInteger bytesTotal){

@@ -7,39 +7,42 @@
 //
 //  Additions and Maintenance for TUSKit 1.0.0 and up by Mark Robert Masterson
 //  Copyright (c) 2015-2016 Mark Robert Masterson. All rights reserved.
+//
+//  Additions and changes for TUSSession completed by Findyr
+//  Copyright (c) 2016 Findyr
 
 @import Foundation;
 
-typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
-typedef void (^TUSUploadFailureBlock)(NSError* error);
-typedef void (^TUSUploadProgressBlock)(NSUInteger bytesWritten, NSUInteger bytesTotal);
+typedef NS_ENUM(NSInteger, TUSSessionUploadState) {
+    TUSSessionUploadStateCreatingFile,
+    TUSSessionUploadStateCheckingFile,
+    TUSSessionUploadStateUploadingFile,
+    TUSSessionUploadStateComplete
+};
 
-typedef struct _TUSRange {
-    long long first;
-    long long last;
-} TUSRange;
+@interface TUSResumableUpload : NSObject
+@property (readonly) NSString *uploadId;
 
-NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
-    TUSRange r;
-    r.first = first;
-    r.last = last;
-    return r;
-}
+/**
+ The upload is complete if the file has been completely uploaded to the TUS server
+*/
+ @property (readonly) BOOL complete;
+ 
 
-@class TUSData;
+/**
+ The upload is idle if no HTTP tasks are currently outstanding for it
+ */
+@property (readonly) BOOL idle;
 
-@interface TUSResumableUpload : NSObject <NSURLConnectionDelegate>
+/**
+ The current state of the upload
+ */
+@property (readonly) TUSSessionUploadState state;
 
-@property (readwrite, copy) TUSUploadResultBlock resultBlock;
-@property (readwrite, copy) TUSUploadFailureBlock failureBlock;
-@property (readwrite, copy) TUSUploadProgressBlock progressBlock;
-
-- (id)initWithURL:(NSString *)url
-             data:(TUSData *)data
-      fingerprint:(NSString *)fingerprint
-    uploadHeaders:(NSDictionary *)headers
-      fileName:(NSString *)fileName;
-
-- (void) start;
-
+- (BOOL) cancel;
+/**
+ Resume the upload if it was cancelled or not yet started
+ */
+- (BOOL) resume;
 @end
+

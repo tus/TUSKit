@@ -6,22 +6,22 @@
 //
 
 #import "TUSSession.h"
-#import "TUSResumableUpload2+Private.h"
+#import "TUSResumableUpload+Private.h"
 #import "TUSUploadStore.h"
 
-@interface TUSSession() <TUSResumableUpload2Delegate>
+@interface TUSSession() <TUSResumableUploadDelegate>
 
 @property (nonatomic, strong) NSURLSession *session; // Session to use for uploads
 @property (nonatomic, strong) NSURL *createUploadURL;
 @property (nonatomic, strong) TUSUploadStore *store; // Data store to save upload status in
-@property (nonatomic, strong) NSMutableDictionary <NSString *, TUSResumableUpload2 *>* uploads;
-@property (nonatomic, strong) NSMutableDictionary <NSURLSessionTask *, TUSResumableUpload2 *>* tasks;
+@property (nonatomic, strong) NSMutableDictionary <NSString *, TUSResumableUpload *>* uploads;
+@property (nonatomic, strong) NSMutableDictionary <NSURLSessionTask *, TUSResumableUpload *>* tasks;
 
-#pragma mark TUSResumableUpload2Delegate methods
+#pragma mark TUSResumableUploadDelegate methods
 /**
  Add an NSURLSessionTask that should be associated with an upload for delegate callbacks (e.g. upload progress)
  */
--(void)addTask:(NSURLSessionTask *)task forUpload:(TUSResumableUpload2 *)upload;
+-(void)addTask:(NSURLSessionTask *)task forUpload:(TUSResumableUpload *)upload;
 
 /**
  Stop tracking an NSURLSessionTask
@@ -79,11 +79,11 @@
 }
 
 #pragma mark public methods
-- (TUSResumableUpload2 *) createUploadFromFile:(NSURL *)fileURL
+- (TUSResumableUpload *) createUploadFromFile:(NSURL *)fileURL
                                        headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
                                       metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata
 {
-    TUSResumableUpload2 *upload = [[TUSResumableUpload2 alloc]  initWithFile:fileURL delegate:self uploadHeaders:headers metadata:metadata];
+    TUSResumableUpload *upload = [[TUSResumableUpload alloc]  initWithFile:fileURL delegate:self uploadHeaders:headers metadata:metadata];
     
     self.uploads[upload.uploadId] = upload; // Save the upload by ID for later
     return upload;
@@ -93,10 +93,10 @@
 /**
  Restore an upload, but do not start it.  Uploads must be restored by ID because file URLs can change between launch.
  */
-- (TUSResumableUpload2 *) restoreUpload:(NSString *)uploadId{
-    TUSResumableUpload2 * restoredUpload = self.uploads[uploadId];
+- (TUSResumableUpload *) restoreUpload:(NSString *)uploadId{
+    TUSResumableUpload * restoredUpload = self.uploads[uploadId];
     if (restoredUpload == nil) {
-        restoredUpload = [TUSResumableUpload2 loadUploadWithId:uploadId delegate:self];
+        restoredUpload = [TUSResumableUpload loadUploadWithId:uploadId delegate:self];
         if (restoredUpload != nil){
             self.uploads[uploadId] = restoredUpload; // Save the upload if we can find it in the data store
         }
@@ -107,7 +107,7 @@
 /**
  Restore all uploads from the data store
  */
--(NSArray <TUSResumableUpload2 *> *)restoreAllUploads
+-(NSArray <TUSResumableUpload *> *)restoreAllUploads
 {
     // First fetch all the stored background upload identifiers
     NSArray <NSString *> *uploadIds = [self.store allUploadIds];
@@ -123,7 +123,7 @@
 -(NSUInteger)cancelAll
 {
     NSUInteger cancelled = 0;
-    for (TUSResumableUpload2 * upload in self.uploads.allValues) {
+    for (TUSResumableUpload * upload in self.uploads.allValues) {
         if ([upload cancel]){
             cancelled++;
         }
@@ -133,9 +133,9 @@
     return cancelled;
 }
 
--(NSArray <TUSResumableUpload2 *> *)resumeAll{
-    NSMutableArray <TUSResumableUpload2 *> *resumableUploads = [@[] mutableCopy];
-    for (TUSResumableUpload2 * upload in self.uploads.allValues) {
+-(NSArray <TUSResumableUpload *> *)resumeAll{
+    NSMutableArray <TUSResumableUpload *> *resumableUploads = [@[] mutableCopy];
+    for (TUSResumableUpload * upload in self.uploads.allValues) {
         if ([upload resume]){
             [resumableUploads addObject:upload];
         }
@@ -144,7 +144,7 @@
 }
 
 #pragma mark delegate methods
--(void)addTask:(NSURLSessionTask *)task forUpload:(TUSResumableUpload2 *)upload{
+-(void)addTask:(NSURLSessionTask *)task forUpload:(TUSResumableUpload *)upload{
     self.tasks[task] = upload;
 }
 

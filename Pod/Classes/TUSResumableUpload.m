@@ -184,6 +184,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     return self;
 }
 
+#pragma mark public methods
 -(BOOL)cancel
 {
     self.cancelled = YES;
@@ -199,6 +200,20 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     return [self continueUpload];
 }
 
+
+
+#pragma mark property getters and setters
+- (long long) length {
+    return self.data.length;
+}
+
+- (BOOL)complete
+{
+    return self.state == TUSSessionUploadStateComplete;
+}
+
+
+#pragma mark private methods
 -(BOOL)continueUpload
 {
     // If the process is idle, need to begin at current state
@@ -256,7 +271,9 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     [request setAllHTTPHeaderFields:mutableHeader];
     
     __weak TUSResumableUpload * weakself = self;
-    
+    UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+        [weakself cancel];
+    }];
     self.currentTask = [self.delegate.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error){
         if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
             [weakself.delegate removeTask:weakself.currentTask];
@@ -283,6 +300,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         }
         weakself.idle = YES;
         [weakself saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        [[UIApplication sharedApplication] endBackgroundTask:bgTask];
         [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
     }];
     [self.delegate addTask:self.currentTask forUpload:self];
@@ -310,7 +328,9 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     [request setAllHTTPHeaderFields:mutableHeader];
     
     __weak TUSResumableUpload * weakself = self;
-    
+    UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+        [weakself cancel];
+    }];
     self.currentTask = [self.delegate.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error){
         if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
             [weakself.delegate removeTask:weakself.currentTask];
@@ -340,7 +360,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         }
         weakself.idle = YES;
         [weakself saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
-        
+        [[UIApplication sharedApplication] endBackgroundTask:bgTask];
         if (delayTime > 0) {
             __weak NSOperationQueue *weakQueue = [NSOperationQueue currentQueue];
             // Delay some time before we try again.  We use a weak queue pointer because if the queue goes away, presumably the session has too (the session should have a strong pointer to the queue).
@@ -383,7 +403,9 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     
     
     __weak TUSResumableUpload * weakself = self;
-    
+    UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+        [weakself cancel];
+    }];
     self.currentTask = [self.delegate.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error){
         if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
             [weakself.delegate removeTask:weakself.currentTask];
@@ -404,6 +426,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         }
         weakself.idle = YES;
         [weakself saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        [[UIApplication sharedApplication] endBackgroundTask:bgTask];
         [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
     }];
     [self.delegate addTask:self.currentTask forUpload:self];
@@ -411,19 +434,6 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     [self.currentTask resume]; // Now everything done on currentTask will be done in the callbacks.
     return YES;
 }
-
-
-#pragma mark - Property Getters and Setters
-- (long long) length {
-    return self.data.length;
-}
-
-- (BOOL)complete
-{
-    return self.state == TUSSessionUploadStateComplete;
-}
-
-#pragma mark NSURLSessionTask Callback
 
 
 /**
@@ -451,7 +461,9 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     }
 }
 
-#pragma mark Persistence functions
+
+
+#pragma mark private and internal persistence functions
 
 
 
@@ -484,7 +496,6 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
              STORE_KEY_FILE_URL: fileUrlData};
     
 }
-
 
 
 +(instancetype)loadUploadWithId:(NSString *)uploadId delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate

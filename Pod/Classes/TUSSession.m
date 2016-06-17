@@ -75,6 +75,7 @@
         _store = store; // TODO: Load uploads from store
         _createUploadURL = endpoint;
         _uploads = [NSMutableDictionary new];
+        _tasks = [NSMutableDictionary new];
         _allowsCellularAccess = allowsCellularAccess; // Bypass accessor because we have code that acts "on value changed"
     }
     return self;

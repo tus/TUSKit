@@ -11,15 +11,22 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <TUSKit/TUSKit.h>
 
-static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:8080/files";
+static NSString* const UPLOAD_ENDPOINT = @"http://192.168.5.80:1080/files/";
 
 @interface TKViewController ()
 
 @property (strong,nonatomic) ALAssetsLibrary *assetLibrary;
+@property (strong, nonatomic) TUSSession *tusSession;
 
 @end
 
 @implementation TKViewController
+
+-(void)viewDidLoad
+{
+    
+    self.tusSession = [[TUSSession alloc] initWithEndpoint:[[NSURL alloc] initWithString:UPLOAD_ENDPOINT] dataStore:[[TUSUploadStore alloc] init] allowsCellularAccess:YES];
+}
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
@@ -42,15 +49,28 @@ static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:8080/files";
     }
     
     [self.assetLibrary assetForURL:assetUrl resultBlock:^(ALAsset* asset) {
-        NSString *fingerprint = [assetUrl absoluteString];
-        NSDictionary *headers =  @{@"":@""};
-        
-        TUSAssetData *uploadData = [[TUSAssetData alloc] initWithAsset:asset];
-        TUSResumableUpload *upload = [[TUSResumableUpload alloc] initWithURL:UPLOAD_ENDPOINT data:uploadData fingerprint:fingerprint uploadHeaders:headers fileName:@"video.mp4"];
 
-        upload.progressBlock = ^(NSUInteger bytesWritten, NSUInteger bytesTotal){
+        
+        ALAssetRepresentation *rep = [asset defaultRepresentation];
+        Byte *buffer = (Byte*)malloc(rep.size);
+        NSUInteger buffered = [rep getBytes:buffer fromOffset:0.0 length:rep.size error:nil];
+        
+        NSData *data = [NSData dataWithBytesNoCopy:buffer length:buffered freeWhenDone:YES];
+        NSURL *documentDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSAllDomainsMask][0];
+        NSURL *fileUrl = [documentDirectory URLByAppendingPathComponent:[[NSUUID alloc] init].UUIDString];
+        
+        NSError *error;
+        if (![data writeToURL:fileUrl options:NSDataWritingAtomic error:&error]) {
+            NSLog(@"%li", (long)error.code);
+        }
+        
+        
+        // Initiate the background transfer
+        TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl headers:@{} metadata:@{}];
+        
+        upload.progressBlock = ^(int64_t bytesWritten, int64_t bytesTotal){
            // Update your progress bar here
-           NSLog(@"progress: %lu / %lu", (unsigned long)bytesWritten, (unsigned long)bytesTotal);
+           NSLog(@"progress: %llu / %llu", (unsigned long long)bytesWritten, (unsigned long long)bytesTotal);
         };
 
         upload.resultBlock = ^(NSURL* fileURL){
@@ -63,7 +83,7 @@ static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:8080/files";
            NSLog(@"error: %@", error);
         };
 
-        [upload start];
+        [upload resume];
     } failureBlock:^(NSError* error) {
         NSLog(@"Unable to load asset due to: %@", error);
     }];

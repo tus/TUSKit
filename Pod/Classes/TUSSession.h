@@ -57,4 +57,5 @@
  This is not done automatically on restore so that an application can choose which to resume.
  */
 -(NSArray <TUSResumableUpload *> *)resumeAll;
+
 @end

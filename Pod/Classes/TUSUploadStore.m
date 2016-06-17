@@ -8,45 +8,35 @@
 #import "TUSResumableUpload.h"
 
 @interface TUSUploadStore ()
-@property (strong, nonatomic) NSMutableDictionary <NSString *, TUSResumableUpload *> * uploads;
 @end
+
 
 @implementation TUSUploadStore
 
--(id) init
-{
-    self = [super init];
-    if (self) {
-        self.uploads = [NSMutableDictionary new];
-    }
-    return self;
-}
 
 -(TUSResumableUpload *) loadUploadWithIdentifier:(NSString *)uploadId delegate:(id<TUSResumableUploadDelegate>)delegate
 {
-    return self.uploads[uploadId];
+    @throw [NSException exceptionWithName:@"Not Implemented" reason:@"TUSUploadStore is an abstract base class and does not implement any methods" userInfo:nil];
 }
 
 -(BOOL)saveUpload:(TUSResumableUpload *)upload
 {
-    self.uploads[upload.uploadId] = upload;
-    return YES;
+    @throw [NSException exceptionWithName:@"Not Implemented" reason:@"TUSUploadStore is an abstract base class and does not implement any methods" userInfo:nil];
 }
 
 -(BOOL)removeUploadWithIdentifier:(NSString *)uploadIdentifier
 {
-    [self.uploads removeObjectForKey:uploadIdentifier];
-    return YES;
+    @throw [NSException exceptionWithName:@"Not Implemented" reason:@"TUSUploadStore is an abstract base class and does not implement any methods" userInfo:nil];
 }
 
 -(NSArray <NSString *>*)allUploadIdentifiers
 {
-    return self.uploads.allKeys;
+    @throw [NSException exceptionWithName:@"Not Implemented" reason:@"TUSUploadStore is an abstract base class and does not implement any methods" userInfo:nil];
 }
 
 -(BOOL)containsUploadWithIdentifier:(NSString *)uploadId
 {
-    return [self.uploads objectForKey:uploadId] != nil;
+    @throw [NSException exceptionWithName:@"Not Implemented" reason:@"TUSUploadStore is an abstract base class and does not implement any methods" userInfo:nil];
 }
 
 -(NSString *)generateUploadId

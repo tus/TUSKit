@@ -548,7 +548,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     NSDictionary *uploadUrl = [NSURL URLWithString:serializedUpload[STORE_KEY_UPLOAD_URL]];
     
     NSURL * savedDelegateEndpoint = [NSURL URLWithString:serializedUpload[STORE_KEY_DELEGATE_ENDPOINT]];
-    if (![savedDelegateEndpoint isEqual:delegate.createUploadURL.absoluteString]){ // Check saved delegate endpoint
+    if (![savedDelegateEndpoint.absoluteString isEqualToString:delegate.createUploadURL.absoluteString]){ // Check saved delegate endpoint
         NSLog(@"Delegate URL in stored dictionary for %@ (%@) does not match the one in the passed-in delegate %@", uploadId, savedDelegateEndpoint, delegate.createUploadURL);
         return nil;
     }
@@ -562,12 +562,13 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
             return nil;
         }
         // Check file length
-        NSDictionary *fileAttributes = [[NSFileManager defaultManager] attributesOfItemAtPath:fileUrl.filePathURL error:&error];
+        NSNumber *fileSize = nil;
+        [fileUrl getResourceValue:&fileSize forKey:NSURLFileSizeKey error:&error];
         if (error != nil){
-            NSLog(@"Error loading details for file for saved at %@ when restoring upload %@", fileUrl, uploadId);
+            NSLog(@"Error loading size of file saved at %@ when restoring upload %@", fileUrl, uploadId);
             return nil;
         }
-        NSNumber *fileSize = fileAttributes[NSFileSize];
+        
         if (fileSize.unsignedLongLongValue != expectedLength.unsignedLongLongValue){
             NSLog(@"Expected file size (%ulld) for saved upload %@ does not match actual file size (%ulld)", fileSize.unsignedLongLongValue, uploadId, expectedLength.unsignedLongLongValue);
             return nil;

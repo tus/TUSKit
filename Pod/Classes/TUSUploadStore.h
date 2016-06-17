@@ -7,8 +7,17 @@
 #import <Foundation/Foundation.h>
 #import "TUSResumableUpload+Private.h"
 
-
+/**
+ Abstract implementation of a TUSUploadStore.  Must be overridden by a concrete sub-class
+ */
 @interface TUSUploadStore : NSObject
+// IMPLEMENTED METHODS
+/**
+ Generate a new, unique upload ID for this data store
+ */
+-(NSString *)generateUploadId;
+
+// UNIMPLEMENTED ABSTRACT METHODS
 -(TUSResumableUpload *) loadUploadWithIdentifier:(NSString *)uploadId delegate:(id<TUSResumableUploadDelegate>)delegate;
 -(BOOL)saveUpload:(TUSResumableUpload *)upload;
 /**
@@ -17,9 +26,6 @@
  */
 -(BOOL)removeUploadWithIdentifier:(NSString *)uploadIdentifier;
 -(BOOL)containsUploadWithIdentifier:(NSString *)uploadId;
-/**
- Generate a new, unique upload ID for this data store
- */
--(NSString *)generateUploadId;
 @property (readonly) NSArray <NSString *>* allUploadIdentifiers;
+
 @end

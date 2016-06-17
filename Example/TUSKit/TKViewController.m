@@ -12,6 +12,7 @@
 #import <TUSKit/TUSKit.h>
 
 static NSString* const UPLOAD_ENDPOINT = @"http://192.168.5.80:1080/files/";
+static NSString* const FILE_NAME = @"tuskit_example";
 
 @interface TKViewController ()
 
@@ -24,8 +25,12 @@ static NSString* const UPLOAD_ENDPOINT = @"http://192.168.5.80:1080/files/";
 
 -(void)viewDidLoad
 {
+    NSURL * applicationSupportURL = [[[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] firstObject];
     
-    self.tusSession = [[TUSSession alloc] initWithEndpoint:[[NSURL alloc] initWithString:UPLOAD_ENDPOINT] dataStore:[[TUSUploadStore alloc] init] allowsCellularAccess:YES];
+    TUSUploadStore * uploadStore = [[TUSFileUploadStore alloc] initWithURL:[applicationSupportURL URLByAppendingPathComponent:FILE_NAME]];
+    self.tusSession = [[TUSSession alloc] initWithEndpoint:[[NSURL alloc] initWithString:UPLOAD_ENDPOINT] dataStore:uploadStore allowsCellularAccess:YES];
+    [self.tusSession restoreAllUploads];
+    [self.tusSession resumeAll];
 }
 
 - (void)viewDidAppear:(BOOL)animated {

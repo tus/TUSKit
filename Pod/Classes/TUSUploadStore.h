@@ -1,10 +1,8 @@
 //
 //  TUSUploadStore.h
-//  Pods
 //
-//  Created by Jay Rogers on 5/20/16.
-//
-//
+//  Created by Findyr
+//  Copyright (c) 2016 Findyr. All rights reserved.
 
 #import <Foundation/Foundation.h>
 #import "TUSResumableUpload.h"
@@ -19,7 +17,7 @@
 -(NSString *) loadBackgroundUploadId:(NSUInteger)uploadTaskId;
 -(BOOL)saveTaskId:(NSUInteger)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId;
 -(BOOL) removeUploadTask:(NSUInteger)uploadTaskId;
--(BOOL) removeBackgroundUpload:(NSString *)uploadId;
+-(BOOL) removeUpload:(NSString *)uploadId;
 -(NSArray *)allUploadIds;
 -(BOOL) containsUploadId:(NSString *)uploadId;
 

@@ -1,8 +1,9 @@
 //
-//  TUSFileData
+//  TUSFileData.h
 //
-//  Created by Findyr on 2016-06-13
-//  Copyright (c) 2016 Findyr
+//  Created by Findyr
+//  Copyright (c) 2016 Findyr. All rights reserved.
+
 
 
 #import "TUSData.h"

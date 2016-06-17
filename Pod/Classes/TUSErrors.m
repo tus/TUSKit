@@ -1,10 +1,8 @@
 //
 //  TUSErrors.m
-//  Pods
 //
-//  Created by Findyr on 5/20/16.
-//
-//
+//  Created by Findyr
+//  Copyright (c) 2016 Findyr. All rights reserved.
 
 #import "TUSErrors.h"
 

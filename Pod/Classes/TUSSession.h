@@ -1,8 +1,8 @@
 //
 //  TUSSession.h
-//  Pods
 //
-//
+//  Created by Findyr
+//  Copyright (c) 2016 Findyr. All rights reserved.
 
 #import <Foundation/Foundation.h>
 #import "TUSUploadStore.h"

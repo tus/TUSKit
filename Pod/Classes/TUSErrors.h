@@ -1,10 +1,8 @@
 //
 //  TUSErrors.h
-//  Pods
 //
-//  Created by Findyr on 5/20/16.
-//
-//
+//  Created by Findyr
+//  Copyright (c) 2016 Findyr. All rights reserved.
 
 #import <Foundation/Foundation.h>
 
@@ -12,5 +10,6 @@ FOUNDATION_EXPORT NSString *const TUSErrorDomain;
 
 typedef enum TUSErrorCode : NSInteger {
     TUSFileDataErrorClosed,
-    TUSFileDataErrorCannotOpen
+    TUSFileDataErrorCannotOpen,
+    TUSResumableUploadErrorServer // Server errors will include a "responseCode" key in the user info dictionary
 };

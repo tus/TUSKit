@@ -1,10 +1,8 @@
 //
 //  TUSResumableUpload+Private.h
-//  Pods
 //
-//  Created by Findyr on 6/7/16.
-//
-//
+//  Created by Findyr
+//  Copyright (c) 2016 Findyr. All rights reserved.
 
 #ifndef TUSResumableUpload_Private_h
 #define TUSResumableUpload_Private_h
@@ -50,6 +48,12 @@
  */
 @required
 -(void)removeTask:(NSURLSessionTask * _Nonnull)task;
+
+/**
+ Stop tracking an TUSResumableUpload
+ */
+@required
+-(void)removeUpload:(TUSResumableUpload * _Nonnull)upload;
 @end
 
 
@@ -69,6 +73,11 @@
 
 +(instancetype _Nullable)loadUploadWithId:(NSString *)uploadId
                                  delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate;
+
+/**
+ Progress callback method for a task associated with this upload. 
+ */
+-(void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
 
 @end
 

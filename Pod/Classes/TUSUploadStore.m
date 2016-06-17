@@ -1,10 +1,8 @@
 //
 //  TUSUploadStore.m
-//  Pods
 //
-//  Created by Jay Rogers on 5/20/16.
-//
-//
+//  Created by Findyr
+//  Copyright (c) 2016 Findyr. All rights reserved.
 
 #import "TUSUploadStore.h"
 #import "TUSResumableUpload.h"
@@ -52,7 +50,7 @@
     return YES;
 }
 
--(BOOL)removeBackgroundUpload:(NSString *)uploadId
+-(BOOL)removeUpload:(NSString *)uploadId
 {
     [self.backgroundUploadStore removeObjectForKey:uploadId];
 

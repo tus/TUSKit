@@ -1,6 +1,5 @@
 //
 //  TUSResumableUpload.m
-//  tus-ios-client-demo
 //
 //  Created by Felix Geisendoerfer on 07.04.13.
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
@@ -8,8 +7,8 @@
 //  Additions and Maintenance for TUSKit 1.0.0 and up by Mark Robert Masterson
 //  Copyright (c) 2015-2016 Mark Robert Masterson. All rights reserved.
 //
-//  Additions for background uploading by Findyr.
-//  Copyright (c) 2016 Findyr. All rights reserved.
+//  Additions and changes for NSURLSession by Findyr
+//  Copyright (c) 2016 Findyr
 
 #import "TUSKit.h"
 #import "TUSData.h"
@@ -48,10 +47,11 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 // Readwrite versions of properties in the header
 @property (readwrite, strong) NSString *uploadId;
 @property (readwrite) BOOL idle;
-@property (readwrite) TUSSessionUploadState state;
+@property (readwrite) TUSResumableUploadState state;
 
 // Internal state
 @property (nonatomic) BOOL cancelled;
+@property (nonatomic) BOOL stopped;
 @property (nonatomic, weak) id<TUSResumableUploadDelegate> delegate; // Current upload offset
 @property (nonatomic) long long offset; // Current upload offset
 @property (nonatomic, strong) NSURL *uploadUrl; // Target URL for file
@@ -92,6 +92,12 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 -(void)saveToStore;
 
 /**
+ Remove this TUSResumableUpload from the store
+ */
+-(void)removeFromStore;
+
+
+/**
  Private designated initializer
  No parameters are modified or checked in any way except for state.
  */
@@ -100,7 +106,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                                    delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate
                               uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
                               finalMetadata:(NSDictionary <NSString *, NSString *>* _Nonnull)metadata
-                                      state:(TUSSessionUploadState)state
+                                      state:(TUSResumableUploadState)state
                                   uploadUrl:(NSURL * _Nullable)uploadUrl;
 
 @end
@@ -142,7 +148,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
                          delegate:delegate
                     uploadHeaders:headers
                     finalMetadata:uploadMetadata
-                            state:TUSSessionUploadStateCreatingFile
+                            state:TUSResumableUploadStateCreatingFile
                         uploadUrl:nil];
     
 }
@@ -157,7 +163,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
                                    delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate
                               uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
                               finalMetadata:(NSDictionary <NSString *, NSString *>* _Nonnull)metadata
-                                      state:(TUSSessionUploadState)state
+                                      state:(TUSResumableUploadState)state
                                   uploadUrl:(NSURL * _Nullable)uploadUrl
 {
     self = [super init];
@@ -171,7 +177,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         _uploadUrl = uploadUrl;
         _idle = YES;
         
-        if (_state != TUSSessionUploadStateComplete){
+        if (_state != TUSResumableUploadStateComplete){
             _data = [[TUSFileData alloc] initWithFileURL:fileUrl];
             if (!_data){
                 NSLog(@"Error creating TUSFileData object with url %@", fileUrl);
@@ -187,16 +193,32 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
 #pragma mark public methods
 -(BOOL)cancel
 {
-    self.cancelled = YES;
+    if([self stop]){
+        self.cancelled = YES;
+        [self.delegate removeUpload:self];
+        [self removeFromStore];
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
+-(BOOL)stop
+{
+    self.stopped = YES;
     if (self.currentTask){
         [self.currentTask cancel];
     }
     [self.data close];
+    return YES;
 }
 
 - (BOOL)resume
 {
-    self.cancelled = NO; // Un-cancel
+    if (self.cancelled){
+        return NO;
+    }
+    self.stopped = NO; // Un-stop
     return [self continueUpload];
 }
 
@@ -209,23 +231,30 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
 
 - (BOOL)complete
 {
-    return self.state == TUSSessionUploadStateComplete;
+    return self.state == TUSResumableUploadStateComplete;
 }
 
+#pragma mark internal methods
+-(void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend{
+    // When notified of upload progress by the TUSSession, send it to the progress block
+    if (self.state == TUSResumableUploadStateUploadingFile && self.currentTask == task && self.progressBlock){
+        self.progressBlock(bytesSent + self.offset, self.length); // Report progress from current offset, which is where the upload task started.
+    }
+}
 
 #pragma mark private methods
 -(BOOL)continueUpload
 {
     // If the process is idle, need to begin at current state
-    if (self.idle && !self.cancelled) {
+    if (self.idle && !self.stopped) {
         switch (self.state) {
-            case TUSSessionUploadStateCreatingFile:
+            case TUSResumableUploadStateCreatingFile:
                 return [self createFile];
-            case TUSSessionUploadStateCheckingFile:
+            case TUSResumableUploadStateCheckingFile:
                 return [self checkFile];
-            case TUSSessionUploadStateUploadingFile:
+            case TUSResumableUploadStateUploadingFile:
                 return [self uploadFile];
-            case TUSSessionUploadStateComplete:
+            case TUSResumableUploadStateComplete:
             default:
                 return NO;
         }
@@ -235,7 +264,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
 
 - (BOOL)createFile
 {
-    self.state = TUSSessionUploadStateCreatingFile;
+    self.state = TUSResumableUploadStateCreatingFile;
     self.offset = 0; // Reset the offset to zero if we're creating a new file.
     
     long long size = self.data.length;
@@ -285,6 +314,18 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         }
         if (error != nil || httpResponse == nil){
             TUSLog(@"Error or no response during attempt to create file, retrying");
+        } else if (httpResponse.statusCode >= 500 && httpResponse.statusCode < 600) {
+            TUSLog(@"Server error, stopping");
+            [weakself stop]; // Will prevent continueUpload from doing anything
+            // Make the callback after the current operation so that the rest of the method will finish.
+            // Store the block so that we know it will be non-nil in the closure.
+            TUSUploadFailureBlock block = weakself.failureBlock;
+            if (block) {
+                NSInteger statusCode = httpResponse.statusCode;
+                [[NSOperationQueue currentQueue] addOperationWithBlock:^{
+                    block([[NSError alloc] initWithDomain:TUSErrorDomain code:TUSResumableUploadErrorServer userInfo:@{@"responseCode": @(statusCode)}]);
+                }];
+            }
         } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
             TUSLog(@"Server responded to create file with %ld. Trying again",
                    (long)httpResponse.statusCode);
@@ -295,7 +336,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
             if (weakself.uploadUrl) {
                 // If we got a valid URL, set the new state to uploading.  Otherwise, will try creating again.k
                 TUSLog(@"Created resumable upload at %@ for id %@", weakself.uploadUrl, weakself.uploadId);
-                weakself.state = TUSSessionUploadStateUploadingFile;
+                weakself.state = TUSResumableUploadStateUploadingFile;
             }
         }
         weakself.idle = YES;
@@ -313,7 +354,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
 
 - (BOOL) checkFile
 {
-    self.state = TUSSessionUploadStateCheckingFile;
+    self.state = TUSResumableUploadStateCheckingFile;
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
@@ -344,16 +385,25 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         if (error != nil || httpResponse == nil){
             TUSLog(@"Error or no response during attempt to check file, retrying");
         } else if (httpResponse.statusCode == 423) {
+            // We only check 423 errors in checkFile because the other methods will properly handle locks with their generic error handling.
             TUSLog(@"File is locked, waiting and retrying");
             delayTime = 5; // Delay 5 seconds to wait for locks.
-        } else if (httpResponse.statusCode == 503 || httpResponse.statusCode == 504) {
-            TUSLog(@"Gateway timeout or service is down, waiting and retrying");
-            delayTime = 60; // Delay 60 seconds to wait for service to resume.
-            //TODO: Fail for other 500 errors
+        } else if (httpResponse.statusCode >= 500 && httpResponse.statusCode < 600) {
+            TUSLog(@"Server error, stopping");
+            [weakself stop]; // Will prevent continueUpload from doing anything
+            // Make the callback after the current operation so that the rest of the method will finish.
+            // Store the block so that we know it will be non-nil in the closure.
+            TUSUploadFailureBlock block = weakself.failureBlock;
+            if (block) {
+                NSInteger statusCode = httpResponse.statusCode;
+                [[NSOperationQueue currentQueue] addOperationWithBlock:^{
+                    block([[NSError alloc] initWithDomain:TUSErrorDomain code:TUSResumableUploadErrorServer userInfo:@{@"responseCode": @(statusCode)}]);
+                }];
+            }
         } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
             TUSLog(@"Server responded to file check with %ld. Creating file",
                    (long)httpResponse.statusCode);
-            weakself.state = TUSSessionUploadStateCreatingFile;
+            weakself.state = TUSResumableUploadStateCreatingFile;
         } else {
             // Got a valid status code, so update state and continue upload.
             [weakself updateStateFromHeaders:httpResponse.allHeaderFields];
@@ -364,9 +414,9 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         if (delayTime > 0) {
             __weak NSOperationQueue *weakQueue = [NSOperationQueue currentQueue];
             // Delay some time before we try again.  We use a weak queue pointer because if the queue goes away, presumably the session has too (the session should have a strong pointer to the queue).
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ // We use the main queue instead of this queue because we do not know this NSOperationQueue's GCD queue.
                 [weakQueue addOperationWithBlock:^{
-                    [weakself continueUpload]; // Continue upload on the queue we were previously on.
+                    [weakself continueUpload]; // Continue upload on the queue all of the upload operations are on.
                 }];
             });
         } else {
@@ -379,9 +429,9 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     return YES;
 }
 
-- (BOOL)uploadFile
+-(BOOL)uploadFile
 {
-    self.state = TUSSessionUploadStateUploadingFile;
+    self.state = TUSResumableUploadStateUploadingFile;
     
     NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
@@ -415,13 +465,27 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
             httpResponse = (NSHTTPURLResponse *)response;
         }
-        if (error != nil){
-            TUSLog(@"Error during attempt to upload, checking state");
-            weakself.state = TUSSessionUploadStateCheckingFile;
-        } else if (httpResponse == nil || httpResponse.statusCode != 204){
-            TUSLog(@"No response or invalid status code during attempt to upload, checking state");
-            weakself.state = TUSSessionUploadStateCheckingFile;
+        if (error != nil || httpResponse == nil){
+            TUSLog(@"Error or no response during attempt to upload file, checking state");
+            weakself.state = TUSResumableUploadStateCheckingFile;
+        } else if (httpResponse.statusCode >= 500 && httpResponse.statusCode < 600) {
+            TUSLog(@"Server error, stopping");
+            weakself.state = TUSResumableUploadStateCheckingFile;
+            [weakself stop]; // Will prevent continueUpload from doing anything
+            // Make the callback after the current operation so that the rest of the method will finish.
+            // Store the block so that we know it will be non-nil in the closure.
+            TUSUploadFailureBlock block = weakself.failureBlock;
+            if (block) {
+                NSInteger statusCode = httpResponse.statusCode;
+                [[NSOperationQueue currentQueue] addOperationWithBlock:^{
+                    block([[NSError alloc] initWithDomain:TUSErrorDomain code:TUSResumableUploadErrorServer userInfo:@{@"responseCode": @(statusCode)}]);
+                }];
+            }
+        } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
+            TUSLog(@"Invalid status code (%ld) during attempt to upload, checking state", (long)httpResponse.statusCode);
+            weakself.state = TUSResumableUploadStateCheckingFile;
         } else {
+            // Got an "OK" response
             [weakself updateStateFromHeaders:httpResponse.allHeaderFields];
         }
         weakself.idle = YES;
@@ -446,18 +510,21 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         long long serverOffset = [rangeHeader longLongValue];
         if (serverOffset >= self.length) {
             TUSLog(@"Upload complete at %@ for id %@", self.uploadUrl, self.uploadId);
-            self.state = TUSSessionUploadStateComplete;
-            //TODO: Close file/data
+            self.state = TUSResumableUploadStateComplete;
+            [self.data stop];
+            if(self.resultBlock){
+                self.resultBlock([self.uploadUrl copy]);
+            }
         } else {
             TUSLog(@"Resumable upload at %@ for %@ from %lld (%@)",
                    self.uploadUrl, self.uploadId, serverOffset, rangeHeader);
             self.offset = serverOffset;
-            self.state = TUSSessionUploadStateUploadingFile;
+            self.state = TUSResumableUploadStateUploadingFile;
         }
     } else {
         TUSLog(@"No header received during request for %@, so checking file", self.uploadUrl);
         // We didn't get an offset header, so we need to run the check again
-        self.state = TUSSessionUploadStateCheckingFile;
+        self.state = TUSResumableUploadStateCheckingFile;
     }
 }
 
@@ -488,7 +555,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     
     return @{STORE_KEY_ID: self.uploadId,
              STORE_KEY_DELEGATE_ENDPOINT: self.delegate.createUploadURL.absoluteString,
-             STORE_KEY_UPLOAD_URL:  self.state == TUSSessionUploadStateCreatingFile? [NSNull null] : self.uploadUrl.absoluteString, //If we are creating the file, there is no upload URL
+             STORE_KEY_UPLOAD_URL:  self.state == TUSResumableUploadStateCreatingFile? [NSNull null] : self.uploadUrl.absoluteString, //If we are creating the file, there is no upload URL
              STORE_KEY_LENGTH: @(self.length),
              STORE_KEY_LAST_STATE: @(self.state),
              STORE_KEY_METADATA: self.metadata,
@@ -520,7 +587,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     //UploadID
     NSNumber *expectedLength = savedData[STORE_KEY_LENGTH];
     NSNumber *stateObj = savedData[STORE_KEY_LAST_STATE];
-    TUSSessionUploadState state = stateObj.unsignedIntegerValue;
+    TUSResumableUploadState state = stateObj.unsignedIntegerValue;
     NSDictionary *metadata = savedData[STORE_KEY_METADATA];
     NSDictionary *headers = savedData[STORE_KEY_UPLOAD_HEADERS];
     NSDictionary *uploadUrl = [NSURL URLWithString:savedData[STORE_KEY_UPLOAD_URL]];
@@ -543,15 +610,15 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
             NSLog(@"Expected file size (%ulld) for saved upload %@ does not match actual file size (%ulld)", fileSize.unsignedLongLongValue, uploadId, expectedLength.unsignedLongLongValue);
             return nil;
         }
-    } else if (state != TUSSessionUploadStateComplete) { // If we do not have a file url and the upload isn't complete, then we were reloading using the wrong method.
+    } else if (state != TUSResumableUploadStateComplete) { // If we do not have a file url and the upload isn't complete, then we were reloading using the wrong method.
         NSLog(@"Attempt to reload non-file upload using file-based upload restore method");
         //TODO: Implement code to resume a non-file-based upload
         return nil;
     }
     
     // If the upload was previously uploading, we need to do a check before we can continue.
-    if (state == TUSSessionUploadStateUploadingFile){
-        state = TUSSessionUploadStateCheckingFile;
+    if (state == TUSResumableUploadStateUploadingFile){
+        state = TUSResumableUploadStateCheckingFile;
     }
     
     return [[self alloc] initWithUploadId:uploadId
@@ -570,5 +637,11 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
 {
     [self.delegate.store saveDictionaryForUpload:self.uploadId dictionary:[self serialize]];
 }
+
+-(void)removeFromStore
+{
+    [self.delegate.store removeUpload:self.uploadId];
+}
+
 
 @end

@@ -1,15 +1,13 @@
 //
 //  TUSSession.m
-//  Pods
 //
-//
-//
+//  Created by Findyr
+//  Copyright (c) 2016 Findyr. All rights reserved.
 
-#import "TUSSession.h"
+#import "TUSKit.h"
 #import "TUSResumableUpload+Private.h"
-#import "TUSUploadStore.h"
 
-@interface TUSSession() <TUSResumableUploadDelegate>
+@interface TUSSession() <TUSResumableUploadDelegate, NSURLSessionDataDelegate>
 
 @property (nonatomic, strong) NSURLSession *session; // Session to use for uploads
 @property (nonatomic, strong) NSURL *createUploadURL;
@@ -17,7 +15,7 @@
 @property (nonatomic, strong) NSMutableDictionary <NSString *, TUSResumableUpload *>* uploads;
 @property (nonatomic, strong) NSMutableDictionary <NSURLSessionTask *, TUSResumableUpload *>* tasks;
 
-#pragma mark TUSResumableUploadDelegate methods
+#pragma mark TUSResumableUploadDelegate method declarations
 /**
  Add an NSURLSessionTask that should be associated with an upload for delegate callbacks (e.g. upload progress)
  */
@@ -28,6 +26,10 @@
  */
 -(void)removeTask:(NSURLSessionTask *)task;
 
+/**
+ Stop tracking a TUSResumableUpload
+ */
+-(void)removeUpload:(TUSResumableUpload * _Nonnull)upload;
 
 @end
 
@@ -56,7 +58,7 @@
     if (_session == nil){
         NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
         sessionConfiguration.allowsCellularAccess = self.allowsCellularAccess;
-        _session = [NSURLSession sessionWithConfiguration:sessionConfiguration delegate:nil delegateQueue:[NSOperationQueue mainQueue]];
+        _session = [NSURLSession sessionWithConfiguration:sessionConfiguration delegate:self delegateQueue:[NSOperationQueue mainQueue]];
     }
     return _session;
 }
@@ -150,6 +152,17 @@
 
 -(void)removeTask:(NSURLSessionTask *)task{
     [self.tasks removeObjectForKey:task];
+}
+
+-(void)removeUpload:(TUSResumableUpload * _Nonnull)upload{
+    // We rely on the TUSBackgroundTasks to remove themselves.
+    [self.uploads removeObjectForKey:upload.uploadId];
+}
+
+#pragma mark NSURLSessionDataDelegate methods
+-(void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend{
+    // Unfortunately we need to use this delegate method to report progress back to the task for it to report it to its callback methods
+    TUSLog(@"Sent some data 'natch");
 }
 
 @end

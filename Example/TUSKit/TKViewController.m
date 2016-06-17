@@ -5,6 +5,8 @@
 //  Created by Michael Avila on 08/10/2014.
 //  Copyright (c) 2014 Michael Avila. All rights reserved.
 //
+//  Additions and changes for TUSSession implementation by Findyr
+//  Copyright (c) 2016 Findyr
 
 #import "TKViewController.h"
 
@@ -21,6 +23,21 @@ static NSString* const FILE_NAME = @"tuskit_example";
 
 @end
 
+static TUSUploadProgressBlock progressBlock = ^(int64_t bytesWritten, int64_t bytesTotal){
+    // Update your progress bar here
+    NSLog(@"progress: %llu / %llu", (unsigned long long)bytesWritten, (unsigned long long)bytesTotal);
+};
+
+static TUSUploadResultBlock resultBlock = ^(NSURL* fileURL){
+    // Use the upload url
+    NSLog(@"url: %@", fileURL);
+};
+
+static TUSUploadFailureBlock failureBlock = ^(NSError* error){
+    // Handle the error
+    NSLog(@"error: %@", error);
+};
+
 @implementation TKViewController
 
 -(void)viewDidLoad
@@ -29,7 +46,11 @@ static NSString* const FILE_NAME = @"tuskit_example";
     
     TUSUploadStore * uploadStore = [[TUSFileUploadStore alloc] initWithURL:[applicationSupportURL URLByAppendingPathComponent:FILE_NAME]];
     self.tusSession = [[TUSSession alloc] initWithEndpoint:[[NSURL alloc] initWithString:UPLOAD_ENDPOINT] dataStore:uploadStore allowsCellularAccess:YES];
-    [self.tusSession restoreAllUploads];
+    for (TUSResumableUpload * upload in [self.tusSession restoreAllUploads]){
+        upload.progressBlock = progressBlock;
+        upload.resultBlock = resultBlock;
+        upload.failureBlock = failureBlock;
+    }
     [self.tusSession resumeAll];
 }
 
@@ -73,20 +94,9 @@ static NSString* const FILE_NAME = @"tuskit_example";
         // Initiate the background transfer
         TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl headers:@{} metadata:@{}];
         
-        upload.progressBlock = ^(int64_t bytesWritten, int64_t bytesTotal){
-           // Update your progress bar here
-           NSLog(@"progress: %llu / %llu", (unsigned long long)bytesWritten, (unsigned long long)bytesTotal);
-        };
-
-        upload.resultBlock = ^(NSURL* fileURL){
-           // Use the upload url
-           NSLog(@"url: %@", fileURL);
-        };
-
-        upload.failureBlock = ^(NSError* error){
-           // Handle the error
-           NSLog(@"error: %@", error);
-        };
+        upload.progressBlock = progressBlock;
+        upload.resultBlock = resultBlock;
+        upload.failureBlock = failureBlock;
 
         [upload resume];
     } failureBlock:^(NSError* error) {

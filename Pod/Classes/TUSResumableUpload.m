@@ -77,25 +77,9 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 - (void) updateStateFromHeaders:(NSDictionary*)headers;
 
 /**
- Serialize this resumable upload for reloading if the app is closed.  Note that the state will not necessarily be the same on restoring the upload.
- */
-- (NSDictionary *) serialize;
-
-/**
  Make the next call on this upload
  */
 - (BOOL) continueUpload;
-
-/**
- Save this TUSResumableUpload to the store for later recovery
- */
--(void)saveToStore;
-
-/**
- Remove this TUSResumableUpload from the store
- */
--(void)removeFromStore;
-
 
 /**
  Private designated initializer
@@ -111,24 +95,14 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 
 @end
 
-/**
- Generate a UUID that will be unique for the specified datastore
- */
-static NSString * generateUUIDForStore(TUSUploadStore * store)
-{
-    while(1) {
-        NSUUID *uuid = [[NSUUID alloc] init];
-        if(![store containsUploadId:uuid.UUIDString])
-            return uuid.UUIDString;
-    }
-}
 
 @implementation TUSResumableUpload
 
-- (instancetype _Nullable)initWithFile:(NSURL * _Nonnull)fileUrl
-                              delegate:(id <TUSResumableUploadDelegate> _Nonnull)delegate
-                         uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
-                              metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata
+- (instancetype _Nullable)initWithUploadId:(NSString *)uploadId
+                                      file:(NSURL * _Nonnull)fileUrl
+                                  delegate:(id <TUSResumableUploadDelegate> _Nonnull)delegate
+                             uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
+                                  metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata
 
 {
     if (!fileUrl.fileURL){
@@ -143,7 +117,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         [uploadMetadata addEntriesFromDictionary:metadata];
     }
     
-    return [self initWithUploadId:generateUUIDForStore(delegate.store)
+    return [self initWithUploadId:uploadId
                              file:fileUrl
                          delegate:delegate
                     uploadHeaders:headers
@@ -184,8 +158,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
                 return nil;
             }
         }
-        
-        [self saveToStore];
+        [self.delegate saveUpload:self];
     }
     return self;
 }
@@ -196,7 +169,6 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     if([self stop]){
         self.cancelled = YES;
         [self.delegate removeUpload:self];
-        [self removeFromStore];
         return YES;
     } else {
         return NO;
@@ -215,7 +187,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
 
 - (BOOL)resume
 {
-    if (self.cancelled){
+    if (self.cancelled || self.complete){
         return NO;
     }
     self.stopped = NO; // Un-stop
@@ -238,7 +210,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
 -(void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend{
     // When notified of upload progress by the TUSSession, send it to the progress block
     if (self.state == TUSResumableUploadStateUploadingFile && self.currentTask == task && self.progressBlock){
-        self.progressBlock(bytesSent + self.offset, self.length); // Report progress from current offset, which is where the upload task started.
+        self.progressBlock(totalBytesSent + self.offset, self.length); // Report progress from current offset, which is where the upload task started.
     }
 }
 
@@ -340,7 +312,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
             }
         }
         weakself.idle = YES;
-        [weakself saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        [weakself.delegate saveUpload:weakself]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
         [[UIApplication sharedApplication] endBackgroundTask:bgTask];
         [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
     }];
@@ -409,7 +381,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
             [weakself updateStateFromHeaders:httpResponse.allHeaderFields];
         }
         weakself.idle = YES;
-        [weakself saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        [weakself.delegate saveUpload:weakself]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
         [[UIApplication sharedApplication] endBackgroundTask:bgTask];
         if (delayTime > 0) {
             __weak NSOperationQueue *weakQueue = [NSOperationQueue currentQueue];
@@ -489,7 +461,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
             [weakself updateStateFromHeaders:httpResponse.allHeaderFields];
         }
         weakself.idle = YES;
-        [weakself saveToStore]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
+        [weakself.delegate saveUpload:weakself]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
         [[UIApplication sharedApplication] endBackgroundTask:bgTask];
         [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
     }];
@@ -498,7 +470,6 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     [self.currentTask resume]; // Now everything done on currentTask will be done in the callbacks.
     return YES;
 }
-
 
 /**
  Uses the offset from the provided headers to update the state of the upload - used by both check (HEAD) and upload (PATCH) response logic.
@@ -512,6 +483,7 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
             TUSLog(@"Upload complete at %@ for id %@", self.uploadUrl, self.uploadId);
             self.state = TUSResumableUploadStateComplete;
             [self.data stop];
+            [self.delegate removeUpload:self];
             if(self.resultBlock){
                 self.resultBlock([self.uploadUrl copy]);
             }
@@ -536,11 +508,6 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
 
 -(NSDictionary *) serialize
 {
-    /*
-     // Readwrite versions of properties in the header
-     @property (readwrite, strong) NSString *id;
-
-     */
     
     NSObject *fileUrlData = [NSNull null];
     if (self.fileUrl){
@@ -564,37 +531,32 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
     
 }
 
-
-+(instancetype)loadUploadWithId:(NSString *)uploadId delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate
+-(instancetype)initWithDictionary:(NSDictionary *)serializedUpload delegate:(id<TUSResumableUploadDelegate>)delegate
 {
-    NSDictionary *savedData = [delegate.store loadDictionaryForUpload:uploadId];
-    
     // If there is no data associated with the upload ID
-    if (savedData == nil) {
-        return nil;
-    } else if (![savedData[STORE_KEY_ID] isEqualToString:uploadId]){ // Sanity check
-        NSLog(@"ID in stored dictionary for %@ does not match (%@)", uploadId, savedData[STORE_KEY_ID]);
+    if (serializedUpload == nil) {
         return nil;
     }
     
-    NSURL * savedDelegateEndpoint = [NSURL URLWithString:savedData[STORE_KEY_DELEGATE_ENDPOINT]];
+    // Get parameters
+    NSNumber *uploadId = serializedUpload[STORE_KEY_ID];
+    NSNumber *expectedLength = serializedUpload[STORE_KEY_LENGTH];
+    NSNumber *stateObj = serializedUpload[STORE_KEY_LAST_STATE];
+    TUSResumableUploadState state = stateObj.unsignedIntegerValue;
+    NSDictionary *metadata = serializedUpload[STORE_KEY_METADATA];
+    NSDictionary *headers = serializedUpload[STORE_KEY_UPLOAD_HEADERS];
+    NSDictionary *uploadUrl = [NSURL URLWithString:serializedUpload[STORE_KEY_UPLOAD_URL]];
+    
+    NSURL * savedDelegateEndpoint = [NSURL URLWithString:serializedUpload[STORE_KEY_DELEGATE_ENDPOINT]];
     if (![savedDelegateEndpoint isEqual:delegate.createUploadURL.absoluteString]){ // Check saved delegate endpoint
         NSLog(@"Delegate URL in stored dictionary for %@ (%@) does not match the one in the passed-in delegate %@", uploadId, savedDelegateEndpoint, delegate.createUploadURL);
         return nil;
     }
     
-    // Get parameters
-    //UploadID
-    NSNumber *expectedLength = savedData[STORE_KEY_LENGTH];
-    NSNumber *stateObj = savedData[STORE_KEY_LAST_STATE];
-    TUSResumableUploadState state = stateObj.unsignedIntegerValue;
-    NSDictionary *metadata = savedData[STORE_KEY_METADATA];
-    NSDictionary *headers = savedData[STORE_KEY_UPLOAD_HEADERS];
-    NSDictionary *uploadUrl = [NSURL URLWithString:savedData[STORE_KEY_UPLOAD_URL]];
     NSURL *fileUrl = nil;
-    if(savedData[STORE_KEY_FILE_URL] != [NSNull null]){
+    if(serializedUpload[STORE_KEY_FILE_URL] != [NSNull null]){
         NSError *error;
-        fileUrl = [NSURL URLByResolvingBookmarkData:savedData[STORE_KEY_FILE_URL] options:0 relativeToURL:nil bookmarkDataIsStale:nil error:&error];
+        fileUrl = [NSURL URLByResolvingBookmarkData:serializedUpload[STORE_KEY_FILE_URL] options:0 relativeToURL:nil bookmarkDataIsStale:nil error:&error];
         if (error != nil){ // Assuming fileUrl must be non-nil if there is no error
             NSLog(@"Error loading file URL from stored data for upload %@", uploadId);
             return nil;
@@ -621,27 +583,13 @@ static NSString * generateUUIDForStore(TUSUploadStore * store)
         state = TUSResumableUploadStateCheckingFile;
     }
     
-    return [[self alloc] initWithUploadId:uploadId
-                                     file:fileUrl
-                                 delegate:delegate
-                            uploadHeaders:headers
-                            finalMetadata:metadata
-                                    state:state
-                                uploadUrl:uploadUrl];
+    return [self initWithUploadId:uploadId
+                             file:fileUrl
+                         delegate:delegate
+                    uploadHeaders:headers
+                    finalMetadata:metadata
+                            state:state
+                        uploadUrl:uploadUrl];
 }
-
-
-
-
--(void)saveToStore
-{
-    [self.delegate.store saveDictionaryForUpload:self.uploadId dictionary:[self serialize]];
-}
-
--(void)removeFromStore
-{
-    [self.delegate.store removeUpload:self.uploadId];
-}
-
 
 @end

@@ -24,7 +24,7 @@ typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
 typedef void (^TUSUploadFailureBlock)(NSError* error);
 typedef void (^TUSUploadProgressBlock)(NSInteger bytesWritten, NSInteger bytesTotal);
 
-@interface TUSResumableUpload : NSObject
+@interface TUSResumableUpload : NSObject<NSCoding>
 @property (readwrite, copy) TUSUploadResultBlock resultBlock;
 @property (readwrite, copy) TUSUploadFailureBlock failureBlock;
 @property (readwrite, copy) TUSUploadProgressBlock progressBlock;

@@ -7,69 +7,54 @@
 #import "TUSUploadStore.h"
 #import "TUSResumableUpload.h"
 
+@interface TUSUploadStore ()
+@property (strong, nonatomic) NSMutableDictionary <NSString *, TUSResumableUpload *> * uploads;
+@end
+
 @implementation TUSUploadStore
 
 -(id) init
 {
     self = [super init];
     if (self) {
-        self.backgroundUploadStore = [NSMutableDictionary new];
-        self.uploadTaskStore = [NSMutableDictionary new];
+        self.uploads = [NSMutableDictionary new];
     }
     return self;
 }
 
--(BOOL)saveDictionaryForUpload:(NSString *)uploadId dictionary:(NSDictionary *)data;
+-(TUSResumableUpload *) loadUploadWithIdentifier:(NSString *)uploadId delegate:(id<TUSResumableUploadDelegate>)delegate
 {
-    [self.backgroundUploadStore setObject:data forKey:uploadId];
-    
+    return self.uploads[uploadId];
+}
+
+-(BOOL)saveUpload:(TUSResumableUpload *)upload
+{
+    self.uploads[upload.uploadId] = upload;
     return YES;
 }
 
--(BOOL)saveTaskId:(NSUInteger)backgroundTaskId withBackgroundUploadId:(NSString *)backgroundUploadId
+-(BOOL)removeUploadWithIdentifier:(NSString *)uploadIdentifier
 {
-    [self.uploadTaskStore setObject:backgroundUploadId forKey:@(backgroundTaskId)];
-    
+    [self.uploads removeObjectForKey:uploadIdentifier];
     return YES;
 }
 
-- (NSString *)loadBackgroundUploadId:(NSUInteger)backgroundTaskId
+-(NSArray <NSString *>*)allUploadIdentifiers
 {
-    return [self.uploadTaskStore objectForKey:@(backgroundTaskId)];
+    return self.uploads.allKeys;
 }
 
--(NSDictionary *)loadDictionaryForUpload:(NSString *)uploadId
+-(BOOL)containsUploadWithIdentifier:(NSString *)uploadId
 {
-    return [self.backgroundUploadStore objectForKey:uploadId];
+    return [self.uploads objectForKey:uploadId] != nil;
 }
 
--(BOOL)removeUploadTask:(NSUInteger)uploadTaskId
+-(NSString *)generateUploadId
 {
-    [self.uploadTaskStore removeObjectForKey:@(uploadTaskId)];
-    
-    return YES;
-}
-
--(BOOL)removeUpload:(NSString *)uploadId
-{
-    [self.backgroundUploadStore removeObjectForKey:uploadId];
-
-    return YES;
-}
-
--(NSMutableArray *)loadAllBackgroundIds
-{
-    NSMutableArray *backgroundUploadIds = [NSMutableArray new];
-    
-    for (id backgroundUploadId in self.backgroundUploadStore) {
-        [backgroundUploadIds addObject:backgroundUploadId];
+    while(1) {
+        NSUUID *uuid = [[NSUUID alloc] init];
+        if(![self containsUploadWithIdentifier:uuid.UUIDString])
+            return uuid.UUIDString;
     }
-    
-    return backgroundUploadIds;
 }
-
--(BOOL)containsUploadId:(NSString *)uploadId{
-    return self.backgroundUploadStore[uploadId] != nil;
-}
-
 @end

@@ -85,7 +85,7 @@
                                        headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
                                       metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata
 {
-    TUSResumableUpload *upload = [[TUSResumableUpload alloc]  initWithFile:fileURL delegate:self uploadHeaders:headers metadata:metadata];
+    TUSResumableUpload *upload = [[TUSResumableUpload alloc]  initWithUploadId:[self.store generateUploadId] file:fileURL delegate:self uploadHeaders:headers metadata:metadata];
     
     self.uploads[upload.uploadId] = upload; // Save the upload by ID for later
     return upload;
@@ -98,7 +98,7 @@
 - (TUSResumableUpload *) restoreUpload:(NSString *)uploadId{
     TUSResumableUpload * restoredUpload = self.uploads[uploadId];
     if (restoredUpload == nil) {
-        restoredUpload = [TUSResumableUpload loadUploadWithId:uploadId delegate:self];
+        restoredUpload = [self.store loadUploadWithIdentifier:uploadId delegate:self];
         if (restoredUpload != nil){
             self.uploads[uploadId] = restoredUpload; // Save the upload if we can find it in the data store
         }
@@ -112,7 +112,7 @@
 -(NSArray <TUSResumableUpload *> *)restoreAllUploads
 {
     // First fetch all the stored background upload identifiers
-    NSArray <NSString *> *uploadIds = [self.store allUploadIds];
+    NSArray <NSString *> *uploadIds = [self.store allUploadIdentifiers];
     
     // Attempt to pull the background upload from the session's in memory store
     for (NSString * uploadId in uploadIds) {
@@ -154,15 +154,22 @@
     [self.tasks removeObjectForKey:task];
 }
 
+-(void)saveUpload:(TUSResumableUpload * _Nonnull)upload{
+    self.uploads[upload.uploadId] = upload;
+    [self.store saveUpload:upload];
+}
+
 -(void)removeUpload:(TUSResumableUpload * _Nonnull)upload{
     // We rely on the TUSBackgroundTasks to remove themselves.
     [self.uploads removeObjectForKey:upload.uploadId];
+    [self.tasks removeObjectsForKeys:[self.tasks allKeysForObject:upload]];
+    [self.store removeUploadWithIdentifier:upload.uploadId];
 }
 
 #pragma mark NSURLSessionDataDelegate methods
 -(void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend{
     // Unfortunately we need to use this delegate method to report progress back to the task for it to report it to its callback methods
-    TUSLog(@"Sent some data 'natch");
+    [self.tasks[task] task:task didSendBodyData:bytesSent totalBytesSent:totalBytesSent totalBytesExpectedToSend:totalBytesExpectedToSend];
 }
 
 @end

@@ -20,9 +20,9 @@
 /**
  Initialize
  */
-- (instancetype)initWithEndpoint:(NSURL * _Nonnull)endpoint
-                       dataStore:(TUSUploadStore * _Nonnull)store
-            allowsCellularAccess:(BOOL)allowsCellularAccess;
+- (instancetype _Nonnull)initWithEndpoint:(NSURL * _Nonnull)endpoint
+                                dataStore:(TUSUploadStore * _Nonnull)store
+                     allowsCellularAccess:(BOOL)allowsCellularAccess;
 
 /**
  Create an upload, but do not start it

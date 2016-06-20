@@ -61,7 +61,7 @@
  */
 
 /** Initialize from a serialized dictionary */
-- (instancetype)initWithDictionary:(NSDictionary * _Nonnull)serializedUpload delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate;
+- (instancetype _Nullable)initWithDictionary:(NSDictionary * _Nonnull)serializedUpload delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate;
 
 
 - (instancetype _Nullable)initWithUploadId:(NSString * _Nonnull)uploadId

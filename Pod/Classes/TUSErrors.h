@@ -12,4 +12,4 @@ typedef enum TUSErrorCode : NSInteger {
     TUSFileDataErrorClosed,
     TUSFileDataErrorCannotOpen,
     TUSResumableUploadErrorServer // Server errors will include a "responseCode" key in the user info dictionary
-};
+} TUSErrorCode;

@@ -61,10 +61,10 @@
  */
 
 /** Initialize from a serialized dictionary */
-- (instancetype)initWithDictionary:(NSDictionary *)serializedUpload delegate:(id<TUSResumableUploadDelegate>)delegate;
+- (instancetype)initWithDictionary:(NSDictionary * _Nonnull)serializedUpload delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate;
 
 
-- (instancetype _Nullable)initWithUploadId:(NSString *)uploadId
+- (instancetype _Nullable)initWithUploadId:(NSString * _Nonnull)uploadId
                                       file:(NSURL * _Nonnull)fileUrl
                                   delegate:(id <TUSResumableUploadDelegate> _Nonnull)delegate
                              uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
@@ -73,10 +73,10 @@
 /**
  Progress callback method for a task associated with this upload. 
  */
--(void)task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
+-(void)task:(NSURLSessionTask * _Nonnull)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
 
 /** Serialize to a dictionary for saving */
--(NSDictionary *) serialize;
+-(NSDictionary * _Nonnull) serialize;
 @end
 
 #endif /* TUSResumableUpload_Private_h */

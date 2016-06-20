@@ -88,7 +88,10 @@
 {
     TUSResumableUpload *upload = [[TUSResumableUpload alloc]  initWithUploadId:[self.store generateUploadId] file:fileURL delegate:self uploadHeaders:headers metadata:metadata];
     
-    self.uploads[upload.uploadId] = upload; // Save the upload by ID for later
+    if (upload){
+        self.uploads[upload.uploadId] = upload; // Save the upload by ID for later
+    }
+    
     return upload;
 }
 

@@ -20,19 +20,19 @@ typedef NS_ENUM(NSInteger, TUSResumableUploadState) {
 };
 
 
-typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
-typedef void (^TUSUploadFailureBlock)(NSError* error);
+typedef void (^TUSUploadResultBlock)(NSURL* _Nonnull fileURL);
+typedef void (^TUSUploadFailureBlock)(NSError* _Nonnull error);
 typedef void (^TUSUploadProgressBlock)(int64_t bytesWritten, int64_t bytesTotal);
 
 @interface TUSResumableUpload : NSObject<NSCoding>
-@property (readwrite, copy) TUSUploadResultBlock resultBlock;
-@property (readwrite, copy) TUSUploadFailureBlock failureBlock;
-@property (readwrite, copy) TUSUploadProgressBlock progressBlock;
+@property (readwrite, copy) _Nullable TUSUploadResultBlock resultBlock;
+@property (readwrite, copy) _Nullable TUSUploadFailureBlock failureBlock;
+@property (readwrite, copy) _Nullable TUSUploadProgressBlock progressBlock;
 
 /**
  The unique ID for the upload object
  */
-@property (readonly) NSString *uploadId;
+@property (readonly) NSString * _Nonnull uploadId;
 
 /**
  The upload is complete if the file has been completely uploaded to the TUS server

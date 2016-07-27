@@ -49,8 +49,15 @@
 -(NSArray <TUSResumableUpload *> * _Nonnull)restoreAllUploads;
 
 
-// Cancel all pending uploads
+/**
+ Cancel all pending uploads such that they cannot be resumed
+ */
 -(NSUInteger)cancelAll;
+
+/**
+ Stop all pending uploads such that they can be resumed
+ */
+-(NSUInteger)stopAll;
 
 /**
  Resume all in-memory uploads.  Return all that have been restarted.

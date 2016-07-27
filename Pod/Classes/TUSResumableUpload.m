@@ -190,6 +190,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     if (self.cancelled || self.complete){
         return NO;
     }
+    [self.data open]; //Re-open data
     self.stopped = NO; // Un-stop
     return [self continueUpload];
 }
@@ -285,7 +286,24 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
             httpResponse = (NSHTTPURLResponse *)response;
         }
         if (error != nil || httpResponse == nil){
-            TUSLog(@"Error or no response during attempt to create file, retrying");
+            switch(error.code){
+                case NSURLErrorBadURL:
+                case NSURLErrorUnsupportedURL:
+                case NSURLErrorCannotFindHost:
+                    TUSLog(@"Unrecoverable error during attempt to create file");
+                    if([weakself stop]){
+                        TUSUploadFailureBlock block = weakself.failureBlock;
+                        if (block){
+                            [[NSOperationQueue currentQueue] addOperationWithBlock:^{
+                                block(error);
+                            }];
+                        }
+                    }
+                    break;
+                default:
+                    //TODO: Fail after a certain number of delayed attempts
+                    TUSLog(@"Error or no response during attempt to create file, retrying");
+            }
         } else if (httpResponse.statusCode >= 500 && httpResponse.statusCode < 600) {
             TUSLog(@"Server error, stopping");
             [weakself stop]; // Will prevent continueUpload from doing anything
@@ -299,6 +317,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                 }];
             }
         } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
+            //TODO: FAIL after a certain number of errors. WAIT between retries.
             TUSLog(@"Server responded to create file with %ld. Trying again",
                    (long)httpResponse.statusCode);
         } else {
@@ -355,7 +374,26 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
             httpResponse = (NSHTTPURLResponse *)response;
         }
         if (error != nil || httpResponse == nil){
-            TUSLog(@"Error or no response during attempt to check file, retrying");
+            switch(error.code){
+                case NSURLErrorBadURL:
+                case NSURLErrorUnsupportedURL:
+                case NSURLErrorCannotFindHost:
+                    TUSLog(@"Unrecoverable error during attempt to check file");
+                    if([weakself stop]){
+                        TUSUploadFailureBlock block = weakself.failureBlock;
+                        if (block){
+                            [[NSOperationQueue currentQueue] addOperationWithBlock:^{
+                                block(error);
+                            }];
+                        }
+                    }
+                    break;
+                case NSURLErrorTimedOut:
+                case NSURLErrorNotConnectedToInternet:
+                default:
+                    //TODO: Fail after a certain number of delayed attempts
+                    TUSLog(@"Error or no response during attempt to check file, retrying");
+            }
         } else if (httpResponse.statusCode == 423) {
             // We only check 423 errors in checkFile because the other methods will properly handle locks with their generic error handling.
             TUSLog(@"File is locked, waiting and retrying");
@@ -481,6 +519,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         long long serverOffset = [rangeHeader longLongValue];
         if (serverOffset >= self.length) {
             TUSLog(@"Upload complete at %@ for id %@", self.uploadUrl, self.uploadId);
+            if (self.progressBlock)
+                self.progressBlock(self.length, self.length); // If there is a progress block, report complete progress
             self.state = TUSResumableUploadStateComplete;
             [self.data stop];
             [self.delegate removeUpload:self];

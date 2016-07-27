@@ -43,8 +43,8 @@
 -(void)setAllowsCellularAccess:(BOOL)allowsCellularAccess
 {
     if (_allowsCellularAccess != allowsCellularAccess) {
-        // Cancel and resume all the uploads if the cellular access value is changing.
-        [self cancelAll];
+        // Stop and resume all the uploads if the cellular access value is changing.
+        [self stopAll];
         _allowsCellularAccess = allowsCellularAccess;
         [self resumeAll];
     }
@@ -86,7 +86,7 @@
                                        headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
                                       metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata
 {
-    TUSResumableUpload *upload = [[TUSResumableUpload alloc]  initWithUploadId:[self.store generateUploadId] file:fileURL delegate:self uploadHeaders:headers metadata:metadata];
+    TUSResumableUpload *upload = [[TUSResumableUpload alloc]  initWithUploadId:[self.store generateUploadId] file:fileURL delegate:self uploadHeaders:headers?:@{} metadata:metadata];
     
     if (upload){
         self.uploads[upload.uploadId] = upload; // Save the upload by ID for later
@@ -137,6 +137,19 @@
     [self.session invalidateAndCancel];
     self.session = nil;
     return cancelled;
+}
+
+-(NSUInteger)stopAll
+{
+    NSUInteger stopped = 0;
+    for (TUSResumableUpload * upload in self.uploads.allValues) {
+        if ([upload stop]){
+            stopped++;
+        }
+    }
+    [self.session invalidateAndCancel];
+    self.session = nil;
+    return stopped;
 }
 
 -(NSArray <TUSResumableUpload *> *)resumeAll{

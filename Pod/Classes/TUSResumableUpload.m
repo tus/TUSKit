@@ -28,6 +28,8 @@
 
 #define HTTP_LOCATION @"Location"
 #define REQUEST_TIMEOUT 30
+// Delay time in seconds between retries
+#define DELAY_TIME 5
 
 // Keys used in serialization
 #define STORE_KEY_ID @"id"
@@ -281,6 +283,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
             [weakself.delegate removeTask:weakself.currentTask];
             weakself.currentTask = nil;
         }
+        
+        NSUInteger delayTime = 0; // No delay
         NSHTTPURLResponse * httpResponse;
         if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
             httpResponse = (NSHTTPURLResponse *)response;
@@ -302,6 +306,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                     break;
                 default:
                     //TODO: Fail after a certain number of delayed attempts
+                    delayTime = DELAY_TIME;
                     TUSLog(@"Error or no response during attempt to create file, retrying");
             }
         } else if (httpResponse.statusCode >= 500 && httpResponse.statusCode < 600) {
@@ -317,7 +322,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                 }];
             }
         } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
-            //TODO: FAIL after a certain number of errors. WAIT between retries.
+            //TODO: FAIL after a certain number of errors.
+            delayTime = DELAY_TIME;
             TUSLog(@"Server responded to create file with %ld. Trying again",
                    (long)httpResponse.statusCode);
         } else {
@@ -333,7 +339,17 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         weakself.idle = YES;
         [weakself.delegate saveUpload:weakself]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
         [[UIApplication sharedApplication] endBackgroundTask:bgTask];
-        [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
+        if (delayTime > 0) {
+            __weak NSOperationQueue *weakQueue = [NSOperationQueue currentQueue];
+            // Delay some time before we try again.  We use a weak queue pointer because if the queue goes away, presumably the session has too (the session should have a strong pointer to the queue).
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ // We use the main queue instead of this queue because we do not know this NSOperationQueue's GCD queue.
+                [weakQueue addOperationWithBlock:^{
+                    [weakself continueUpload]; // Continue upload on the queue all of the upload operations are on.
+                }];
+            });
+        } else {
+            [weakself continueUpload]; // Continue upload on the queue we were previously on.
+        }
     }];
     [self.delegate addTask:self.currentTask forUpload:self];
     self.idle = NO;
@@ -392,12 +408,13 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                 case NSURLErrorNotConnectedToInternet:
                 default:
                     //TODO: Fail after a certain number of delayed attempts
+                    delayTime = DELAY_TIME;
                     TUSLog(@"Error or no response during attempt to check file, retrying");
             }
         } else if (httpResponse.statusCode == 423) {
             // We only check 423 errors in checkFile because the other methods will properly handle locks with their generic error handling.
             TUSLog(@"File is locked, waiting and retrying");
-            delayTime = 5; // Delay 5 seconds to wait for locks.
+            delayTime = DELAY_TIME; // Delay to wait for locks.
         } else if (httpResponse.statusCode >= 500 && httpResponse.statusCode < 600) {
             TUSLog(@"Server error, stopping");
             [weakself stop]; // Will prevent continueUpload from doing anything
@@ -477,6 +494,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         }
         if (error != nil || httpResponse == nil){
             TUSLog(@"Error or no response during attempt to upload file, checking state");
+            // No need to delay, because we are changing states - if there is a network or server error, it will keep delaying there
             weakself.state = TUSResumableUploadStateCheckingFile;
         } else if (httpResponse.statusCode >= 500 && httpResponse.statusCode < 600) {
             TUSLog(@"Server error, stopping");
@@ -493,6 +511,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
             }
         } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
             TUSLog(@"Invalid status code (%ld) during attempt to upload, checking state", (long)httpResponse.statusCode);
+            // No need to delay, because we are changing states: if there is a network or server error, it will delay in the checking state
             weakself.state = TUSResumableUploadStateCheckingFile;
         } else {
             // Got an "OK" response

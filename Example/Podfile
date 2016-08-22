@@ -1,8 +1,8 @@
-target 'TUSKit', :exclusive => true do
+target 'TUSKit' do
   pod "TUSKit", :path => "../"
 end
 
-target 'Tests', :exclusive => true do
+target 'Tests' do
   pod "TUSKit", :path => "../"
 
   pod 'Specta', '~> 0.2.1'

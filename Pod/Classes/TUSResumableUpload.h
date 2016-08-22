@@ -1,45 +1,68 @@
 //
 //  TUSResumableUpload.h
-//  tus-ios-client-demo
 //
 //  Originally Created by Felix Geisendoerfer on 07.04.13.
 //  Copyright (c) 2013 Felix Geisendoerfer. All rights reserved.
 //
 //  Additions and Maintenance for TUSKit 1.0.0 and up by Mark Robert Masterson
 //  Copyright (c) 2015-2016 Mark Robert Masterson. All rights reserved.
+//
+//  Additions and changes for NSURLSession by Findyr
+//  Copyright (c) 2016 Findyr
 
 @import Foundation;
 
-typedef void (^TUSUploadResultBlock)(NSURL* fileURL);
-typedef void (^TUSUploadFailureBlock)(NSError* error);
-typedef void (^TUSUploadProgressBlock)(NSInteger bytesWritten, NSInteger bytesTotal);
+typedef NS_ENUM(NSInteger, TUSResumableUploadState) {
+    TUSResumableUploadStateCreatingFile,
+    TUSResumableUploadStateCheckingFile,
+    TUSResumableUploadStateUploadingFile,
+    TUSResumableUploadStateComplete
+};
 
-typedef struct _TUSRange {
-    long long first;
-    long long last;
-} TUSRange;
 
-NS_INLINE TUSRange TUSMakeRange(long long first, long long last) {
-    TUSRange r;
-    r.first = first;
-    r.last = last;
-    return r;
-}
+typedef void (^TUSUploadResultBlock)(NSURL* _Nonnull fileURL);
+typedef void (^TUSUploadFailureBlock)(NSError* _Nonnull error);
+typedef void (^TUSUploadProgressBlock)(int64_t bytesWritten, int64_t bytesTotal);
 
-@class TUSData;
+@interface TUSResumableUpload : NSObject<NSCoding>
+@property (readwrite, copy) _Nullable TUSUploadResultBlock resultBlock;
+@property (readwrite, copy) _Nullable TUSUploadFailureBlock failureBlock;
+@property (readwrite, copy) _Nullable TUSUploadProgressBlock progressBlock;
 
-@interface TUSResumableUpload : NSObject <NSURLConnectionDelegate>
+/**
+ The unique ID for the upload object
+ */
+@property (readonly) NSString * _Nonnull uploadId;
 
-@property (readwrite, copy) TUSUploadResultBlock resultBlock;
-@property (readwrite, copy) TUSUploadFailureBlock failureBlock;
-@property (readwrite, copy) TUSUploadProgressBlock progressBlock;
+/**
+ The upload is complete if the file has been completely uploaded to the TUS server
+*/
+ @property (readonly) BOOL complete;
+ 
 
-- (id)initWithURL:(NSString *)url
-             data:(TUSData *)data
-      fingerprint:(NSString *)fingerprint
-    uploadHeaders:(NSDictionary *)headers
-      fileName:(NSString *)fileName;
+/**
+ The upload is idle if no HTTP tasks are currently outstanding for it
+ */
+@property (readonly) BOOL idle;
 
-- (void) start;
+/**
+ The current state of the upload
+ */
+@property (readonly) TUSResumableUploadState state;
 
+/**
+ Permanently cancel this upload.  If cancelled, it cannot be resumed
+ */
+-(BOOL)cancel;
+
+/**
+ Temporarily stop this upload.
+ */
+-(BOOL)stop;
+
+/**
+ Resume the upload if it was cancelled or not yet started
+ */
+- (BOOL) resume;
 @end
+

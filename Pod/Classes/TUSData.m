@@ -1,12 +1,14 @@
 //
 //  TUSData.m
-//  tus-ios-client-demo
 //
 //  Created by Alexis Hildebrandt on 18-04-2013.
 //  Copyright (c) 2013 tus.io. All rights reserved.
 //
 //  Additions and Maintenance for TUSKit 1.0.0 and up by Mark Robert Masterson
 //  Copyright (c) 2015-2016 Mark Robert Masterson. All rights reserved.
+//
+//  Additions and changes for NSURLSession by Findyr
+//  Copyright (c) 2016 Findyr. All rights reserved.
 
 
 #import "TUSKit.h"
@@ -27,19 +29,7 @@
 {
     self = [super init];
     if (self) {
-        NSInputStream* inStream = nil;
-        NSOutputStream* outStream = nil;
-        [self createBoundInputStream:&inStream
-                            outputStream:&outStream
-                              bufferSize:TUS_BUFSIZE];
-        assert(inStream != nil);
-        assert(outStream != nil);
-        self.inputStream = inStream;
-        self.outputStream = outStream;
-        self.outputStream.delegate = self;
-        [self.outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop]
-                                     forMode:NSDefaultRunLoopMode];
-        [self.outputStream open];
+        // Do nothing - we will lazily instantiate.
     }
     return self;
 }
@@ -56,20 +46,41 @@
 #pragma mark - Public Methods
 - (NSInputStream*)dataStream
 {
-    return _inputStream;
+    if (self.inputStream.streamStatus == NSStreamStatusClosed){
+        // Stream has been closed, destroy the existing ones
+        [self stop];
+    }
+    
+    if (!self.inputStream) {
+        // There is no _inputStream, so we should lazily instantiate
+        NSInputStream* inStream = nil;
+        NSOutputStream* outStream = nil;
+        [self createBoundInputStream:&inStream
+                        outputStream:&outStream
+                          bufferSize:TUS_BUFSIZE];
+        assert(inStream != nil);
+        assert(outStream != nil);
+        self.inputStream = inStream;
+        self.outputStream = outStream;
+        self.outputStream.delegate = self;
+        [self.outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop]
+                                     forMode:NSDefaultRunLoopMode];
+        [self.outputStream open];
+    }
+    return self.inputStream;
 }
 
 - (void)stop
 {
-    [[self outputStream] setDelegate:nil];
-    [[self outputStream] removeFromRunLoop:[NSRunLoop currentRunLoop]
+    self.outputStream.delegate = nil;
+    [self.outputStream removeFromRunLoop:[NSRunLoop currentRunLoop]
                                    forMode:NSDefaultRunLoopMode];
-    [[self outputStream] close];
-    [self setOutputStream:nil];
+    [self.outputStream close];
+    self.outputStream = nil;
 
-    [[self inputStream] setDelegate:nil];
-    [[self inputStream] close];
-    [self setInputStream:nil];
+    self.inputStream.delegate = nil;;
+    [self.inputStream close];
+    self.inputStream = nil;
 }
 
 - (long long)length
@@ -199,6 +210,11 @@
     }
 }
 
+-(void)close{}
+-(BOOL)open
+{
+    return YES;
+}
 
 @end
 

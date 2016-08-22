@@ -1,7 +1,7 @@
 PODS:
   - Expecta (0.3.1)
   - Specta (0.2.1)
-  - TUSKit (1.0.0)
+  - TUSKit (1.2.1)
 
 DEPENDENCIES:
   - Expecta
@@ -10,11 +10,13 @@ DEPENDENCIES:
 
 EXTERNAL SOURCES:
   TUSKit:
-    :path: ../
+    :path: "../"
 
 SPEC CHECKSUMS:
   Expecta: a354d4633409dd9fe8c4f5ff5130426adbe31628
   Specta: 15a276a6343867b426d5ed135d5aa4d04123a573
-  TUSKit: 4c452794d954979b13a2d8ba5981fd73fefa4146
+  TUSKit: 520b397978bd2d552120cca55ea90d3e3a167e22
 
-COCOAPODS: 0.36.0
+PODFILE CHECKSUM: 4fbaeb860281a790df78fb9bebdafbcc041d57de
+
+COCOAPODS: 1.0.0

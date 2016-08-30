@@ -7,7 +7,7 @@
 An iOS client written in `Objective-C` for [tus resumable upload protocol](http://tus.io/).
 
 ## TUSKit 1.3.0
-TUSKit 1.3.0 is not yet out on Cocoapods, but can be installed by downloading the repo and including the /Pod/Classes folder into your project. 
+`TUSKit 1.3.0` is not yet out on Cocoapods, but can be installed by downloading the repo and including the `/Pod/Classes` folder into your project. 
 
 This version has improved upload storage and background uploads. Sparse documentation can be found in the example. After the pod is released full documentation will follow.
 

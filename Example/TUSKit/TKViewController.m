@@ -13,7 +13,7 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <TUSKit/TUSKit.h>
 
-static NSString* const UPLOAD_ENDPOINT = @"http://192.168.5.80:1080/files/";
+static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
 static NSString* const FILE_NAME = @"tuskit_example";
 
 @interface TKViewController ()

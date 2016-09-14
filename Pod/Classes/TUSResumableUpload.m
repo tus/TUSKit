@@ -267,7 +267,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     [mutableHeader setObject:[NSString stringWithFormat:@"%lld", size] forKey:HTTP_UPLOAD_LENGTH];
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
     
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.delegate.createUploadURL
+    NSURL *createUploadURL = self.delegate.createUploadURL;
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:createUploadURL
                                                                 cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
                                                             timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_POST];
@@ -329,7 +330,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         } else {
             // Got a valid status code, so update url
             NSString *location = [httpResponse.allHeaderFields valueForKey:HTTP_LOCATION];
-            weakself.uploadUrl = [NSURL URLWithString:location relativeToURL:self.delegate.createUploadURL];
+            weakself.uploadUrl = [NSURL URLWithString:location relativeToURL:createUploadURL];
             if (weakself.uploadUrl) {
                 // If we got a valid URL, set the new state to uploading.  Otherwise, will try creating again.k
                 TUSLog(@"Created resumable upload at %@ for id %@", weakself.uploadUrl, weakself.uploadId);

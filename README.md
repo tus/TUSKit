@@ -24,7 +24,7 @@ You'll need a tus.io friendly server before using TUSKit or any other tus client
 
 # Usage
 ------
-Please refrence the Example Project for usage examples while documenation is beign written.
+Please refrence the Example Project for usage examples while documentation is being written.
 
 
 # About [tus.io](http://tus.io):

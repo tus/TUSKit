@@ -9,6 +9,9 @@
 //
 //  Additions and changes for NSURLSession by Findyr
 //  Copyright (c) 2016 Findyr
+//
+// Additions and changes for Transloadit by Mark R Masterson
+//  Copyright (c) 2015-2016 Mark Robert Masterson & Transloadit. All rights reserved.
 
 #import "TUSKit.h"
 #import "TUSData.h"
@@ -257,8 +260,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         [formattedEntry appendString:base64String];
         [formattedMetadata addObject:formattedEntry];
     }
-    [mutableHeader setObject:[formattedMetadata componentsJoinedByString:@","] forKey:@"Upload-Metadata"];
-    
+    NSString* stripColon = [[formattedMetadata componentsJoinedByString:@","] stringByReplacingOccurrencesOfString:@":" withString:@""];
+    [mutableHeader setObject:stripColon forKey:@"Upload-Metadata"];
     
     // Add custom headers after the filename, as the upload-metadata may be customized
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];

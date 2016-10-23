@@ -9,6 +9,9 @@
 //
 //  Additions and changes for NSURLSession by Findyr
 //  Copyright (c) 2016 Findyr
+//
+// Additions and changes for Transloadit by Mark R Masterson
+//  Copyright (c) 2015-2016 Mark Robert Masterson & Transloadit. All rights reserved.
 
 #import "TUSKit.h"
 #import "TUSData.h"
@@ -257,8 +260,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         [formattedEntry appendString:base64String];
         [formattedMetadata addObject:formattedEntry];
     }
-    [mutableHeader setObject:[formattedMetadata componentsJoinedByString:@","] forKey:@"Upload-Metadata"];
-    
+    NSString* stripColon = [[formattedMetadata componentsJoinedByString:@","] stringByReplacingOccurrencesOfString:@":" withString:@""];
+    [mutableHeader setObject:stripColon forKey:@"Upload-Metadata"];
     
     // Add custom headers after the filename, as the upload-metadata may be customized
     [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
@@ -267,7 +270,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     [mutableHeader setObject:[NSString stringWithFormat:@"%lld", size] forKey:HTTP_UPLOAD_LENGTH];
     [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
     
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.delegate.createUploadURL
+    NSURL *createUploadURL = self.delegate.createUploadURL;
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:createUploadURL
                                                                 cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
                                                             timeoutInterval:REQUEST_TIMEOUT];
     [request setHTTPMethod:HTTP_POST];
@@ -329,7 +333,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         } else {
             // Got a valid status code, so update url
             NSString *location = [httpResponse.allHeaderFields valueForKey:HTTP_LOCATION];
-            weakself.uploadUrl = [NSURL URLWithString:location];
+            weakself.uploadUrl = [NSURL URLWithString:location relativeToURL:createUploadURL];
             if (weakself.uploadUrl) {
                 // If we got a valid URL, set the new state to uploading.  Otherwise, will try creating again.k
                 TUSLog(@"Created resumable upload at %@ for id %@", weakself.uploadUrl, weakself.uploadId);

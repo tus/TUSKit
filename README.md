@@ -22,9 +22,94 @@ To run the example project, clone the repo, and run `pod install` from the Examp
 ## The Protocol
 You'll need a tus.io friendly server before using TUSKit or any other tus client. You can find a list of [tus implementations here](http://tus.io/implementations.html).
 
-# Usage
+# Usage (1.3.0)
 ------
-Please refrence the Example Project for usage examples while documentation is being written.
+## TUSSession
+A NSURLSession that manages, creates, and reloads TUS uploads using a single NSURLSession and data store.
+    
+    ...
+    @property (strong, nonatomic) TUSSession *tusSession;
+    ...
+    ...
+    self.tusSession = [[TUSSession alloc] initWithEndpoint:[[NSURL alloc] initWithString:UPLOAD_ENDPOINT] dataStore:uploadStore allowsCellularAccess:YES];
+
+**Endpoint** - An NSURL of your tus.io server.
+
+**dataStore** - The `TUSUploadStore` you've created for your uploads.
+
+**allowsCellularAccess** - Allow uploads over cell data.
+
+
+## TUSUploadStore
+The data storage for uploads.
+
+    TUSUploadStore * uploadStore = [[TUSFileUploadStore alloc] initWithURL:[applicationSupportURL URLByAppendingPathComponent:FILE_NAME]];
+
+**URL** - URL To Local File.
+
+## TUSResumableUpload
+Easily add uploads to your data storage using the your TUSSession.
+
+    TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl headers:@{} metadata:@{}];
+
+
+**fileUrl** - URL To Local File.
+
+**Headers** - An `NSDictionary` of your custom headers for the upload.
+
+**Metadata** - Any extra metadata you wanna attach to your upload
+
+**Resume** - Starts and resumes upload.
+
+    [upload resume];
+    
+**Stop** - Stops upload.
+
+    [upload stop];
+    
+**State** - Get the current state of an upload.
+
+    [upload state];
+
+## Blocks
+
+### Progress Block
+A block fired throughout the progress of your upload.
+
+    static TUSUploadProgressBlock progressBlock = ^(int64_t bytesWritten, int64_t bytesTotal) {
+        // Update your progress bar here
+        NSLog(@"progress: %llu / %llu", (unsigned long long)bytesWritten, (unsigned long long)bytesTotal);
+    };
+Set it to your `TUSResumableUpload` object.
+
+    upload.progressBlock = progressBlock;
+    
+### Failure Block
+A block fired when your upload fails.
+
+    static TUSUploadFailureBlock failureBlock = ^(NSError* error){
+        // Handle the error
+        NSLog(@"error: %@", error);
+    };
+
+Set it to your `TUSResumableUpload` object.
+
+    upload.failureBlock = failureBlock;
+    
+### Result Block
+A block fired when your upload fails.
+
+    static TUSUploadResultBlock resultBlock = ^(NSURL* fileURL){
+        // Use the upload url
+        NSLog(@"url: %@", fileURL);
+    };
+
+Set it to your `TUSResumableUpload` object.
+
+    upload.resultBlock = resultBlock;
+
+----
+Please refrence the Example Project for more usage examples
 
 
 # About [tus.io](http://tus.io):

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "TUSKit"
-  s.version          = "1.3.3"
+  s.version          = "1.3.4"
   s.summary          = "An iOS implementation of the tus resumable video upload protocol."
   s.description      = <<-DESC
                        An iOS implementation of the tus resumable video upload protocol.
@@ -11,7 +11,8 @@ Pod::Spec.new do |s|
   s.author           = { "Michael Avila" => "me@michaelavila.com","Mark Robert Masterson" => "mrobertmasterson@gmail.com", "Mark Robert Masterson" => "mark@masterson.io"  }
   s.source           = { :git => "https://github.com/tus/tus-ios-client.git", :tag => s.version.to_s }
 
-  s.platform     = :ios, '8.0'
+  s.ios.deployment_target = "8.0"
+  s.osx.deployment_target = "10.10"
   s.requires_arc = true
 
   s.source_files = 'Pod/Classes/**/*'

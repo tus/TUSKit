@@ -5,6 +5,4 @@ end
 target 'Tests' do
   pod "TUSKit", :path => "../"
 
-  pod 'Specta', '~> 0.2.1'
-  pod 'Expecta'
 end

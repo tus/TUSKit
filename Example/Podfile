@@ -2,6 +2,10 @@ target 'TUSKit' do
   pod "TUSKit", :path => "../"
 end
 
+target 'TUSKit_MacOS_Example' do
+  pod "TUSKit", :path => "../"
+end
+
 target 'Tests' do
   pod "TUSKit", :path => "../"
 

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "TUSKit"
-  s.version          = "1.3.8"
+  s.version          = "1.3.9"
   s.summary          = "An iOS implementation of the tus resumable video upload protocol."
   s.description      = <<-DESC
                        An iOS implementation of the tus resumable video upload protocol.

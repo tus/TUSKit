@@ -279,9 +279,13 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     [request setAllHTTPHeaderFields:mutableHeader];
     
     __weak TUSResumableUpload * weakself = self;
+    
+    #if TARGET_OS_IPHONE
     UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
         [weakself cancel];
-    }];
+    }];    #elif TARGET_OS_MAC
+    #endif
+
     self.currentTask = [self.delegate.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error){
         if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
             [weakself.delegate removeTask:weakself.currentTask];
@@ -342,7 +346,12 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         }
         weakself.idle = YES;
         [weakself.delegate saveUpload:weakself]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
-        [[UIApplication sharedApplication] endBackgroundTask:bgTask];
+        #if TARGET_OS_IPHONE
+            [[UIApplication sharedApplication] endBackgroundTask:bgTask];
+        #elif TARGET_OS_MAC
+            [weakself cancel];
+        #endif
+        
         if (delayTime > 0) {
             __weak NSOperationQueue *weakQueue = [NSOperationQueue currentQueue];
             // Delay some time before we try again.  We use a weak queue pointer because if the queue goes away, presumably the session has too (the session should have a strong pointer to the queue).
@@ -380,9 +389,11 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     [request setAllHTTPHeaderFields:mutableHeader];
     
     __weak TUSResumableUpload * weakself = self;
-    UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+    #if TARGET_OS_IPHONE
+        UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
         [weakself cancel];
-    }];
+        }];
+    #endif
     self.currentTask = [self.delegate.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error){
         if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
             [weakself.delegate removeTask:weakself.currentTask];
@@ -441,7 +452,11 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         }
         weakself.idle = YES;
         [weakself.delegate saveUpload:weakself]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
-        [[UIApplication sharedApplication] endBackgroundTask:bgTask];
+        #if TARGET_OS_IPHONE
+            [[UIApplication sharedApplication] endBackgroundTask:bgTask];
+        #elif TARGET_OS_MAC
+            [weakself cancel];
+        #endif
         if (delayTime > 0) {
             __weak NSOperationQueue *weakQueue = [NSOperationQueue currentQueue];
             // Delay some time before we try again.  We use a weak queue pointer because if the queue goes away, presumably the session has too (the session should have a strong pointer to the queue).
@@ -484,9 +499,11 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     
     
     __weak TUSResumableUpload * weakself = self;
-    UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
-        [weakself cancel];
-    }];
+    #if TARGET_OS_IPHONE
+        UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+            [weakself cancel];
+        }];
+    #endif
     self.currentTask = [self.delegate.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error){
         if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
             [weakself.delegate removeTask:weakself.currentTask];
@@ -523,7 +540,11 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         }
         weakself.idle = YES;
         [weakself.delegate saveUpload:weakself]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
-        [[UIApplication sharedApplication] endBackgroundTask:bgTask];
+        #if TARGET_OS_IPHONE
+            [[UIApplication sharedApplication] endBackgroundTask:bgTask];
+        #elif TARGET_OS_MAC
+            [weakself cancel];
+        #endif
         [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
     }];
     [self.delegate addTask:self.currentTask forUpload:self];

@@ -12,11 +12,16 @@
 #import "TUSAssetData.h"
 
 @interface TUSAssetData ()
+#if TARGET_OS_IPHONE
 @property (strong, nonatomic) ALAsset* asset;
+#elif TARGET_OS_MAC
+@property (strong, nonatomic) MLMediaObject* asset;
+#endif
 @end
 
 @implementation TUSAssetData
 
+#if TARGET_OS_IPHONE
 - (id)initWithAsset:(ALAsset*)asset
 {
     self = [super init];
@@ -25,8 +30,21 @@
     }
     return self;
 }
+#ELIF TARGET_OS_MAC
+- (id)initWithAsset:(MLMediaObject*)asset
+{
+    self = [super init];
+    if (self) {
+        self.asset = asset;
+    }
+    return self;
+}
+#endif
+
+
 
 #pragma mark - TUSData Methods
+#if TARGET_OS_IPHONE
 - (long long)length
 {
     ALAssetRepresentation* assetRepresentation = [_asset defaultRepresentation];
@@ -44,7 +62,26 @@
 
     return [assetRepresentation size];
 }
+#ELIF TARGET_OS_MAC
+- (long long)length
+{
+    if (!_asset) {
+        // NOTE:
+        // defaultRepresentation "returns nil for assets from a shared photo
+        // stream that are not yet available locally." (ALAsset Class Reference)
+        
+        // TODO:
+        // Handle deferred availability of ALAssetRepresentation,
+        // by registering for an ALAssetsLibraryChangedNotification.
+        TUSLog(@"@TODO: Implement support for ALAssetsLibraryChangedNotification to support shared photo stream assets");
+        return 0;
+    }
+    
+    return [_asset fileSize];
+}
+#endif
 
+#if TARGET_OS_IPHONE
 - (NSUInteger)getBytes:(uint8_t *)buffer
             fromOffset:(long long)offset
                 length:(NSUInteger)length
@@ -56,5 +93,8 @@
                                   length:length
                                    error:error];
 }
+#ELIF TARGET_OS_MAC
+#endif
+
 
 @end

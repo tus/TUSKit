@@ -30,6 +30,7 @@
 		6003F5B2195388D20070C39A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F591195388D20070C39A /* UIKit.framework */; };
 		6003F5BA195388D20070C39A /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 6003F5B8195388D20070C39A /* InfoPlist.strings */; };
 		6003F5BC195388D20070C39A /* Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6003F5BB195388D20070C39A /* Tests.m */; };
+		696B4FBCDC39DC19AC059E57 /* libPods-TUSKit_MacOS_Example.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B2585C78D79329E8BD58CB2F /* libPods-TUSKit_MacOS_Example.a */; };
 		81A8CED36936361B31D51697 /* libPods-TUSKit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 94BE9E2097B840319C7576AD /* libPods-TUSKit.a */; };
 /* End PBXBuildFile section */
 
@@ -59,7 +60,7 @@
 
 /* Begin PBXFileReference section */
 		2198F7C3EFA4406DB60E9FD0 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
-		28C00B041ECD79F600430748 /* TUSKit MacOS Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TUSKit MacOS Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		28C00B041ECD79F600430748 /* TUSKit_MacOS_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TUSKit_MacOS_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		28C00B061ECD79F600430748 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		28C00B071ECD79F600430748 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		28C00B0A1ECD79F600430748 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -98,10 +99,13 @@
 		6003F5BB195388D20070C39A /* Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Tests.m; sourceTree = "<group>"; };
 		606FC2411953D9B200FFA9A0 /* Tests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Tests-Prefix.pch"; sourceTree = "<group>"; };
 		94BE9E2097B840319C7576AD /* libPods-TUSKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TUSKit.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		97BA7FEA7A277EE9173FC532 /* Pods-TUSKit_MacOS_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TUSKit_MacOS_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-TUSKit_MacOS_Example/Pods-TUSKit_MacOS_Example.release.xcconfig"; sourceTree = "<group>"; };
 		B154447F00BA422485024C03 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		B156087D9854F9F535819A05 /* Pods-Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-Tests/Pods-Tests.release.xcconfig"; sourceTree = "<group>"; };
+		B2585C78D79329E8BD58CB2F /* libPods-TUSKit_MacOS_Example.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TUSKit_MacOS_Example.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4D528B07F809226971E7E48 /* Pods-TUSKit.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TUSKit.release.xcconfig"; path = "Pods/Target Support Files/Pods-TUSKit/Pods-TUSKit.release.xcconfig"; sourceTree = "<group>"; };
 		F4DC08B04A13457D8409F9B4 /* TUSKit.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = TUSKit.podspec; path = ../TUSKit.podspec; sourceTree = "<group>"; };
+		FC5575320A03013A99909793 /* Pods-TUSKit_MacOS_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TUSKit_MacOS_Example.debug.xcconfig"; path = "Pods/Target Support Files/Pods-TUSKit_MacOS_Example/Pods-TUSKit_MacOS_Example.debug.xcconfig"; sourceTree = "<group>"; };
 		FF8166735401D785C86DF9B4 /* libPods-Tests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Tests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -110,6 +114,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				696B4FBCDC39DC19AC059E57 /* libPods-TUSKit_MacOS_Example.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -159,6 +164,8 @@
 				E4D528B07F809226971E7E48 /* Pods-TUSKit.release.xcconfig */,
 				544ABCA6686C6597A4CA55C6 /* Pods-Tests.debug.xcconfig */,
 				B156087D9854F9F535819A05 /* Pods-Tests.release.xcconfig */,
+				FC5575320A03013A99909793 /* Pods-TUSKit_MacOS_Example.debug.xcconfig */,
+				97BA7FEA7A277EE9173FC532 /* Pods-TUSKit_MacOS_Example.release.xcconfig */,
 			);
 			name = Pods;
 			sourceTree = "<group>";
@@ -224,7 +231,7 @@
 			children = (
 				6003F58A195388D20070C39A /* TUSKit.app */,
 				6003F5AE195388D20070C39A /* Tests.xctest */,
-				28C00B041ECD79F600430748 /* TUSKit MacOS Example.app */,
+				28C00B041ECD79F600430748 /* TUSKit_MacOS_Example.app */,
 				28C00B191ECD79F600430748 /* TUSKit MacOS ExampleTests.xctest */,
 				28C00B241ECD79F600430748 /* TUSKit MacOS ExampleUITests.xctest */,
 			);
@@ -240,6 +247,7 @@
 				6003F5AF195388D20070C39A /* XCTest.framework */,
 				94BE9E2097B840319C7576AD /* libPods-TUSKit.a */,
 				FF8166735401D785C86DF9B4 /* libPods-Tests.a */,
+				B2585C78D79329E8BD58CB2F /* libPods-TUSKit_MacOS_Example.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -302,21 +310,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		28C00B031ECD79F600430748 /* TUSKit MacOS Example */ = {
+		28C00B031ECD79F600430748 /* TUSKit_MacOS_Example */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 28C00B311ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit MacOS Example" */;
+			buildConfigurationList = 28C00B311ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit_MacOS_Example" */;
 			buildPhases = (
+				156793661E95BA435822EAEB /* [CP] Check Pods Manifest.lock */,
 				28C00B001ECD79F600430748 /* Sources */,
 				28C00B011ECD79F600430748 /* Frameworks */,
 				28C00B021ECD79F600430748 /* Resources */,
+				3508852BA91B7E96485DD5C7 /* [CP] Embed Pods Frameworks */,
+				D826D3F1084F37062B809103 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = "TUSKit MacOS Example";
+			name = TUSKit_MacOS_Example;
 			productName = "TUSKit MacOS Example";
-			productReference = 28C00B041ECD79F600430748 /* TUSKit MacOS Example.app */;
+			productReference = 28C00B041ECD79F600430748 /* TUSKit_MacOS_Example.app */;
 			productType = "com.apple.product-type.application";
 		};
 		28C00B181ECD79F600430748 /* TUSKit MacOS ExampleTests */ = {
@@ -446,7 +457,7 @@
 			targets = (
 				6003F589195388D20070C39A /* TUSKit */,
 				6003F5AD195388D20070C39A /* Tests */,
-				28C00B031ECD79F600430748 /* TUSKit MacOS Example */,
+				28C00B031ECD79F600430748 /* TUSKit_MacOS_Example */,
 				28C00B181ECD79F600430748 /* TUSKit MacOS ExampleTests */,
 				28C00B231ECD79F600430748 /* TUSKit MacOS ExampleUITests */,
 			);
@@ -499,6 +510,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		156793661E95BA435822EAEB /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
 		2C36823982C5A11655A46F3E /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -512,6 +538,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Tests/Pods-Tests-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		3508852BA91B7E96485DD5C7 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-TUSKit_MacOS_Example/Pods-TUSKit_MacOS_Example-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		84022079743DAE094D266266 /* [CP] Check Pods Manifest.lock */ = {
@@ -572,6 +613,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-TUSKit/Pods-TUSKit-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		D826D3F1084F37062B809103 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-TUSKit_MacOS_Example/Pods-TUSKit_MacOS_Example-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		DB0D5A03BA12C8E5F1B6AEAD /* [CP] Check Pods Manifest.lock */ = {
@@ -641,12 +697,12 @@
 /* Begin PBXTargetDependency section */
 		28C00B1B1ECD79F600430748 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 28C00B031ECD79F600430748 /* TUSKit MacOS Example */;
+			target = 28C00B031ECD79F600430748 /* TUSKit_MacOS_Example */;
 			targetProxy = 28C00B1A1ECD79F600430748 /* PBXContainerItemProxy */;
 		};
 		28C00B261ECD79F600430748 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 28C00B031ECD79F600430748 /* TUSKit MacOS Example */;
+			target = 28C00B031ECD79F600430748 /* TUSKit_MacOS_Example */;
 			targetProxy = 28C00B251ECD79F600430748 /* PBXContainerItemProxy */;
 		};
 		6003F5B4195388D20070C39A /* PBXTargetDependency */ = {
@@ -702,6 +758,7 @@
 /* Begin XCBuildConfiguration section */
 		28C00B2B1ECD79F600430748 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = FC5575320A03013A99909793 /* Pods-TUSKit_MacOS_Example.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -729,6 +786,7 @@
 		};
 		28C00B2C1ECD79F600430748 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 97BA7FEA7A277EE9173FC532 /* Pods-TUSKit_MacOS_Example.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1015,13 +1073,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		28C00B311ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit MacOS Example" */ = {
+		28C00B311ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit_MacOS_Example" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				28C00B2B1ECD79F600430748 /* Debug */,
 				28C00B2C1ECD79F600430748 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		28C00B321ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit MacOS ExampleTests" */ = {
 			isa = XCConfigurationList;
@@ -1030,6 +1089,7 @@
 				28C00B2E1ECD79F600430748 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		28C00B331ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit MacOS ExampleUITests" */ = {
 			isa = XCConfigurationList;
@@ -1038,6 +1098,7 @@
 				28C00B301ECD79F600430748 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		6003F585195388D10070C39A /* Build configuration list for PBXProject "TUSKit" */ = {
 			isa = XCConfigurationList;

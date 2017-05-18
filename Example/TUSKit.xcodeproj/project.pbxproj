@@ -8,6 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		23C826D3E7BF2961EDA63783 /* libPods-Tests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FF8166735401D785C86DF9B4 /* libPods-Tests.a */; };
+		28C00B081ECD79F600430748 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 28C00B071ECD79F600430748 /* AppDelegate.m */; };
+		28C00B0B1ECD79F600430748 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 28C00B0A1ECD79F600430748 /* main.m */; };
+		28C00B0E1ECD79F600430748 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 28C00B0D1ECD79F600430748 /* ViewController.m */; };
+		28C00B101ECD79F600430748 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 28C00B0F1ECD79F600430748 /* Assets.xcassets */; };
+		28C00B131ECD79F600430748 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 28C00B111ECD79F600430748 /* Main.storyboard */; };
+		28C00B1E1ECD79F600430748 /* TUSKit_MacOS_ExampleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 28C00B1D1ECD79F600430748 /* TUSKit_MacOS_ExampleTests.m */; };
+		28C00B291ECD79F600430748 /* TUSKit_MacOS_ExampleUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 28C00B281ECD79F600430748 /* TUSKit_MacOS_ExampleUITests.m */; };
 		6003F58E195388D20070C39A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58D195388D20070C39A /* Foundation.framework */; };
 		6003F590195388D20070C39A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58F195388D20070C39A /* CoreGraphics.framework */; };
 		6003F592195388D20070C39A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F591195388D20070C39A /* UIKit.framework */; };
@@ -27,6 +34,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		28C00B1A1ECD79F600430748 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6003F582195388D10070C39A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 28C00B031ECD79F600430748;
+			remoteInfo = "TUSKit MacOS Example";
+		};
+		28C00B251ECD79F600430748 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6003F582195388D10070C39A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 28C00B031ECD79F600430748;
+			remoteInfo = "TUSKit MacOS Example";
+		};
 		6003F5B3195388D20070C39A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 6003F582195388D10070C39A /* Project object */;
@@ -38,6 +59,21 @@
 
 /* Begin PBXFileReference section */
 		2198F7C3EFA4406DB60E9FD0 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		28C00B041ECD79F600430748 /* TUSKit MacOS Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TUSKit MacOS Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		28C00B061ECD79F600430748 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		28C00B071ECD79F600430748 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		28C00B0A1ECD79F600430748 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		28C00B0C1ECD79F600430748 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		28C00B0D1ECD79F600430748 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		28C00B0F1ECD79F600430748 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		28C00B121ECD79F600430748 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		28C00B141ECD79F600430748 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		28C00B191ECD79F600430748 /* TUSKit MacOS ExampleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "TUSKit MacOS ExampleTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		28C00B1D1ECD79F600430748 /* TUSKit_MacOS_ExampleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TUSKit_MacOS_ExampleTests.m; sourceTree = "<group>"; };
+		28C00B1F1ECD79F600430748 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		28C00B241ECD79F600430748 /* TUSKit MacOS ExampleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "TUSKit MacOS ExampleUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		28C00B281ECD79F600430748 /* TUSKit_MacOS_ExampleUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TUSKit_MacOS_ExampleUITests.m; sourceTree = "<group>"; };
+		28C00B2A1ECD79F600430748 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		46DA0321A6FC07F5A14B3946 /* Pods-TUSKit.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TUSKit.debug.xcconfig"; path = "Pods/Target Support Files/Pods-TUSKit/Pods-TUSKit.debug.xcconfig"; sourceTree = "<group>"; };
 		544ABCA6686C6597A4CA55C6 /* Pods-Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Tests/Pods-Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		6003F58A195388D20070C39A /* TUSKit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TUSKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -70,6 +106,27 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		28C00B011ECD79F600430748 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28C00B161ECD79F600430748 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28C00B211ECD79F600430748 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6003F587195388D20070C39A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -106,12 +163,56 @@
 			name = Pods;
 			sourceTree = "<group>";
 		};
+		28C00B051ECD79F600430748 /* TUSKit MacOS Example */ = {
+			isa = PBXGroup;
+			children = (
+				28C00B061ECD79F600430748 /* AppDelegate.h */,
+				28C00B071ECD79F600430748 /* AppDelegate.m */,
+				28C00B0C1ECD79F600430748 /* ViewController.h */,
+				28C00B0D1ECD79F600430748 /* ViewController.m */,
+				28C00B0F1ECD79F600430748 /* Assets.xcassets */,
+				28C00B111ECD79F600430748 /* Main.storyboard */,
+				28C00B141ECD79F600430748 /* Info.plist */,
+				28C00B091ECD79F600430748 /* Supporting Files */,
+			);
+			path = "TUSKit MacOS Example";
+			sourceTree = "<group>";
+		};
+		28C00B091ECD79F600430748 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				28C00B0A1ECD79F600430748 /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		28C00B1C1ECD79F600430748 /* TUSKit MacOS ExampleTests */ = {
+			isa = PBXGroup;
+			children = (
+				28C00B1D1ECD79F600430748 /* TUSKit_MacOS_ExampleTests.m */,
+				28C00B1F1ECD79F600430748 /* Info.plist */,
+			);
+			path = "TUSKit MacOS ExampleTests";
+			sourceTree = "<group>";
+		};
+		28C00B271ECD79F600430748 /* TUSKit MacOS ExampleUITests */ = {
+			isa = PBXGroup;
+			children = (
+				28C00B281ECD79F600430748 /* TUSKit_MacOS_ExampleUITests.m */,
+				28C00B2A1ECD79F600430748 /* Info.plist */,
+			);
+			path = "TUSKit MacOS ExampleUITests";
+			sourceTree = "<group>";
+		};
 		6003F581195388D10070C39A = {
 			isa = PBXGroup;
 			children = (
 				60FF7A9C1954A5C5007DD14C /* Podspec Metadata */,
 				6003F593195388D20070C39A /* TUSKit */,
 				6003F5B5195388D20070C39A /* Tests */,
+				28C00B051ECD79F600430748 /* TUSKit MacOS Example */,
+				28C00B1C1ECD79F600430748 /* TUSKit MacOS ExampleTests */,
+				28C00B271ECD79F600430748 /* TUSKit MacOS ExampleUITests */,
 				6003F58C195388D20070C39A /* Frameworks */,
 				6003F58B195388D20070C39A /* Products */,
 				26C8E7CB2F70A51B69B4AEB2 /* Pods */,
@@ -123,6 +224,9 @@
 			children = (
 				6003F58A195388D20070C39A /* TUSKit.app */,
 				6003F5AE195388D20070C39A /* Tests.xctest */,
+				28C00B041ECD79F600430748 /* TUSKit MacOS Example.app */,
+				28C00B191ECD79F600430748 /* TUSKit MacOS ExampleTests.xctest */,
+				28C00B241ECD79F600430748 /* TUSKit MacOS ExampleUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -198,6 +302,59 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		28C00B031ECD79F600430748 /* TUSKit MacOS Example */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 28C00B311ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit MacOS Example" */;
+			buildPhases = (
+				28C00B001ECD79F600430748 /* Sources */,
+				28C00B011ECD79F600430748 /* Frameworks */,
+				28C00B021ECD79F600430748 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "TUSKit MacOS Example";
+			productName = "TUSKit MacOS Example";
+			productReference = 28C00B041ECD79F600430748 /* TUSKit MacOS Example.app */;
+			productType = "com.apple.product-type.application";
+		};
+		28C00B181ECD79F600430748 /* TUSKit MacOS ExampleTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 28C00B321ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit MacOS ExampleTests" */;
+			buildPhases = (
+				28C00B151ECD79F600430748 /* Sources */,
+				28C00B161ECD79F600430748 /* Frameworks */,
+				28C00B171ECD79F600430748 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				28C00B1B1ECD79F600430748 /* PBXTargetDependency */,
+			);
+			name = "TUSKit MacOS ExampleTests";
+			productName = "TUSKit MacOS ExampleTests";
+			productReference = 28C00B191ECD79F600430748 /* TUSKit MacOS ExampleTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		28C00B231ECD79F600430748 /* TUSKit MacOS ExampleUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 28C00B331ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit MacOS ExampleUITests" */;
+			buildPhases = (
+				28C00B201ECD79F600430748 /* Sources */,
+				28C00B211ECD79F600430748 /* Frameworks */,
+				28C00B221ECD79F600430748 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				28C00B261ECD79F600430748 /* PBXTargetDependency */,
+			);
+			name = "TUSKit MacOS ExampleUITests";
+			productName = "TUSKit MacOS ExampleUITests";
+			productReference = 28C00B241ECD79F600430748 /* TUSKit MacOS ExampleUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		6003F589195388D20070C39A /* TUSKit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6003F5BF195388D20070C39A /* Build configuration list for PBXNativeTarget "TUSKit" */;
@@ -249,6 +406,23 @@
 				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = "Michael Avila";
 				TargetAttributes = {
+					28C00B031ECD79F600430748 = {
+						CreatedOnToolsVersion = 8.3.2;
+						DevelopmentTeam = MPKS94G26Q;
+						ProvisioningStyle = Automatic;
+					};
+					28C00B181ECD79F600430748 = {
+						CreatedOnToolsVersion = 8.3.2;
+						DevelopmentTeam = MPKS94G26Q;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 28C00B031ECD79F600430748;
+					};
+					28C00B231ECD79F600430748 = {
+						CreatedOnToolsVersion = 8.3.2;
+						DevelopmentTeam = MPKS94G26Q;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 28C00B031ECD79F600430748;
+					};
 					6003F589195388D20070C39A = {
 						DevelopmentTeam = MPKS94G26Q;
 					};
@@ -272,11 +446,37 @@
 			targets = (
 				6003F589195388D20070C39A /* TUSKit */,
 				6003F5AD195388D20070C39A /* Tests */,
+				28C00B031ECD79F600430748 /* TUSKit MacOS Example */,
+				28C00B181ECD79F600430748 /* TUSKit MacOS ExampleTests */,
+				28C00B231ECD79F600430748 /* TUSKit MacOS ExampleUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		28C00B021ECD79F600430748 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				28C00B101ECD79F600430748 /* Assets.xcassets in Resources */,
+				28C00B131ECD79F600430748 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28C00B171ECD79F600430748 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28C00B221ECD79F600430748 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6003F588195388D20070C39A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -392,6 +592,32 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		28C00B001ECD79F600430748 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				28C00B0E1ECD79F600430748 /* ViewController.m in Sources */,
+				28C00B0B1ECD79F600430748 /* main.m in Sources */,
+				28C00B081ECD79F600430748 /* AppDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28C00B151ECD79F600430748 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				28C00B1E1ECD79F600430748 /* TUSKit_MacOS_ExampleTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28C00B201ECD79F600430748 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				28C00B291ECD79F600430748 /* TUSKit_MacOS_ExampleUITests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6003F586195388D20070C39A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -413,6 +639,16 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		28C00B1B1ECD79F600430748 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 28C00B031ECD79F600430748 /* TUSKit MacOS Example */;
+			targetProxy = 28C00B1A1ECD79F600430748 /* PBXContainerItemProxy */;
+		};
+		28C00B261ECD79F600430748 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 28C00B031ECD79F600430748 /* TUSKit MacOS Example */;
+			targetProxy = 28C00B251ECD79F600430748 /* PBXContainerItemProxy */;
+		};
 		6003F5B4195388D20070C39A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 6003F589195388D20070C39A /* TUSKit */;
@@ -421,6 +657,14 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		28C00B111ECD79F600430748 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				28C00B121ECD79F600430748 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
 		6003F596195388D20070C39A /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -456,6 +700,169 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		28C00B2B1ECD79F600430748 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = MPKS94G26Q;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = "TUSKit MacOS Example/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.transloadit.TUSKit-MacOS-Example";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		28C00B2C1ECD79F600430748 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = MPKS94G26Q;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = "TUSKit MacOS Example/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.transloadit.TUSKit-MacOS-Example";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		28C00B2D1ECD79F600430748 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = MPKS94G26Q;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = "TUSKit MacOS ExampleTests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.masterson.TUSKit-MacOS-ExampleTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TUSKit MacOS Example.app/Contents/MacOS/TUSKit MacOS Example";
+			};
+			name = Debug;
+		};
+		28C00B2E1ECD79F600430748 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = MPKS94G26Q;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = "TUSKit MacOS ExampleTests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.masterson.TUSKit-MacOS-ExampleTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TUSKit MacOS Example.app/Contents/MacOS/TUSKit MacOS Example";
+			};
+			name = Release;
+		};
+		28C00B2F1ECD79F600430748 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = MPKS94G26Q;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = "TUSKit MacOS ExampleUITests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.masterson.TUSKit-MacOS-ExampleUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = "TUSKit MacOS Example";
+			};
+			name = Debug;
+		};
+		28C00B301ECD79F600430748 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = MPKS94G26Q;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = "TUSKit MacOS ExampleUITests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.masterson.TUSKit-MacOS-ExampleUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = "TUSKit MacOS Example";
+			};
+			name = Release;
+		};
 		6003F5BD195388D20070C39A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -608,6 +1015,30 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		28C00B311ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit MacOS Example" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				28C00B2B1ECD79F600430748 /* Debug */,
+				28C00B2C1ECD79F600430748 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		28C00B321ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit MacOS ExampleTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				28C00B2D1ECD79F600430748 /* Debug */,
+				28C00B2E1ECD79F600430748 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		28C00B331ECD79F600430748 /* Build configuration list for PBXNativeTarget "TUSKit MacOS ExampleUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				28C00B2F1ECD79F600430748 /* Debug */,
+				28C00B301ECD79F600430748 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		6003F585195388D10070C39A /* Build configuration list for PBXProject "TUSKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

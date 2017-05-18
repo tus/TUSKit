@@ -15,7 +15,7 @@
 
 #if TARGET_OS_IPHONE
 #import <AssetsLibrary/AssetsLibrary.h>
-#elif TARGET_OS_MAC
+#elif defined TARGET_OS_OSX
 @import MediaLibrary;
 #endif
 
@@ -23,7 +23,7 @@
 
 #if TARGET_OS_IPHONE
 - (id)initWithAsset:(ALAsset*)asset;
-#elif TARGET_OS_MAC
+#elif defined TARGET_OS_OSX
 - (id)initWithAsset:(MLMediaObject*)asset;
 #endif
 

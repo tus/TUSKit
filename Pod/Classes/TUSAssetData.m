@@ -14,7 +14,7 @@
 @interface TUSAssetData ()
 #if TARGET_OS_IPHONE
 @property (strong, nonatomic) ALAsset* asset;
-#elif TARGET_OS_MAC
+#elif defined TARGET_OS_OSX
 @property (strong, nonatomic) MLMediaObject* asset;
 #endif
 @end
@@ -30,7 +30,8 @@
     }
     return self;
 }
-#ELIF TARGET_OS_MAC
+#endif
+#if TARGET_OS_OSX
 - (id)initWithAsset:(MLMediaObject*)asset
 {
     self = [super init];
@@ -62,7 +63,8 @@
 
     return [assetRepresentation size];
 }
-#ELIF TARGET_OS_MAC
+#endif
+#if TARGET_OS_OSX
 - (long long)length
 {
     if (!_asset) {
@@ -93,7 +95,8 @@
                                   length:length
                                    error:error];
 }
-#ELIF TARGET_OS_MAC
+#endif
+#if TARGET_OS_OSX
 #endif
 
 

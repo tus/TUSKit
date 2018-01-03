@@ -120,6 +120,11 @@ Please refrence the Example Project for more usage examples
 
 TUSKit is a ready to use tus client for iOS.
 
+# Todo
+------
+-   [Add retry count](#29)
+-   [SSL Support](#32)
+-   [Uploadstore save to disk](#33)
 
 # License
 ------

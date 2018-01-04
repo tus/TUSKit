@@ -585,7 +585,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     
     return @{STORE_KEY_ID: self.uploadId,
              STORE_KEY_DELEGATE_ENDPOINT: self.delegate.createUploadURL.absoluteString,
-             STORE_KEY_UPLOAD_URL:  self.state == TUSResumableUploadStateCreatingFile? [NSNull null] : self.uploadUrl.absoluteString, //If we are creating the file, there is no upload URL
+             STORE_KEY_UPLOAD_URL:  self.state == TUSResumableUploadStateCreatingFile? @"" : self.uploadUrl.absoluteString, //If we are creating the file, there is no upload URL
              STORE_KEY_LENGTH: @(self.length),
              STORE_KEY_LAST_STATE: @(self.state),
              STORE_KEY_METADATA: self.metadata,

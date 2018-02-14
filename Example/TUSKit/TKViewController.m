@@ -10,15 +10,15 @@
 
 #import "TKViewController.h"
 
-#import <AssetsLibrary/AssetsLibrary.h>
 #import <TUSKit/TUSKit.h>
+#import <Photos/Photos.h>
 
-static NSString* const UPLOAD_ENDPOINT = @"http://127.0.0.1:1080/files/";
+
+static NSString* const UPLOAD_ENDPOINT = @"https://master.tus.io/files/";
 static NSString* const FILE_NAME = @"tuskit_example";
 
 @interface TKViewController ()
 
-@property (strong,nonatomic) ALAssetsLibrary *assetLibrary;
 @property (strong, nonatomic) TUSSession *tusSession;
 
 @end
@@ -63,45 +63,61 @@ static TUSUploadFailureBlock failureBlock = ^(NSError* error){
     UIImagePickerController *imagePicker = [UIImagePickerController new];
     imagePicker.mediaTypes = [UIImagePickerController availableMediaTypesForSourceType:imagePicker.sourceType];
     imagePicker.delegate = self;
-    [self presentViewController:imagePicker animated:YES completion:nil];
+    
+    PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
+    if(status == PHAuthorizationStatusNotDetermined) {
+        [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+            [self presentViewController:imagePicker animated:YES completion:nil];
+        }];
+    } else if (status == PHAuthorizationStatusAuthorized) {
+        [self presentViewController:imagePicker animated:YES completion:nil];
+    } else if (status == PHAuthorizationStatusRestricted) {
+        //Permisions Needed
+    } else if (status == PHAuthorizationStatusDenied) {
+        // Permisions Needed
+    }
+
 }
 
-- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
-    [self dismissViewControllerAnimated:YES completion:nil];
-    NSURL *assetUrl = [info valueForKey:UIImagePickerControllerReferenceURL];
-    
-    if (!self.assetLibrary) {
-        self.assetLibrary = [ALAssetsLibrary new];
-    }
-    
-    [self.assetLibrary assetForURL:assetUrl resultBlock:^(ALAsset* asset) {
 
+
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
+    //MARK: Grabbing data from the ImagePicker using the PhotosLibray
+    [self dismissViewControllerAnimated:YES completion:nil];
+    
+    NSURL *assetUrl = [info valueForKey:UIImagePickerControllerReferenceURL];
+    PHFetchResult *result = [PHAssetCollection fetchAssetCollectionsWithType:PHAssetCollectionTypeSmartAlbum
+                                                                     subtype:PHAssetCollectionSubtypeSmartAlbumUserLibrary
+                                                                     options:nil];
+    PHAssetCollection *assetCollection = result.firstObject;
+    NSLog(@"%@", assetCollection.localizedTitle);
+    
+    NSArray<NSURL *> *array = [[NSArray alloc] initWithObjects:assetUrl, nil];
+    PHFetchResult *fetchResult = [PHAsset fetchAssetsWithALAssetURLs:array options:nil];
+    PHAsset *asset = [fetchResult firstObject];
+    
+    [[[PHImageManager alloc] init] requestImageDataForAsset:asset options:nil resultHandler:^(NSData * _Nullable imageData, NSString * _Nullable dataUTI, UIImageOrientation orientation, NSDictionary * _Nullable info) {
         
-        ALAssetRepresentation *rep = [asset defaultRepresentation];
-        Byte *buffer = (Byte*)malloc(rep.size);
-        NSUInteger buffered = [rep getBytes:buffer fromOffset:0.0 length:rep.size error:nil];
-        
-        NSData *data = [NSData dataWithBytesNoCopy:buffer length:buffered freeWhenDone:YES];
         NSURL *documentDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSAllDomainsMask][0];
         NSURL *fileUrl = [documentDirectory URLByAppendingPathComponent:[[NSUUID alloc] init].UUIDString];
-        
         NSError *error;
-        if (![data writeToURL:fileUrl options:NSDataWritingAtomic error:&error]) {
+        if (![imageData writeToURL:fileUrl options:NSDataWritingAtomic error:&error]) {
             NSLog(@"%li", (long)error.code);
         }
         
+                // Initiate the background transfer
+                TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl headers:@{} metadata:@{}];
         
-        // Initiate the background transfer
-        TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl headers:@{} metadata:@{}];
+                upload.progressBlock = progressBlock;
+                upload.resultBlock = resultBlock;
+                upload.failureBlock = failureBlock;
         
-        upload.progressBlock = progressBlock;
-        upload.resultBlock = resultBlock;
-        upload.failureBlock = failureBlock;
-
-        [upload resume];
-    } failureBlock:^(NSError* error) {
-        NSLog(@"Unable to load asset due to: %@", error);
-    }];
+                [upload resume];
+        
+            }];
 }
+
+
+
 
 @end

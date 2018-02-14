@@ -18,7 +18,7 @@
 #elif defined TARGET_OS_OSX
 @import MediaLibrary;
 #endif
-
+__deprecated_msg("TUSAssetData is no longer in use as of TUSKit 1.4.0")
 @interface TUSAssetData : TUSData
 
 #if TARGET_OS_IPHONE

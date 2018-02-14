@@ -20,7 +20,7 @@
 -(instancetype)initWithFileURL:(NSURL *)url
 {
     // Check file first
-    if (![[NSFileManager defaultManager] isReadableFileAtPath:url.filePathURL]){
+    if (![[NSFileManager defaultManager] isReadableFileAtPath:url.filePathURL]  ){
         return nil;
     }
     

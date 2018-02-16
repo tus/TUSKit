@@ -349,7 +349,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         #if TARGET_OS_IPHONE
             [[UIApplication sharedApplication] endBackgroundTask:bgTask];
         #elif defined TARGET_OS_OSX
-            [weakself cancel];
+            // [weakself cancel];
         #endif
         
         if (delayTime > 0) {
@@ -455,7 +455,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         #if TARGET_OS_IPHONE
             [[UIApplication sharedApplication] endBackgroundTask:bgTask];
         #elif defined TARGET_OS_OSX
-            [weakself cancel];
+            // [weakself cancel];
         #endif
         if (delayTime > 0) {
             __weak NSOperationQueue *weakQueue = [NSOperationQueue currentQueue];
@@ -543,7 +543,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         #if TARGET_OS_IPHONE
             [[UIApplication sharedApplication] endBackgroundTask:bgTask];
         #elif defined TARGET_OS_OSX
-            [weakself cancel];
+            // [weakself cancel];
         #endif
         [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
     }];

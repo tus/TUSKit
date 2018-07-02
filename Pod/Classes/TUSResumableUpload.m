@@ -203,8 +203,6 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     return [self continueUpload];
 }
 
-
-
 #pragma mark property getters and setters
 - (long long) length {
     return self.data.length;
@@ -507,9 +505,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     //If we are using chunked sizes, set the chunkSize and retrieve the data
     //with the offset and size of self.chunkSize
     if (self.chunkSize > 0) {
-        //[self.data setChunkSize:self.chunkSize];
         request.HTTPBody = [self.data dataChunk:self.chunkSize];
-        
         TUSLog(@"Uploading chunk sized %lu / %lld ", request.HTTPBody.length, self.chunkSize);
     } else {
         request.HTTPBodyStream = self.data.dataStream;

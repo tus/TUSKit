@@ -67,6 +67,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 @property (nonatomic, strong) NSURL *fileUrl; // File URL for saving if we created our own TUSData
 @property (readonly) long long length;
 
+@property (nonatomic) long long chunkSize; //how big chunks we send to the server
+
 #pragma mark private method headers
 
 /**
@@ -155,6 +157,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         _state = state;
         _uploadUrl = uploadUrl;
         _idle = YES;
+        _chunkSize = -1;
         
         if (_state != TUSResumableUploadStateComplete){
             _data = [[TUSFileData alloc] initWithFileURL:fileUrl];
@@ -210,6 +213,10 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 - (BOOL)complete
 {
     return self.state == TUSResumableUploadStateComplete;
+}
+
+- (void)setChunkSize:(long long)chunkSize {
+    _chunkSize = chunkSize;
 }
 
 #pragma mark internal methods
@@ -494,9 +501,19 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     [request setHTTPMethod:HTTP_PATCH];
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:mutableHeader];
-    [self.data setOffset:self.offset]; // Advance the offset of data to the expected value
-    request.HTTPBodyStream = self.data.dataStream;
     
+    [self.data setOffset:self.offset]; // Advance the offset of data to the expected value
+    
+    //If we are using chunked sizes, set the chunkSize and retrieve the data
+    //with the offset and size of self.chunkSize
+    if (self.chunkSize > 0) {
+        //[self.data setChunkSize:self.chunkSize];
+        request.HTTPBody = [self.data dataChunk:self.chunkSize];
+        
+        TUSLog(@"Uploading chunk sized %lu / %lld ", request.HTTPBody.length, self.chunkSize);
+    } else {
+        request.HTTPBodyStream = self.data.dataStream;
+    }
     
     __weak TUSResumableUpload * weakself = self;
     #if TARGET_OS_IPHONE

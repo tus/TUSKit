@@ -95,7 +95,6 @@
     return upload;
 }
 
-
 /**
  Restore an upload, but do not start it.  Uploads must be restored by ID because file URLs can change between launch.
  */

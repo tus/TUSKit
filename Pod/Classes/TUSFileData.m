@@ -96,4 +96,12 @@
     }
     
 }
+
+- (NSData*)dataChunk:(long long)chunkSize
+          fromOffset: (NSUInteger)offset
+{
+    [self.fileHandle seekToFileOffset:offset];
+    NSData *chunkData = [self.fileHandle readDataOfLength:chunkSize];
+    return chunkData;
+}
 @end

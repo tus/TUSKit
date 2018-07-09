@@ -64,5 +64,11 @@ typedef void (^TUSUploadProgressBlock)(int64_t bytesWritten, int64_t bytesTotal)
  Resume the upload if it was cancelled or not yet started
  */
 - (BOOL) resume;
+
+/**
+ Lazily instantiate the chunkSize for the upload
+ */
+- (void)setChunkSize:(long long)chunkSize;
+
 @end
 

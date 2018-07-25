@@ -97,7 +97,7 @@ Set it to your `TUSResumableUpload` object.
     upload.failureBlock = failureBlock;
     
 ### Result Block
-A block fired when your upload fails.
+A block fired when your upload is successful.
 
     static TUSUploadResultBlock resultBlock = ^(NSURL* fileURL){
         // Use the upload url

@@ -12,12 +12,17 @@
 
 #define TUS_LOGGING_ENABLED 1
 #if TUS_LOGGING_ENABLED
-    #define TUSLog( s, ... ) NSLog( @"<%@:(%d)> %@", \
-        [[NSString stringWithUTF8String:__FILE__] lastPathComponent], \
-        __LINE__, \
-        [NSString stringWithFormat:(s), ##__VA_ARGS__])
+#define TUSLog( s, ... ) NSLog( @"<%@:(%d)> %@", \
+[[NSString stringWithUTF8String:__FILE__] lastPathComponent], \
+__LINE__, \
+[NSString stringWithFormat:(s), ##__VA_ARGS__])
 #else
-    #define TUSLog( s, ... ) ;
+#define TUSLog( s, ... ) ;
+#endif
+
+#import <Foundation/Foundation.h>
+#if TARGET_OS_IPHONE
+#import <UIKit/UIKit.h>
 #endif
 
 #import "TUSData.h"
@@ -27,3 +32,9 @@
 #import "TUSUploadStore.h"
 #import "TUSSession.h"
 #import "TUSErrors.h"
+
+//! Project version number for TUSKit.
+FOUNDATION_EXPORT double TUSKitVersionNumber;
+
+//! Project version string for TUSKit.
+FOUNDATION_EXPORT const unsigned char TUSKitVersionString[];

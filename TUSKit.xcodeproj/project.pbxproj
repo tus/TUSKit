@@ -7,8 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7B59AFB5220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */; };
+		7B59AFB6220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */; };
 		7BF09ED4220C462900E79BA6 /* TUSKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E7E220C41AB00E79BA6 /* TUSKit.h */; };
-		7BF09ED5220C462900E79BA6 /* Info iOS.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7BF09E7F220C41AB00E79BA6 /* Info iOS.plist */; };
 		7BF09ED6220C462900E79BA6 /* TUSKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E7E220C41AB00E79BA6 /* TUSKit.h */; };
 		7BF09ED8220C462D00E79BA6 /* TUSAssetData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E88220C429C00E79BA6 /* TUSAssetData.h */; };
 		7BF09ED9220C462D00E79BA6 /* TUSAssetData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E91220C429C00E79BA6 /* TUSAssetData.m */; };
@@ -44,10 +45,11 @@
 		7BF09EF7220C462D00E79BA6 /* TUSSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E96220C429C00E79BA6 /* TUSSession.m */; };
 		7BF09EF8220C462D00E79BA6 /* TUSUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8D220C429C00E79BA6 /* TUSUploadStore.h */; };
 		7BF09EF9220C462D00E79BA6 /* TUSUploadStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8E220C429C00E79BA6 /* TUSUploadStore.m */; };
-		7BF693A5220C487000121EEF /* Info macOS.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7BF693A4220C487000121EEF /* Info macOS.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		7B59AFB3220D8E5F0044C33A /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
+		7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TUSKitUmbrella.h; sourceTree = "<group>"; };
 		7BF09E7E220C41AB00E79BA6 /* TUSKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TUSKit.h; sourceTree = "<group>"; };
 		7BF09E7F220C41AB00E79BA6 /* Info iOS.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info iOS.plist"; sourceTree = "<group>"; };
 		7BF09E86220C429C00E79BA6 /* TUSErrors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSErrors.h; sourceTree = "<group>"; };
@@ -90,10 +92,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7B59AFB2220D8E280044C33A /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				7BF09E7F220C41AB00E79BA6 /* Info iOS.plist */,
+				7BF693A4220C487000121EEF /* Info macOS.plist */,
+				7B59AFB3220D8E5F0044C33A /* module.modulemap */,
+				7BF09E7E220C41AB00E79BA6 /* TUSKit.h */,
+				7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */,
+			);
+			path = "Supporting Files";
+			sourceTree = "<group>";
+		};
 		7BF09E71220C41AB00E79BA6 = {
 			isa = PBXGroup;
 			children = (
 				7BF09E7D220C41AB00E79BA6 /* TUSKit */,
+				7B59AFB2220D8E280044C33A /* Supporting Files */,
 				7BF09E7C220C41AB00E79BA6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -110,9 +125,6 @@
 		7BF09E7D220C41AB00E79BA6 /* TUSKit */ = {
 			isa = PBXGroup;
 			children = (
-				7BF09E7E220C41AB00E79BA6 /* TUSKit.h */,
-				7BF09E7F220C41AB00E79BA6 /* Info iOS.plist */,
-				7BF693A4220C487000121EEF /* Info macOS.plist */,
 				7BF09E88220C429C00E79BA6 /* TUSAssetData.h */,
 				7BF09E91220C429C00E79BA6 /* TUSAssetData.m */,
 				7BF09E89220C429C00E79BA6 /* TUSData.h */,
@@ -142,6 +154,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7BF09EE0220C462D00E79BA6 /* TUSFileUploadStore.h in Headers */,
+				7B59AFB5220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */,
 				7BF09EE4220C462D00E79BA6 /* TUSResumableUpload+Private.h in Headers */,
 				7BF09EE5220C462D00E79BA6 /* TUSSession.h in Headers */,
 				7BF09ED8220C462D00E79BA6 /* TUSAssetData.h in Headers */,
@@ -159,6 +172,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7BF09EF1220C462D00E79BA6 /* TUSFileUploadStore.h in Headers */,
+				7B59AFB6220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */,
 				7BF09EF5220C462D00E79BA6 /* TUSResumableUpload+Private.h in Headers */,
 				7BF09EF6220C462D00E79BA6 /* TUSSession.h in Headers */,
 				7BF09EE9220C462D00E79BA6 /* TUSAssetData.h in Headers */,
@@ -253,7 +267,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7BF09ED5220C462900E79BA6 /* Info iOS.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -261,7 +274,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7BF693A5220C487000121EEF /* Info macOS.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -432,7 +444,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = "$(SRCROOT)/TUSKit/Info iOS.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info iOS.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -440,7 +452,8 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "io.tus.TUSKit-iOS";
+				MODULEMAP_FILE = "$(SRCROOT)/Supporting Files/module.modulemap";
+				PRODUCT_BUNDLE_IDENTIFIER = io.tus.TUSKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -460,7 +473,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = "$(SRCROOT)/TUSKit/Info iOS.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info iOS.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -468,7 +481,8 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "io.tus.TUSKit-iOS";
+				MODULEMAP_FILE = "$(SRCROOT)/Supporting Files/module.modulemap";
+				PRODUCT_BUNDLE_IDENTIFIER = io.tus.TUSKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 4.2;
@@ -489,7 +503,7 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				FRAMEWORK_VERSION = A;
-				INFOPLIST_FILE = "$(SRCROOT)/TUSKit/Info macOS.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info macOS.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -497,7 +511,8 @@
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				PRODUCT_BUNDLE_IDENTIFIER = "io.tus.TUSKit-macOS";
+				MODULEMAP_FILE = "$(SRCROOT)/Supporting Files/module.modulemap";
+				PRODUCT_BUNDLE_IDENTIFIER = io.tus.TUSKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
@@ -519,7 +534,7 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				FRAMEWORK_VERSION = A;
-				INFOPLIST_FILE = "$(SRCROOT)/TUSKit/Info macOS.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info macOS.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -527,7 +542,8 @@
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
-				PRODUCT_BUNDLE_IDENTIFIER = "io.tus.TUSKit-macOS";
+				MODULEMAP_FILE = "$(SRCROOT)/Supporting Files/module.modulemap";
+				PRODUCT_BUNDLE_IDENTIFIER = io.tus.TUSKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;

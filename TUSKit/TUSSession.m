@@ -5,6 +5,7 @@
 //  Copyright (c) 2016 Findyr. All rights reserved.
 
 #import "TUSKit.h"
+#import "TUSSession.h"
 #import "TUSResumableUpload+Private.h"
 
 @interface TUSSession() <TUSResumableUploadDelegate, NSURLSessionDataDelegate>

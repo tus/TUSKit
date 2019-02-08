@@ -10,6 +10,11 @@
 //  Additions and changes for NSURLSession by Findyr
 //  Copyright (c) 2016 Findyr
 
+#import <Foundation/Foundation.h>
+#if TARGET_OS_IPHONE
+#import <UIKit/UIKit.h>
+#endif
+
 #define TUS_LOGGING_ENABLED 1
 #if TUS_LOGGING_ENABLED
 #define TUSLog( s, ... ) NSLog( @"<%@:(%d)> %@", \
@@ -19,19 +24,6 @@ __LINE__, \
 #else
 #define TUSLog( s, ... ) ;
 #endif
-
-#import <Foundation/Foundation.h>
-#if TARGET_OS_IPHONE
-#import <UIKit/UIKit.h>
-#endif
-
-#import "TUSData.h"
-#import "TUSAssetData.h"
-#import "TUSResumableUpload.h"
-#import "TUSFileUploadStore.h"
-#import "TUSUploadStore.h"
-#import "TUSSession.h"
-#import "TUSErrors.h"
 
 //! Project version number for TUSKit.
 FOUNDATION_EXPORT double TUSKitVersionNumber;

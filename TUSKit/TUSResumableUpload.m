@@ -14,6 +14,7 @@
 //  Copyright (c) 2015-2016 Mark Robert Masterson & Transloadit. All rights reserved.
 
 #import "TUSKit.h"
+#import "TUSErrors.h"
 #import "TUSData.h"
 
 #import "TUSResumableUpload+Private.h"

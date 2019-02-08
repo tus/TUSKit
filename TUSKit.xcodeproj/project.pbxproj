@@ -7,43 +7,43 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		7B59AFB5220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */; };
-		7B59AFB6220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */; };
-		7BF09ED4220C462900E79BA6 /* TUSKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E7E220C41AB00E79BA6 /* TUSKit.h */; };
-		7BF09ED6220C462900E79BA6 /* TUSKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E7E220C41AB00E79BA6 /* TUSKit.h */; };
-		7BF09ED8220C462D00E79BA6 /* TUSAssetData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E88220C429C00E79BA6 /* TUSAssetData.h */; };
+		7B59AFB5220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7B59AFB6220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09ED4220C462900E79BA6 /* TUSKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E7E220C41AB00E79BA6 /* TUSKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09ED6220C462900E79BA6 /* TUSKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E7E220C41AB00E79BA6 /* TUSKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09ED8220C462D00E79BA6 /* TUSAssetData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E88220C429C00E79BA6 /* TUSAssetData.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09ED9220C462D00E79BA6 /* TUSAssetData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E91220C429C00E79BA6 /* TUSAssetData.m */; };
-		7BF09EDA220C462D00E79BA6 /* TUSData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E89220C429C00E79BA6 /* TUSData.h */; };
+		7BF09EDA220C462D00E79BA6 /* TUSData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E89220C429C00E79BA6 /* TUSData.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EDB220C462D00E79BA6 /* TUSData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8A220C429C00E79BA6 /* TUSData.m */; };
-		7BF09EDC220C462D00E79BA6 /* TUSErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E86220C429C00E79BA6 /* TUSErrors.h */; };
+		7BF09EDC220C462D00E79BA6 /* TUSErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E86220C429C00E79BA6 /* TUSErrors.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EDD220C462D00E79BA6 /* TUSErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8B220C429C00E79BA6 /* TUSErrors.m */; };
-		7BF09EDE220C462D00E79BA6 /* TUSFileData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8F220C429C00E79BA6 /* TUSFileData.h */; };
+		7BF09EDE220C462D00E79BA6 /* TUSFileData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8F220C429C00E79BA6 /* TUSFileData.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EDF220C462D00E79BA6 /* TUSFileData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E95220C429C00E79BA6 /* TUSFileData.m */; };
-		7BF09EE0220C462D00E79BA6 /* TUSFileUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E97220C429C00E79BA6 /* TUSFileUploadStore.h */; };
+		7BF09EE0220C462D00E79BA6 /* TUSFileUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E97220C429C00E79BA6 /* TUSFileUploadStore.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EE1220C462D00E79BA6 /* TUSFileUploadStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8C220C429C00E79BA6 /* TUSFileUploadStore.m */; };
-		7BF09EE2220C462D00E79BA6 /* TUSResumableUpload.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E94220C429C00E79BA6 /* TUSResumableUpload.h */; };
+		7BF09EE2220C462D00E79BA6 /* TUSResumableUpload.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E94220C429C00E79BA6 /* TUSResumableUpload.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EE3220C462D00E79BA6 /* TUSResumableUpload.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E93220C429C00E79BA6 /* TUSResumableUpload.m */; };
-		7BF09EE4220C462D00E79BA6 /* TUSResumableUpload+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E90220C429C00E79BA6 /* TUSResumableUpload+Private.h */; };
-		7BF09EE5220C462D00E79BA6 /* TUSSession.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E92220C429C00E79BA6 /* TUSSession.h */; };
+		7BF09EE4220C462D00E79BA6 /* TUSResumableUpload+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E90220C429C00E79BA6 /* TUSResumableUpload+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EE5220C462D00E79BA6 /* TUSSession.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E92220C429C00E79BA6 /* TUSSession.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EE6220C462D00E79BA6 /* TUSSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E96220C429C00E79BA6 /* TUSSession.m */; };
-		7BF09EE7220C462D00E79BA6 /* TUSUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8D220C429C00E79BA6 /* TUSUploadStore.h */; };
+		7BF09EE7220C462D00E79BA6 /* TUSUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8D220C429C00E79BA6 /* TUSUploadStore.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EE8220C462D00E79BA6 /* TUSUploadStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8E220C429C00E79BA6 /* TUSUploadStore.m */; };
-		7BF09EE9220C462D00E79BA6 /* TUSAssetData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E88220C429C00E79BA6 /* TUSAssetData.h */; };
+		7BF09EE9220C462D00E79BA6 /* TUSAssetData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E88220C429C00E79BA6 /* TUSAssetData.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EEA220C462D00E79BA6 /* TUSAssetData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E91220C429C00E79BA6 /* TUSAssetData.m */; };
-		7BF09EEB220C462D00E79BA6 /* TUSData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E89220C429C00E79BA6 /* TUSData.h */; };
+		7BF09EEB220C462D00E79BA6 /* TUSData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E89220C429C00E79BA6 /* TUSData.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EEC220C462D00E79BA6 /* TUSData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8A220C429C00E79BA6 /* TUSData.m */; };
-		7BF09EED220C462D00E79BA6 /* TUSErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E86220C429C00E79BA6 /* TUSErrors.h */; };
+		7BF09EED220C462D00E79BA6 /* TUSErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E86220C429C00E79BA6 /* TUSErrors.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EEE220C462D00E79BA6 /* TUSErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8B220C429C00E79BA6 /* TUSErrors.m */; };
-		7BF09EEF220C462D00E79BA6 /* TUSFileData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8F220C429C00E79BA6 /* TUSFileData.h */; };
+		7BF09EEF220C462D00E79BA6 /* TUSFileData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8F220C429C00E79BA6 /* TUSFileData.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EF0220C462D00E79BA6 /* TUSFileData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E95220C429C00E79BA6 /* TUSFileData.m */; };
-		7BF09EF1220C462D00E79BA6 /* TUSFileUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E97220C429C00E79BA6 /* TUSFileUploadStore.h */; };
+		7BF09EF1220C462D00E79BA6 /* TUSFileUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E97220C429C00E79BA6 /* TUSFileUploadStore.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EF2220C462D00E79BA6 /* TUSFileUploadStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8C220C429C00E79BA6 /* TUSFileUploadStore.m */; };
-		7BF09EF3220C462D00E79BA6 /* TUSResumableUpload.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E94220C429C00E79BA6 /* TUSResumableUpload.h */; };
+		7BF09EF3220C462D00E79BA6 /* TUSResumableUpload.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E94220C429C00E79BA6 /* TUSResumableUpload.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EF4220C462D00E79BA6 /* TUSResumableUpload.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E93220C429C00E79BA6 /* TUSResumableUpload.m */; };
-		7BF09EF5220C462D00E79BA6 /* TUSResumableUpload+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E90220C429C00E79BA6 /* TUSResumableUpload+Private.h */; };
-		7BF09EF6220C462D00E79BA6 /* TUSSession.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E92220C429C00E79BA6 /* TUSSession.h */; };
+		7BF09EF5220C462D00E79BA6 /* TUSResumableUpload+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E90220C429C00E79BA6 /* TUSResumableUpload+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EF6220C462D00E79BA6 /* TUSSession.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E92220C429C00E79BA6 /* TUSSession.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EF7220C462D00E79BA6 /* TUSSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E96220C429C00E79BA6 /* TUSSession.m */; };
-		7BF09EF8220C462D00E79BA6 /* TUSUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8D220C429C00E79BA6 /* TUSUploadStore.h */; };
+		7BF09EF8220C462D00E79BA6 /* TUSUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8D220C429C00E79BA6 /* TUSUploadStore.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7BF09EF9220C462D00E79BA6 /* TUSUploadStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8E220C429C00E79BA6 /* TUSUploadStore.m */; };
 /* End PBXBuildFile section */
 

@@ -7,10 +7,11 @@
 //
 
 #import "TUSKit.h"
-#import "TUSData.h"
 #import "TUSAssetData.h"
-#import "TUSResumableUpload.h"
-#import "TUSFileUploadStore.h"
-#import "TUSUploadStore.h"
-#import "TUSSession.h"
+#import "TUSData.h"
 #import "TUSErrors.h"
+#import "TUSFileData.h"
+#import "TUSFileUploadStore.h"
+#import "TUSResumableUpload.h"
+#import "TUSSession.h"
+#import "TUSUploadStore.h"

@@ -25,6 +25,15 @@ __LINE__, \
 #define TUSLog( s, ... ) ;
 #endif
 
+#import "TUSAssetData.h"
+#import "TUSData.h"
+#import "TUSErrors.h"
+#import "TUSFileData.h"
+#import "TUSFileUploadStore.h"
+#import "TUSResumableUpload.h"
+#import "TUSSession.h"
+#import "TUSUploadStore.h"
+
 //! Project version number for TUSKit.
 FOUNDATION_EXPORT double TUSKitVersionNumber;
 

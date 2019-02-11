@@ -8,5 +8,4 @@ end
 
 target 'Tests' do
   pod "TUSKit", :path => "../"
-
 end

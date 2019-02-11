@@ -1,0 +1,587 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		7B59AFB5220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7B59AFB6220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09ED4220C462900E79BA6 /* TUSKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E7E220C41AB00E79BA6 /* TUSKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09ED6220C462900E79BA6 /* TUSKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E7E220C41AB00E79BA6 /* TUSKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09ED8220C462D00E79BA6 /* TUSAssetData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E88220C429C00E79BA6 /* TUSAssetData.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09ED9220C462D00E79BA6 /* TUSAssetData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E91220C429C00E79BA6 /* TUSAssetData.m */; };
+		7BF09EDA220C462D00E79BA6 /* TUSData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E89220C429C00E79BA6 /* TUSData.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EDB220C462D00E79BA6 /* TUSData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8A220C429C00E79BA6 /* TUSData.m */; };
+		7BF09EDC220C462D00E79BA6 /* TUSErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E86220C429C00E79BA6 /* TUSErrors.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EDD220C462D00E79BA6 /* TUSErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8B220C429C00E79BA6 /* TUSErrors.m */; };
+		7BF09EDE220C462D00E79BA6 /* TUSFileData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8F220C429C00E79BA6 /* TUSFileData.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EDF220C462D00E79BA6 /* TUSFileData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E95220C429C00E79BA6 /* TUSFileData.m */; };
+		7BF09EE0220C462D00E79BA6 /* TUSFileUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E97220C429C00E79BA6 /* TUSFileUploadStore.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EE1220C462D00E79BA6 /* TUSFileUploadStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8C220C429C00E79BA6 /* TUSFileUploadStore.m */; };
+		7BF09EE2220C462D00E79BA6 /* TUSResumableUpload.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E94220C429C00E79BA6 /* TUSResumableUpload.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EE3220C462D00E79BA6 /* TUSResumableUpload.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E93220C429C00E79BA6 /* TUSResumableUpload.m */; };
+		7BF09EE4220C462D00E79BA6 /* TUSResumableUpload+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E90220C429C00E79BA6 /* TUSResumableUpload+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EE5220C462D00E79BA6 /* TUSSession.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E92220C429C00E79BA6 /* TUSSession.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EE6220C462D00E79BA6 /* TUSSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E96220C429C00E79BA6 /* TUSSession.m */; };
+		7BF09EE7220C462D00E79BA6 /* TUSUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8D220C429C00E79BA6 /* TUSUploadStore.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EE8220C462D00E79BA6 /* TUSUploadStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8E220C429C00E79BA6 /* TUSUploadStore.m */; };
+		7BF09EE9220C462D00E79BA6 /* TUSAssetData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E88220C429C00E79BA6 /* TUSAssetData.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EEA220C462D00E79BA6 /* TUSAssetData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E91220C429C00E79BA6 /* TUSAssetData.m */; };
+		7BF09EEB220C462D00E79BA6 /* TUSData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E89220C429C00E79BA6 /* TUSData.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EEC220C462D00E79BA6 /* TUSData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8A220C429C00E79BA6 /* TUSData.m */; };
+		7BF09EED220C462D00E79BA6 /* TUSErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E86220C429C00E79BA6 /* TUSErrors.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EEE220C462D00E79BA6 /* TUSErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8B220C429C00E79BA6 /* TUSErrors.m */; };
+		7BF09EEF220C462D00E79BA6 /* TUSFileData.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8F220C429C00E79BA6 /* TUSFileData.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EF0220C462D00E79BA6 /* TUSFileData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E95220C429C00E79BA6 /* TUSFileData.m */; };
+		7BF09EF1220C462D00E79BA6 /* TUSFileUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E97220C429C00E79BA6 /* TUSFileUploadStore.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EF2220C462D00E79BA6 /* TUSFileUploadStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8C220C429C00E79BA6 /* TUSFileUploadStore.m */; };
+		7BF09EF3220C462D00E79BA6 /* TUSResumableUpload.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E94220C429C00E79BA6 /* TUSResumableUpload.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EF4220C462D00E79BA6 /* TUSResumableUpload.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E93220C429C00E79BA6 /* TUSResumableUpload.m */; };
+		7BF09EF5220C462D00E79BA6 /* TUSResumableUpload+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E90220C429C00E79BA6 /* TUSResumableUpload+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EF6220C462D00E79BA6 /* TUSSession.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E92220C429C00E79BA6 /* TUSSession.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EF7220C462D00E79BA6 /* TUSSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E96220C429C00E79BA6 /* TUSSession.m */; };
+		7BF09EF8220C462D00E79BA6 /* TUSUploadStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BF09E8D220C429C00E79BA6 /* TUSUploadStore.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7BF09EF9220C462D00E79BA6 /* TUSUploadStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BF09E8E220C429C00E79BA6 /* TUSUploadStore.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		7B59AFB3220D8E5F0044C33A /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
+		7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TUSKitUmbrella.h; sourceTree = "<group>"; };
+		7BF09E7E220C41AB00E79BA6 /* TUSKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TUSKit.h; sourceTree = "<group>"; };
+		7BF09E7F220C41AB00E79BA6 /* Info iOS.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info iOS.plist"; sourceTree = "<group>"; };
+		7BF09E86220C429C00E79BA6 /* TUSErrors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSErrors.h; sourceTree = "<group>"; };
+		7BF09E88220C429C00E79BA6 /* TUSAssetData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSAssetData.h; sourceTree = "<group>"; };
+		7BF09E89220C429C00E79BA6 /* TUSData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSData.h; sourceTree = "<group>"; };
+		7BF09E8A220C429C00E79BA6 /* TUSData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSData.m; sourceTree = "<group>"; };
+		7BF09E8B220C429C00E79BA6 /* TUSErrors.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSErrors.m; sourceTree = "<group>"; };
+		7BF09E8C220C429C00E79BA6 /* TUSFileUploadStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSFileUploadStore.m; sourceTree = "<group>"; };
+		7BF09E8D220C429C00E79BA6 /* TUSUploadStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSUploadStore.h; sourceTree = "<group>"; };
+		7BF09E8E220C429C00E79BA6 /* TUSUploadStore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSUploadStore.m; sourceTree = "<group>"; };
+		7BF09E8F220C429C00E79BA6 /* TUSFileData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSFileData.h; sourceTree = "<group>"; };
+		7BF09E90220C429C00E79BA6 /* TUSResumableUpload+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "TUSResumableUpload+Private.h"; sourceTree = "<group>"; };
+		7BF09E91220C429C00E79BA6 /* TUSAssetData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSAssetData.m; sourceTree = "<group>"; };
+		7BF09E92220C429C00E79BA6 /* TUSSession.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSSession.h; sourceTree = "<group>"; };
+		7BF09E93220C429C00E79BA6 /* TUSResumableUpload.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSResumableUpload.m; sourceTree = "<group>"; };
+		7BF09E94220C429C00E79BA6 /* TUSResumableUpload.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSResumableUpload.h; sourceTree = "<group>"; };
+		7BF09E95220C429C00E79BA6 /* TUSFileData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSFileData.m; sourceTree = "<group>"; };
+		7BF09E96220C429C00E79BA6 /* TUSSession.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUSSession.m; sourceTree = "<group>"; };
+		7BF09E97220C429C00E79BA6 /* TUSFileUploadStore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TUSFileUploadStore.h; sourceTree = "<group>"; };
+		7BF09EBC220C43F400E79BA6 /* TUSKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TUSKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7BF09EC9220C440D00E79BA6 /* TUSKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TUSKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7BF693A4220C487000121EEF /* Info macOS.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Info macOS.plist"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7BF09EB9220C43F400E79BA6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7BF09EC6220C440D00E79BA6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		7B59AFB2220D8E280044C33A /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				7BF09E7F220C41AB00E79BA6 /* Info iOS.plist */,
+				7BF693A4220C487000121EEF /* Info macOS.plist */,
+				7B59AFB3220D8E5F0044C33A /* module.modulemap */,
+				7BF09E7E220C41AB00E79BA6 /* TUSKit.h */,
+				7B59AFB4220D8E8B0044C33A /* TUSKitUmbrella.h */,
+			);
+			path = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		7BF09E71220C41AB00E79BA6 = {
+			isa = PBXGroup;
+			children = (
+				7BF09E7D220C41AB00E79BA6 /* TUSKit */,
+				7B59AFB2220D8E280044C33A /* Supporting Files */,
+				7BF09E7C220C41AB00E79BA6 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7BF09E7C220C41AB00E79BA6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7BF09EBC220C43F400E79BA6 /* TUSKit.framework */,
+				7BF09EC9220C440D00E79BA6 /* TUSKit.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7BF09E7D220C41AB00E79BA6 /* TUSKit */ = {
+			isa = PBXGroup;
+			children = (
+				7BF09E88220C429C00E79BA6 /* TUSAssetData.h */,
+				7BF09E91220C429C00E79BA6 /* TUSAssetData.m */,
+				7BF09E89220C429C00E79BA6 /* TUSData.h */,
+				7BF09E8A220C429C00E79BA6 /* TUSData.m */,
+				7BF09E86220C429C00E79BA6 /* TUSErrors.h */,
+				7BF09E8B220C429C00E79BA6 /* TUSErrors.m */,
+				7BF09E8F220C429C00E79BA6 /* TUSFileData.h */,
+				7BF09E95220C429C00E79BA6 /* TUSFileData.m */,
+				7BF09E97220C429C00E79BA6 /* TUSFileUploadStore.h */,
+				7BF09E8C220C429C00E79BA6 /* TUSFileUploadStore.m */,
+				7BF09E94220C429C00E79BA6 /* TUSResumableUpload.h */,
+				7BF09E93220C429C00E79BA6 /* TUSResumableUpload.m */,
+				7BF09E90220C429C00E79BA6 /* TUSResumableUpload+Private.h */,
+				7BF09E92220C429C00E79BA6 /* TUSSession.h */,
+				7BF09E96220C429C00E79BA6 /* TUSSession.m */,
+				7BF09E8D220C429C00E79BA6 /* TUSUploadStore.h */,
+				7BF09E8E220C429C00E79BA6 /* TUSUploadStore.m */,
+			);
+			path = TUSKit;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		7BF09EB7220C43F400E79BA6 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7BF09EE0220C462D00E79BA6 /* TUSFileUploadStore.h in Headers */,
+				7B59AFB5220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */,
+				7BF09EE4220C462D00E79BA6 /* TUSResumableUpload+Private.h in Headers */,
+				7BF09EE5220C462D00E79BA6 /* TUSSession.h in Headers */,
+				7BF09ED8220C462D00E79BA6 /* TUSAssetData.h in Headers */,
+				7BF09EE7220C462D00E79BA6 /* TUSUploadStore.h in Headers */,
+				7BF09EDE220C462D00E79BA6 /* TUSFileData.h in Headers */,
+				7BF09EE2220C462D00E79BA6 /* TUSResumableUpload.h in Headers */,
+				7BF09EDA220C462D00E79BA6 /* TUSData.h in Headers */,
+				7BF09EDC220C462D00E79BA6 /* TUSErrors.h in Headers */,
+				7BF09ED4220C462900E79BA6 /* TUSKit.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7BF09EC4220C440D00E79BA6 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7BF09EF1220C462D00E79BA6 /* TUSFileUploadStore.h in Headers */,
+				7B59AFB6220D8E8B0044C33A /* TUSKitUmbrella.h in Headers */,
+				7BF09EF5220C462D00E79BA6 /* TUSResumableUpload+Private.h in Headers */,
+				7BF09EF6220C462D00E79BA6 /* TUSSession.h in Headers */,
+				7BF09EE9220C462D00E79BA6 /* TUSAssetData.h in Headers */,
+				7BF09EF8220C462D00E79BA6 /* TUSUploadStore.h in Headers */,
+				7BF09EEF220C462D00E79BA6 /* TUSFileData.h in Headers */,
+				7BF09EF3220C462D00E79BA6 /* TUSResumableUpload.h in Headers */,
+				7BF09EEB220C462D00E79BA6 /* TUSData.h in Headers */,
+				7BF09EED220C462D00E79BA6 /* TUSErrors.h in Headers */,
+				7BF09ED6220C462900E79BA6 /* TUSKit.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		7BF09EBB220C43F400E79BA6 /* TUSKit iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7BF09EC1220C43F400E79BA6 /* Build configuration list for PBXNativeTarget "TUSKit iOS" */;
+			buildPhases = (
+				7BF09EB7220C43F400E79BA6 /* Headers */,
+				7BF09EB8220C43F400E79BA6 /* Sources */,
+				7BF09EB9220C43F400E79BA6 /* Frameworks */,
+				7BF09EBA220C43F400E79BA6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "TUSKit iOS";
+			productName = "TUSKit iOS";
+			productReference = 7BF09EBC220C43F400E79BA6 /* TUSKit.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		7BF09EC8220C440D00E79BA6 /* TUSKit macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7BF09ECE220C440D00E79BA6 /* Build configuration list for PBXNativeTarget "TUSKit macOS" */;
+			buildPhases = (
+				7BF09EC4220C440D00E79BA6 /* Headers */,
+				7BF09EC5220C440D00E79BA6 /* Sources */,
+				7BF09EC6220C440D00E79BA6 /* Frameworks */,
+				7BF09EC7220C440D00E79BA6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "TUSKit macOS";
+			productName = "TUSKit macOS";
+			productReference = 7BF09EC9220C440D00E79BA6 /* TUSKit.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7BF09E72220C41AB00E79BA6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				CLASSPREFIX = TUS;
+				LastUpgradeCheck = 1010;
+				ORGANIZATIONNAME = tus;
+				TargetAttributes = {
+					7BF09EBB220C43F400E79BA6 = {
+						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1010;
+					};
+					7BF09EC8220C440D00E79BA6 = {
+						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1010;
+					};
+				};
+			};
+			buildConfigurationList = 7BF09E75220C41AB00E79BA6 /* Build configuration list for PBXProject "TUSKit" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 7BF09E71220C41AB00E79BA6;
+			productRefGroup = 7BF09E7C220C41AB00E79BA6 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7BF09EBB220C43F400E79BA6 /* TUSKit iOS */,
+				7BF09EC8220C440D00E79BA6 /* TUSKit macOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7BF09EBA220C43F400E79BA6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7BF09EC7220C440D00E79BA6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7BF09EB8220C43F400E79BA6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7BF09EDB220C462D00E79BA6 /* TUSData.m in Sources */,
+				7BF09EE8220C462D00E79BA6 /* TUSUploadStore.m in Sources */,
+				7BF09EE1220C462D00E79BA6 /* TUSFileUploadStore.m in Sources */,
+				7BF09ED9220C462D00E79BA6 /* TUSAssetData.m in Sources */,
+				7BF09EDF220C462D00E79BA6 /* TUSFileData.m in Sources */,
+				7BF09EE3220C462D00E79BA6 /* TUSResumableUpload.m in Sources */,
+				7BF09EE6220C462D00E79BA6 /* TUSSession.m in Sources */,
+				7BF09EDD220C462D00E79BA6 /* TUSErrors.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7BF09EC5220C440D00E79BA6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7BF09EEC220C462D00E79BA6 /* TUSData.m in Sources */,
+				7BF09EF9220C462D00E79BA6 /* TUSUploadStore.m in Sources */,
+				7BF09EF2220C462D00E79BA6 /* TUSFileUploadStore.m in Sources */,
+				7BF09EEA220C462D00E79BA6 /* TUSAssetData.m in Sources */,
+				7BF09EF0220C462D00E79BA6 /* TUSFileData.m in Sources */,
+				7BF09EF4220C462D00E79BA6 /* TUSResumableUpload.m in Sources */,
+				7BF09EF7220C462D00E79BA6 /* TUSSession.m in Sources */,
+				7BF09EEE220C462D00E79BA6 /* TUSErrors.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		7BF09E81220C41AB00E79BA6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		7BF09E82220C41AB00E79BA6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		7BF09EC2220C43F400E79BA6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = W4KHXBA29T;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info iOS.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MODULEMAP_FILE = "$(SRCROOT)/Supporting Files/module.modulemap";
+				PRODUCT_BUNDLE_IDENTIFIER = io.tus.TUSKit;
+				PRODUCT_NAME = TUSKit;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		7BF09EC3220C43F400E79BA6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = W4KHXBA29T;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info iOS.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MODULEMAP_FILE = "$(SRCROOT)/Supporting Files/module.modulemap";
+				PRODUCT_BUNDLE_IDENTIFIER = io.tus.TUSKit;
+				PRODUCT_NAME = TUSKit;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		7BF09ECF220C440D00E79BA6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = W4KHXBA29T;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info macOS.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MODULEMAP_FILE = "$(SRCROOT)/Supporting Files/module.modulemap";
+				PRODUCT_BUNDLE_IDENTIFIER = io.tus.TUSKit;
+				PRODUCT_NAME = TUSKit;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.2;
+			};
+			name = Debug;
+		};
+		7BF09ED0220C440D00E79BA6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = W4KHXBA29T;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info macOS.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MODULEMAP_FILE = "$(SRCROOT)/Supporting Files/module.modulemap";
+				PRODUCT_BUNDLE_IDENTIFIER = io.tus.TUSKit;
+				PRODUCT_NAME = TUSKit;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.2;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7BF09E75220C41AB00E79BA6 /* Build configuration list for PBXProject "TUSKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7BF09E81220C41AB00E79BA6 /* Debug */,
+				7BF09E82220C41AB00E79BA6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7BF09EC1220C43F400E79BA6 /* Build configuration list for PBXNativeTarget "TUSKit iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7BF09EC2220C43F400E79BA6 /* Debug */,
+				7BF09EC3220C43F400E79BA6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7BF09ECE220C440D00E79BA6 /* Build configuration list for PBXNativeTarget "TUSKit macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7BF09ECF220C440D00E79BA6 /* Debug */,
+				7BF09ED0220C440D00E79BA6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 7BF09E72220C41AB00E79BA6 /* Project object */;
+}

@@ -6,7 +6,6 @@
 //
 //
 
-#import <TUSKit/TUSKit.h>
 #import "TUSUploadStore.h"
 @interface TUSFileUploadStore : TUSUploadStore
 -(instancetype)initWithURL:(NSURL *)url;

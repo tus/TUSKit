@@ -1,0 +1,6 @@
+framework module TUSKit {
+  umbrella header "TUSKitUmbrella.h"
+
+  export *
+  module * { export * }
+}

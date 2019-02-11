@@ -10,10 +10,11 @@
 //  Additions and changes for NSURLSession by Findyr
 //  Copyright (c) 2016 Findyr
 //
-// Additions and changes for Transloadit by Mark R Masterson
+//  Additions and changes for Transloadit by Mark R Masterson
 //  Copyright (c) 2015-2016 Mark Robert Masterson & Transloadit. All rights reserved.
 
 #import "TUSKit.h"
+#import "TUSErrors.h"
 #import "TUSData.h"
 
 #import "TUSResumableUpload+Private.h"

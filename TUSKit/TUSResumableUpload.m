@@ -111,6 +111,36 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                                   delegate:(id <TUSResumableUploadDelegate> _Nonnull)delegate
                              uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
                                   metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata
+                                 uploadUrl:(NSURL * _Nonnull)uploadUrl
+
+{
+    if (!fileUrl.fileURL){
+        NSLog(@"URL provided to TUSResumableUpload is not a file URL: %@", fileUrl);
+        return nil;
+    }
+
+    // Set up metadata with filename
+    NSMutableDictionary *uploadMetadata = [NSMutableDictionary new];
+    uploadMetadata[@"filename"] = fileUrl.filePathURL.lastPathComponent;
+    if (metadata){
+        [uploadMetadata addEntriesFromDictionary:metadata];
+    }
+
+    return [self initWithUploadId:uploadId
+                             file:fileUrl
+                         delegate:delegate
+                    uploadHeaders:headers
+                    finalMetadata:uploadMetadata
+                            state:TUSResumableUploadStateUploadingFile
+                        uploadUrl:uploadUrl];
+
+}
+
+- (instancetype _Nullable)initWithUploadId:(NSString * _Nonnull)uploadId
+                                      file:(NSURL * _Nonnull)fileUrl
+                                  delegate:(id <TUSResumableUploadDelegate> _Nonnull)delegate
+                             uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
+                                  metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata
 
 {
     if (!fileUrl.fileURL){

@@ -52,6 +52,7 @@ static TUSUploadFailureBlock failureBlock = ^(NSError* error){
         upload.failureBlock = failureBlock;
     }
     [self.tusSession resumeAll];
+    
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -105,7 +106,7 @@ static TUSUploadFailureBlock failureBlock = ^(NSError* error){
             NSLog(@"%li", (long)error.code);
         }
         
-                // Initiate the background transfer
+                // If a file has not been created yet by your TUS backend
                 TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl headers:@{} metadata:@{}];
         
                 upload.progressBlock = progressBlock;
@@ -113,6 +114,16 @@ static TUSUploadFailureBlock failureBlock = ^(NSError* error){
                 upload.failureBlock = failureBlock;
         
                 [upload resume];
+                
+//                //If a file has been created by your TUS backend, and you simply need to upload the data
+//                NSURL *urlForAlreadyCreatedFile = [[NSURL alloc] initWithString:@"URL_HERE"];
+//                TUSResumableUpload *uploadToAleadyCreatedFile = [self.tusSession createUploadFromFile:fileUrl headers:@{} metadata:@{} uploadUrl:urlForAlreadyCreatedFile ];
+//
+//                uploadToAleadyCreatedFile.progressBlock = progressBlock;
+//                uploadToAleadyCreatedFile.resultBlock = resultBlock;
+//                uploadToAleadyCreatedFile.failureBlock = failureBlock;
+//
+//                [uploadToAleadyCreatedFile resume];
         
             }];
 }

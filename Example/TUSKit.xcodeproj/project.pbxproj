@@ -31,6 +31,7 @@
 		6003F5BA195388D20070C39A /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 6003F5B8195388D20070C39A /* InfoPlist.strings */; };
 		6003F5BC195388D20070C39A /* Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6003F5BB195388D20070C39A /* Tests.m */; };
 		696B4FBCDC39DC19AC059E57 /* libPods-TUSKit_MacOS_Example.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B2585C78D79329E8BD58CB2F /* libPods-TUSKit_MacOS_Example.a */; };
+		7B94C563221576FE001E077E /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B94C562221576FE001E077E /* Launch Screen.storyboard */; };
 		81A8CED36936361B31D51697 /* libPods-TUSKit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 94BE9E2097B840319C7576AD /* libPods-TUSKit.a */; };
 /* End PBXBuildFile section */
 
@@ -98,6 +99,7 @@
 		6003F5B9195388D20070C39A /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		6003F5BB195388D20070C39A /* Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Tests.m; sourceTree = "<group>"; };
 		606FC2411953D9B200FFA9A0 /* Tests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Tests-Prefix.pch"; sourceTree = "<group>"; };
+		7B94C562221576FE001E077E /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		94BE9E2097B840319C7576AD /* libPods-TUSKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TUSKit.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		97BA7FEA7A277EE9173FC532 /* Pods-TUSKit_MacOS_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TUSKit_MacOS_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-TUSKit_MacOS_Example/Pods-TUSKit_MacOS_Example.release.xcconfig"; sourceTree = "<group>"; };
 		B154447F00BA422485024C03 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
@@ -259,6 +261,7 @@
 				6003F59D195388D20070C39A /* TKAppDelegate.m */,
 				6003F59F195388D20070C39A /* Main_iPhone.storyboard */,
 				6003F5A2195388D20070C39A /* Main_iPad.storyboard */,
+				7B94C562221576FE001E077E /* Launch Screen.storyboard */,
 				6003F5A5195388D20070C39A /* TKViewController.h */,
 				6003F5A6195388D20070C39A /* TKViewController.m */,
 				6003F5A8195388D20070C39A /* Images.xcassets */,
@@ -489,6 +492,7 @@
 				6003F5A4195388D20070C39A /* Main_iPad.storyboard in Resources */,
 				6003F5A9195388D20070C39A /* Images.xcassets in Resources */,
 				6003F5A1195388D20070C39A /* Main_iPhone.storyboard in Resources */,
+				7B94C563221576FE001E077E /* Launch Screen.storyboard in Resources */,
 				6003F598195388D20070C39A /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -28,6 +28,7 @@
  Create an upload, but do not start it
  */
 - (TUSResumableUpload * _Nullable) createUploadFromFile:(NSURL * _Nonnull)fileURL
+                                                  retry:(int)retryCount
                                                 headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
                                                metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata;
 

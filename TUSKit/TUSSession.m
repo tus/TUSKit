@@ -84,11 +84,13 @@
 
 #pragma mark public methods
 - (TUSResumableUpload *) createUploadFromFile:(NSURL *)fileURL
+                                        retry:(int)retryCount
                                       headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
                                      metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata
 {
     TUSResumableUpload *upload = [[TUSResumableUpload alloc]  initWithUploadId:[self.store generateUploadId]
                                                                           file:fileURL
+                                                                         retry:retryCount
                                                                       delegate:self
                                                                  uploadHeaders:headers?:@{}
                                                                       metadata:metadata];

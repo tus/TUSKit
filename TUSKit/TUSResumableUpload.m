@@ -67,6 +67,9 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 @property (nonatomic, strong) NSURLSessionTask *currentTask; // Nonatomic because we know we will assign it, then start the thread that will remove it.
 @property (nonatomic, strong) NSURL *fileUrl; // File URL for saving if we created our own TUSData
 @property (readonly) long long length;
+@property (nonatomic) int rertyCount; // Number of times to try
+@property (nonatomic) int attempts; // Number of times tried
+
 
 @property (nonatomic) long long chunkSize; //how big chunks we send to the server
 
@@ -138,6 +141,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 
 - (instancetype _Nullable)initWithUploadId:(NSString * _Nonnull)uploadId
                                       file:(NSURL * _Nonnull)fileUrl
+                                    retry:(int)retryCount
                                   delegate:(id <TUSResumableUploadDelegate> _Nonnull)delegate
                              uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
                                   metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata
@@ -157,6 +161,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     
     return [self initWithUploadId:uploadId
                              file:fileUrl
+                            retry:retryCount
                          delegate:delegate
                     uploadHeaders:headers
                     finalMetadata:uploadMetadata
@@ -172,6 +177,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
  */
 - (instancetype _Nullable) initWithUploadId:(NSString *)uploadId
                                        file:(NSURL* _Nullable)fileUrl
+                                      retry:(int)retryCount
                                    delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate
                               uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
                               finalMetadata:(NSDictionary <NSString *, NSString *>* _Nonnull)metadata
@@ -189,6 +195,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         _uploadUrl = uploadUrl;
         _idle = YES;
         _chunkSize = -1;
+        _rertyCount = retryCount;
+        _attempts = 0;
         
         if (_state != TUSResumableUploadStateComplete){
             _data = [[TUSFileData alloc] initWithFileURL:fileUrl];
@@ -349,10 +357,16 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                     }
                     break;
                 default:
+                    self.attempts++;
+                    if (self.rertyCount == -1){
+                        TUSLog(@"Infinite retry.");
+                    }else if (self.attempts >= self.rertyCount){
+                        [weakself stop];
+                    }
                     //TODO: Fail after a certain number of delayed attempts
                     delayTime = DELAY_TIME;
-                    TUSLog(@"Error or no response during attempt to create file, retrying");
-            }
+                    TUSLog(@"Server not responding or error. Trying again. Attempt %i",
+                           self.attempts);            }
         } else if (httpResponse.statusCode >= 500 && httpResponse.statusCode < 600) {
             TUSLog(@"Server error, stopping");
             [weakself stop]; // Will prevent continueUpload from doing anything
@@ -366,10 +380,16 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                 }];
             }
         } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
+            self.attempts++;
+            if (self.rertyCount == -1){
+                TUSLog(@"Infinite retry.");
+            }else if (self.attempts >= self.rertyCount){
+                [weakself stop];
+            }
             //TODO: FAIL after a certain number of errors.
             delayTime = DELAY_TIME;
-            TUSLog(@"Server responded to create file with %ld. Trying again",
-                   (long)httpResponse.statusCode);
+            TUSLog(@"Server responded to create file with %ld. Trying again. Attempt %i",
+                   (long)httpResponse.statusCode, self.attempts);
         } else {
             // Got a valid status code, so update url
             NSString *location = [httpResponse.allHeaderFields valueForKey:HTTP_LOCATION];
@@ -650,7 +670,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     
     return @{STORE_KEY_ID: self.uploadId,
              STORE_KEY_DELEGATE_ENDPOINT: self.delegate.createUploadURL.absoluteString,
-             STORE_KEY_UPLOAD_URL:  self.state == TUSResumableUploadStateCreatingFile? [NSNull null] : self.uploadUrl.absoluteString, //If we are creating the file, there is no upload URL
+             STORE_KEY_UPLOAD_URL:  self.state == TUSResumableUploadStateCreatingFile? @"": self.uploadUrl.absoluteString, //If we are creating the file, there is no upload URL
              STORE_KEY_LENGTH: @(self.length),
              STORE_KEY_LAST_STATE: @(self.state),
              STORE_KEY_METADATA: self.metadata,

@@ -107,7 +107,7 @@ static TUSUploadFailureBlock failureBlock = ^(NSError* error){
         }
         
                 // If a file has not been created yet by your TUS backend
-        TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl retry:-1 headers:@{} metadata:@{}];
+        TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl retry:-1 headers:@{} metadata:@{} uploadUrl:[[NSURL alloc] initWithString:@""]];
         
                 upload.progressBlock = progressBlock;
                 upload.resultBlock = resultBlock;

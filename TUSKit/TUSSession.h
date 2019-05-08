@@ -15,7 +15,7 @@
  This is NOT yet thread safe.
  */
 @interface TUSSession : NSObject
-@property BOOL allowsCellularAccess;
+@property (nonatomic) BOOL allowsCellularAccess;
 
 /**
  Initialize
@@ -36,6 +36,7 @@
  Create an upload with a uploadUrl
  */
 - (TUSResumableUpload * _Nullable) createUploadFromFile:(NSURL * _Nonnull)fileURL
+                                                  retry:(int)retryCount
                                                 headers:(NSDictionary <NSString *, NSString *> * __nullable)headers
                                                metadata:(NSDictionary <NSString *, NSString *> * __nullable)metadata
                                               uploadUrl:(NSURL * _Nonnull)uploadUrl;

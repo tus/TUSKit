@@ -111,6 +111,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 
 - (instancetype _Nullable)initWithUploadId:(NSString * _Nonnull)uploadId
                                       file:(NSURL * _Nonnull)fileUrl
+                                    retry:(int)retryCount
                                   delegate:(id <TUSResumableUploadDelegate> _Nonnull)delegate
                              uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
                                   metadata:(NSDictionary <NSString *, NSString *>* _Nullable)metadata
@@ -131,6 +132,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 
     return [self initWithUploadId:uploadId
                              file:fileUrl
+                            retry:retryCount
                          delegate:delegate
                     uploadHeaders:headers
                     finalMetadata:uploadMetadata

@@ -59,6 +59,8 @@
     if (_session == nil){
         NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
         sessionConfiguration.allowsCellularAccess = self.allowsCellularAccess;
+        sessionConfiguration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+        sessionConfiguration.URLCache = nil;
         _session = [NSURLSession sessionWithConfiguration:sessionConfiguration delegate:self delegateQueue:[NSOperationQueue mainQueue]];
     }
     return _session;

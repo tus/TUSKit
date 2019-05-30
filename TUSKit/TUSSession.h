@@ -16,6 +16,7 @@
  */
 @interface TUSSession : NSObject
 @property (nonatomic) BOOL allowsCellularAccess;
+-(NSURLSession *_Nonnull) session;
 
 /**
  Initialize

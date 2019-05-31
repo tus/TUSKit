@@ -16,6 +16,7 @@
  */
 @interface TUSSession : NSObject
 @property (nonatomic) BOOL allowsCellularAccess;
+-(NSURLSession *_Nonnull) session;
 
 /**
  Initialize
@@ -23,6 +24,10 @@
 - (instancetype _Nonnull)initWithEndpoint:(NSURL * _Nonnull)endpoint
                                 dataStore:(TUSUploadStore * _Nonnull)store
                      allowsCellularAccess:(BOOL)allowsCellularAccess;
+
+- (id _Nonnull )initWithEndpoint:(NSURL * _Nonnull)endpoint
+             dataStore:(TUSUploadStore * _Nonnull)store
+  sessionConfiguration:(NSURLSessionConfiguration * _Nonnull)sessionConfiguration;
 
 /**
  Create an upload, but do not start it

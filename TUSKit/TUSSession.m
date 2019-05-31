@@ -15,6 +15,7 @@
 @property (nonatomic, strong) TUSUploadStore *store; // Data store to save upload status in
 @property (nonatomic, strong) NSMutableDictionary <NSString *, TUSResumableUpload *>* uploads;
 @property (nonatomic, strong) NSMutableDictionary <NSURLSessionTask *, TUSResumableUpload *>* tasks;
+@property (nonatomic, strong) NSURLSessionConfiguration *sessionConfiguration; // Session config to use for uploads
 
 #pragma mark TUSResumableUploadDelegate method declarations
 /**
@@ -57,8 +58,16 @@
 -(NSURLSession *) session{
     // Lazily instantiate a session
     if (_session == nil){
-        NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
-        sessionConfiguration.allowsCellularAccess = self.allowsCellularAccess;
+        NSURLSessionConfiguration *sessionConfiguration;
+        if (_sessionConfiguration == nil) {
+            sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
+            sessionConfiguration.allowsCellularAccess = self.allowsCellularAccess;
+            sessionConfiguration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+            sessionConfiguration.URLCache = nil;
+        } else {
+            sessionConfiguration = _sessionConfiguration;
+        }
+        
         _session = [NSURLSession sessionWithConfiguration:sessionConfiguration delegate:self delegateQueue:[NSOperationQueue mainQueue]];
     }
     return _session;
@@ -78,6 +87,23 @@
         _uploads = [NSMutableDictionary new];
         _tasks = [NSMutableDictionary new];
         _allowsCellularAccess = allowsCellularAccess; // Bypass accessor because we have code that acts "on value changed"
+    }
+    return self;
+}
+
+- (id)initWithEndpoint:(NSURL *)endpoint
+             dataStore:(TUSUploadStore *)store
+  sessionConfiguration:(NSURLSessionConfiguration *)sessionConfiguration
+{
+    self = [super init];
+    
+    if (self) {
+        _store = store; // TODO: Load uploads from store
+        _createUploadURL = endpoint;
+        _uploads = [NSMutableDictionary new];
+        _tasks = [NSMutableDictionary new];
+        _allowsCellularAccess = YES; //default
+        _sessionConfiguration = sessionConfiguration;
     }
     return self;
 }

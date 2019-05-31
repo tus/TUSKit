@@ -22,10 +22,14 @@ To run the example project, clone the repo, and run `pod install` from the Examp
 ## The Protocol
 You'll need a tus.io friendly server before using TUSKit or any other tus client. You can find a list of [tus implementations here](http://tus.io/implementations.html).
 
-# Usage (1.4.0)
+# Usage (1.4.2)
 ------
 ## TUSSession
 A NSURLSession that manages, creates, and reloads TUS uploads using a single NSURLSession and data store.
+
+A simple session can be setup as follows:
+
+*by default, as of `1.4.2`, a simple session has no request caching.*
     
     ...
     @property (strong, nonatomic) TUSSession *tusSession;
@@ -38,6 +42,23 @@ A NSURLSession that manages, creates, and reloads TUS uploads using a single NSU
 **dataStore** - The `TUSUploadStore` you've created for your uploads.
 
 **allowsCellularAccess** - Allow uploads over cell data.
+
+---
+
+However if you require more of an advanced setup and wish to use your own `NSURLSessionConfiguration`:
+
+    ...
+    @property (strong, nonatomic) TUSSession *tusSession;
+    ...
+    ...
+    NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    self.tusSession = [[TUSSession alloc] initWithEndpoint:[[NSURL alloc] initWithString:UPLOAD_ENDPOINT]  dataStore:uploadStore sessionConfiguration:sessionConfiguration];
+
+**Endpoint** - An NSURL of your tus.io server.
+
+**dataStore** - The `TUSUploadStore` you've created for your uploads.
+
+**sessionConfiguration** - Your custom `NSURLSessionConfiguration`  object.
 
 
 ## TUSUploadStore

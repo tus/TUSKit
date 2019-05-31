@@ -28,7 +28,8 @@ You'll need a tus.io friendly server before using TUSKit or any other tus client
 A NSURLSession that manages, creates, and reloads TUS uploads using a single NSURLSession and data store.
 
 A simple session can be setup as follows:
-*by default, as of `1.4.2`, a simple session has no request cahcing.*
+
+*by default, as of `1.4.2`, a simple session has no request caching.*
     
     ...
     @property (strong, nonatomic) TUSSession *tusSession;
@@ -42,7 +43,9 @@ A simple session can be setup as follows:
 
 **allowsCellularAccess** - Allow uploads over cell data.
 
-However if you require more of an advanced setup and wish to use your own `NSURLSessionConifuration`:
+---
+
+However if you require more of an advanced setup and wish to use your own `NSURLSessionConfiguration`:
 
     ...
     @property (strong, nonatomic) TUSSession *tusSession;

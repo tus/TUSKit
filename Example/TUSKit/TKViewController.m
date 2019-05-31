@@ -45,7 +45,10 @@ static TUSUploadFailureBlock failureBlock = ^(NSError* error){
     NSURL * applicationSupportURL = [[[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] firstObject];
     
     TUSUploadStore * uploadStore = [[TUSFileUploadStore alloc] initWithURL:[applicationSupportURL URLByAppendingPathComponent:FILE_NAME]];
-    self.tusSession = [[TUSSession alloc] initWithEndpoint:[[NSURL alloc] initWithString:UPLOAD_ENDPOINT] dataStore:uploadStore allowsCellularAccess:YES];
+//    self.tusSession = [[TUSSession alloc] initWithEndpoint:[[NSURL alloc] initWithString:UPLOAD_ENDPOINT] dataStore:uploadStore allowsCellularAccess:YES];
+    NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    sessionConfiguration.allowsCellularAccess = NO;
+    self.tusSession = [[TUSSession alloc] initWithEndpoint:[[NSURL alloc] initWithString:UPLOAD_ENDPOINT]  dataStore:uploadStore sessionConfiguration:sessionConfiguration];
     for (TUSResumableUpload * upload in [self.tusSession restoreAllUploads]){
         upload.progressBlock = progressBlock;
         upload.resultBlock = resultBlock;
@@ -107,7 +110,7 @@ static TUSUploadFailureBlock failureBlock = ^(NSError* error){
         }
         
                 // If a file has not been created yet by your TUS backend
-        TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl retry:-1 headers:@{} metadata:@{} uploadUrl:[[NSURL alloc] initWithString:@""]];
+        TUSResumableUpload *upload = [self.tusSession createUploadFromFile:fileUrl retry:-1 headers:@{} metadata:@{}];
         
                 upload.progressBlock = progressBlock;
                 upload.resultBlock = resultBlock;

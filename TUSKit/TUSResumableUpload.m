@@ -99,6 +99,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
  */
 - (instancetype _Nullable) initWithUploadId:(NSString *)uploadId
                                        file:(NSURL* _Nullable)fileUrl
+                                      retry:(int)retryCount
                                    delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate
                               uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
                               finalMetadata:(NSDictionary <NSString *, NSString *>* _Nonnull)metadata
@@ -731,6 +732,12 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         return nil;
     }
     
+    NSNumber *retryCountNumber = serializedUpload[STORE_KEY_RETRY_COUNT];
+    int retryCount = -1;
+    if (retryCountNumber != nil) {
+        retryCount = retryCountNumber.intValue;
+    }
+    
     // If the upload was previously uploading, we need to do a check before we can continue.
     if (state == TUSResumableUploadStateUploadingFile){
         state = TUSResumableUploadStateCheckingFile;
@@ -738,6 +745,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     
     return [self initWithUploadId:uploadId
                              file:fileUrl
+                       retry:retryCount
                          delegate:delegate
                     uploadHeaders:headers
                     finalMetadata:metadata

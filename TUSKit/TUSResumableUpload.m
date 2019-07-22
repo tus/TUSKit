@@ -691,7 +691,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     }
     
     // Get parameters
-    NSNumber *uploadId = serializedUpload[STORE_KEY_ID];
+    NSString *uploadId = serializedUpload[STORE_KEY_ID];
     NSNumber *expectedLength = serializedUpload[STORE_KEY_LENGTH];
     NSNumber *stateObj = serializedUpload[STORE_KEY_LAST_STATE];
     TUSResumableUploadState state = stateObj.unsignedIntegerValue;

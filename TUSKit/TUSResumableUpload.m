@@ -44,6 +44,7 @@
 #define STORE_KEY_METADATA @"metadata"
 #define STORE_KEY_LENGTH @"uploadLength"
 #define STORE_KEY_LAST_STATE @"lastState"
+#define STORE_KEY_RETRY_COUNT @"retryCount"
 
 
 typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error);
@@ -677,7 +678,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
              STORE_KEY_LAST_STATE: @(self.state),
              STORE_KEY_METADATA: self.metadata,
              STORE_KEY_UPLOAD_HEADERS: self.uploadHeaders,
-             STORE_KEY_FILE_URL: fileUrlData};
+             STORE_KEY_FILE_URL: fileUrlData,
+             STORE_KEY_RETRY_COUNT: @(self.rertyCount)};
     
 }
 

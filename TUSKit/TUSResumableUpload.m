@@ -745,7 +745,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     
     return [self initWithUploadId:uploadId
                              file:fileUrl
-                       retry:retryCount
+                            retry:retryCount
                          delegate:delegate
                     uploadHeaders:headers
                     finalMetadata:metadata

@@ -44,6 +44,7 @@
 #define STORE_KEY_METADATA @"metadata"
 #define STORE_KEY_LENGTH @"uploadLength"
 #define STORE_KEY_LAST_STATE @"lastState"
+#define STORE_KEY_RETRY_COUNT @"retryCount"
 
 
 typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error);
@@ -67,7 +68,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 @property (nonatomic, strong) NSURLSessionTask *currentTask; // Nonatomic because we know we will assign it, then start the thread that will remove it.
 @property (nonatomic, strong) NSURL *fileUrl; // File URL for saving if we created our own TUSData
 @property (readonly) long long length;
-@property (nonatomic) int rertyCount; // Number of times to try
+@property (nonatomic) int retryCount; // Number of times to try
 @property (nonatomic) int attempts; // Number of times tried
 
 
@@ -98,6 +99,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
  */
 - (instancetype _Nullable) initWithUploadId:(NSString *)uploadId
                                        file:(NSURL* _Nullable)fileUrl
+                                      retry:(int)retryCount
                                    delegate:(id<TUSResumableUploadDelegate> _Nonnull)delegate
                               uploadHeaders:(NSDictionary <NSString *, NSString *>* _Nonnull)headers
                               finalMetadata:(NSDictionary <NSString *, NSString *>* _Nonnull)metadata
@@ -197,7 +199,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         _uploadUrl = uploadUrl;
         _idle = YES;
         _chunkSize = -1;
-        _rertyCount = retryCount;
+        _retryCount = retryCount;
         _attempts = 0;
         
         if (_state != TUSResumableUploadStateComplete){
@@ -360,9 +362,9 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                     break;
                 default:
                     self.attempts++;
-                    if (self.rertyCount == -1){
+                    if (self.retryCount == -1){
                         TUSLog(@"Infinite retry.");
-                    }else if (self.attempts >= self.rertyCount){
+                    }else if (self.attempts >= self.retryCount){
                         [weakself stop];
                     }
                     //TODO: Fail after a certain number of delayed attempts
@@ -383,9 +385,9 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
             }
         } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
             self.attempts++;
-            if (self.rertyCount == -1){
+            if (self.retryCount == -1){
                 TUSLog(@"Infinite retry.");
-            }else if (self.attempts >= self.rertyCount){
+            }else if (self.attempts >= self.retryCount){
                 [weakself stop];
             }
             //TODO: FAIL after a certain number of errors.
@@ -677,7 +679,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
              STORE_KEY_LAST_STATE: @(self.state),
              STORE_KEY_METADATA: self.metadata,
              STORE_KEY_UPLOAD_HEADERS: self.uploadHeaders,
-             STORE_KEY_FILE_URL: fileUrlData};
+             STORE_KEY_FILE_URL: fileUrlData,
+             STORE_KEY_RETRY_COUNT: @(self.retryCount)};
     
 }
 
@@ -689,7 +692,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     }
     
     // Get parameters
-    NSNumber *uploadId = serializedUpload[STORE_KEY_ID];
+    NSString *uploadId = serializedUpload[STORE_KEY_ID];
     NSNumber *expectedLength = serializedUpload[STORE_KEY_LENGTH];
     NSNumber *stateObj = serializedUpload[STORE_KEY_LAST_STATE];
     TUSResumableUploadState state = stateObj.unsignedIntegerValue;
@@ -729,6 +732,12 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         return nil;
     }
     
+    NSNumber *retryCountNumber = serializedUpload[STORE_KEY_RETRY_COUNT];
+    int retryCount = -1;
+    if (retryCountNumber != nil) {
+        retryCount = retryCountNumber.intValue;
+    }
+    
     // If the upload was previously uploading, we need to do a check before we can continue.
     if (state == TUSResumableUploadStateUploadingFile){
         state = TUSResumableUploadStateCheckingFile;
@@ -736,6 +745,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     
     return [self initWithUploadId:uploadId
                              file:fileUrl
+                            retry:retryCount
                          delegate:delegate
                     uploadHeaders:headers
                     finalMetadata:metadata

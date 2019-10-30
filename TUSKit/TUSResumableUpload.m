@@ -361,16 +361,24 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                     }
                     break;
                 default:
-                    self.attempts++;
-                    if (self.retryCount == -1){
+                    weakself.attempts++;
+                    if (weakself.retryCount == -1){
                         TUSLog(@"Infinite retry.");
-                    }else if (self.attempts >= self.retryCount){
+                    } else if (weakself.attempts >= weakself.retryCount){
+                        TUSLog(@"Failed after a certain number of delayed attempts.");
                         [weakself stop];
+                        TUSUploadFailureBlock block = weakself.failureBlock;
+                        if (block){
+                            [[NSOperationQueue currentQueue] addOperationWithBlock:^{
+                                NSError *error = [[NSError alloc] initWithDomain:TUSErrorDomain code:TUSResumableUploadErrorRetry userInfo:nil];
+                                block(error);
+                            }];
+                        }
+                        break;
                     }
-                    //TODO: Fail after a certain number of delayed attempts
                     delayTime = DELAY_TIME;
                     TUSLog(@"Server not responding or error. Trying again. Attempt %i",
-                           self.attempts);            }
+                           weakself.attempts);            }
         } else if (httpResponse.statusCode >= 500 && httpResponse.statusCode < 600) {
             TUSLog(@"Server error, stopping");
             [weakself stop]; // Will prevent continueUpload from doing anything
@@ -384,18 +392,28 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                 }];
             }
         } else if (httpResponse.statusCode < 200 || httpResponse.statusCode > 204){
-            self.attempts++;
-            if (self.retryCount == -1){
-                TUSLog(@"Infinite retry.");
-            }else if (self.attempts >= self.retryCount){
+            weakself.attempts++;
+            if (weakself.retryCount == -1 || weakself.attempts < weakself.retryCount){
+                if (weakself.retryCount == -1){
+                    TUSLog(@"Infinite retry.");
+                }
+                delayTime = DELAY_TIME;
+                TUSLog(@"Server responded to create file with %ld. Trying again. Attempt %i",
+                       (long)httpResponse.statusCode, weakself.attempts);
+            } else {
+                TUSLog(@"Failed after a certain number of delayed attempts.");
                 [weakself stop];
+                TUSUploadFailureBlock block = weakself.failureBlock;
+                if (block){
+                    [[NSOperationQueue currentQueue] addOperationWithBlock:^{
+                        NSError *error = [[NSError alloc] initWithDomain:TUSErrorDomain code:TUSResumableUploadErrorRetry userInfo:nil];
+                        block(error);
+                    }];
+                }
             }
-            //TODO: FAIL after a certain number of errors.
-            delayTime = DELAY_TIME;
-            TUSLog(@"Server responded to create file with %ld. Trying again. Attempt %i",
-                   (long)httpResponse.statusCode, self.attempts);
         } else {
-            // Got a valid status code, so update url
+            // Got a valid status code, so reset attempts counter and update url
+            weakself.attempts = 0;
             NSString *location = [httpResponse.allHeaderFields valueForKey:HTTP_LOCATION];
             weakself.uploadUrl = [NSURL URLWithString:location relativeToURL:createUploadURL];
             if (weakself.uploadUrl) {
@@ -482,7 +500,21 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                 case NSURLErrorTimedOut:
                 case NSURLErrorNotConnectedToInternet:
                 default:
-                    //TODO: Fail after a certain number of delayed attempts
+                    weakself.attempts++;
+                    if (weakself.retryCount == -1){
+                        TUSLog(@"Infinite retry.");
+                    } else if (weakself.attempts >= weakself.retryCount){
+                        TUSLog(@"Failed after a certain number of delayed attempts.");
+                        [weakself stop];
+                        TUSUploadFailureBlock block = weakself.failureBlock;
+                        if (block){
+                            [[NSOperationQueue currentQueue] addOperationWithBlock:^{
+                                NSError *error = [[NSError alloc] initWithDomain:TUSErrorDomain code:TUSResumableUploadErrorRetry userInfo:nil];
+                                block(error);
+                            }];
+                        }
+                        break;
+                    }
                     delayTime = DELAY_TIME;
                     TUSLog(@"Error or no response during attempt to check file, retrying");
             }
@@ -507,7 +539,8 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
                    (long)httpResponse.statusCode);
             weakself.state = TUSResumableUploadStateCreatingFile;
         } else {
-            // Got a valid status code, so update state and continue upload.
+            // Got a valid status code, so reset attempts counter, update state and continue upload.
+            weakself.attempts = 0;
             [weakself updateStateFromHeaders:httpResponse.allHeaderFields];
         }
         weakself.idle = YES;

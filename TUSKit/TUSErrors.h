@@ -11,5 +11,6 @@ FOUNDATION_EXPORT NSString *const TUSErrorDomain;
 typedef enum TUSErrorCode : NSInteger {
     TUSFileDataErrorClosed,
     TUSFileDataErrorCannotOpen,
-    TUSResumableUploadErrorServer // Server errors will include a "responseCode" key in the user info dictionary
+    TUSResumableUploadErrorServer, // Server errors will include a "responseCode" key in the user info dictionary,
+    TUSResumableUploadErrorRetry
 } TUSErrorCode;

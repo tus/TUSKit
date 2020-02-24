@@ -698,7 +698,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     TUSResumableUploadState state = stateObj.unsignedIntegerValue;
     NSDictionary *metadata = serializedUpload[STORE_KEY_METADATA];
     NSDictionary *headers = serializedUpload[STORE_KEY_UPLOAD_HEADERS];
-    NSDictionary *uploadUrl = [NSURL URLWithString:serializedUpload[STORE_KEY_UPLOAD_URL]];
+    NSURL *uploadUrl = [NSURL URLWithString:serializedUpload[STORE_KEY_UPLOAD_URL]];
     
     NSURL * savedDelegateEndpoint = [NSURL URLWithString:serializedUpload[STORE_KEY_DELEGATE_ENDPOINT]];
     if (![savedDelegateEndpoint.absoluteString isEqualToString:delegate.createUploadURL.absoluteString]){ // Check saved delegate endpoint

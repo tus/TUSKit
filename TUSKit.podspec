@@ -17,12 +17,6 @@ Pod::Spec.new do |s|
   s.module_map = 'Supporting Files/module.modulemap'
   s.source_files = 'TUSKit/*.{h,m}', 'Supporting Files/*.{h}'
 
-#   s.default_subspec = 'Core'
-#
-#   s.subspec 'Core' do |core|
-#     core.source_files = 'TUSKit/*.{m,h}', 'Supporting Files/*.{h}'
-#   end
-
   s.subspec 'AppExtension' do |ext|
     ext.source_files = 'TUSKit/*.{m,h}', 'Supporting Files/*.{h}'
     # For app extensions, disabling code paths using unavailable API

@@ -16,5 +16,11 @@ Pod::Spec.new do |s|
   s.module_name = 'TUSKit'
   s.module_map = 'Supporting Files/module.modulemap'
   s.source_files = 'TUSKit/*.{h,m}', 'Supporting Files/*.{h}'
+
+  s.subspec 'AppExtension' do |ext|
+    ext.source_files = 'TUSKit/*.{m,h}', 'Supporting Files/*.{h}'
+    # For app extensions, disabling code paths using unavailable API
+    ext.pod_target_xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => 'TUSKIT_APP_EXTENSIONS=1' }
+  end
 end
 

@@ -8,11 +8,15 @@
 import UIKit
 
 class TUSClient: NSObject {
-
+    
+    // MARK: Properties
+    
     var uploadURL: URL?
     var delegate: TUSDelegate?
     var currentUploads: [TUSUpload]?
     var currentStatus: TUSUploadStatus?
+    
+    //MARK: Initializers
     
     init(withUploadURLString uploadURLString: String) {
         super.init()
@@ -24,6 +28,9 @@ class TUSClient: NSObject {
         self.uploadURL = uploadURL
     }
     
+    
+    // MARK: Create methods
+    
     func createOrResume(forUpload upload: TUSUpload) {
         //
         createOrResume(forUpload: upload, withRetries: 0)
@@ -33,27 +40,52 @@ class TUSClient: NSObject {
            //
     }
     
+    
+    // MARK: Methods for one upload
+    
+    func resume(forUpload upload: TUSUpload) {
+        
+    }
+    
+    func retry(forUpload upload: TUSUpload) {
+        
+    }
+    
+    func cancel(forUpload upload: TUSUpload) {
+        
+    }
+    
+    func cleanUp(forUpload upload: TUSUpload) {
+        
+    }
+    
+    // MARK: Mass methods
+    
     func resumeAll() {
         for upload in currentUploads! {
-            upload.resume()
+            resume(forUpload: upload)
         }
     }
     
     func retryAll() {
         for upload in currentUploads! {
-            upload.retry()
+            retry(forUpload: upload)
         }
     }
     
     func cancelAll() {
-          for upload in currentUploads! {
-              upload.cancel()
-          }
+         for upload in currentUploads! {
+             cancel(forUpload: upload)
+         }
     }
     
     func cleanUp() {
         for upload in currentUploads! {
-            upload.delete()
+            cleanUp(forUpload: upload)
         }
     }
+    
+    // MARK: Pricate Networking / Upload methods
+    
+    
 }

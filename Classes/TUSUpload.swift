@@ -24,20 +24,4 @@ class TUSUpload: NSObject {
     init(withId id: String) {
         //
     }
-    
-    func resume() {
-        
-    }
-    
-    func retry() {
-        
-    }
-    
-    func cancel() {
-        
-    }
-    
-    func delete() {
-        
-    }
 }

@@ -1,3 +1,11 @@
+# TUSKit
+[![Protocol](http://img.shields.io/badge/tus_protocol-v1.0.0-blue.svg?style=flat)](http://tus.io/protocols/resumable-upload.html)
+[![Version](https://img.shields.io/cocoapods/v/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit)
+[![License](https://img.shields.io/cocoapods/l/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit)
+[![Platform](https://img.shields.io/cocoapods/p/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit)
+
+An iOS client written in `Swift` for [tus resumable upload protocol](http://tus.io/).
+
 # Proposed changes for TUSKit
 
 #### Goals
@@ -27,10 +35,18 @@ var newUpload = TUSUpload(withId: "Some Id to refrence a file", andFile: "FilePa
 var anotherNewUpload = TUSUpload(withId: "Another Id to refrence a file", andData: DataObject)
 var previousUpload = TUSUpload(withId: "Just an ID of a past upload")
 
+//Misc functions for TUSUpload
+newUpload.cancel()
+newUpload.retry()
 
-//Misc functions for resuming
-client.currentUploadsUnfinished() //an array of TUSUpload objects of uploads unfinished
+
+//Misc functions for client
+client.currentUploads() //an array of TUSUpload objects of uploads unfinished
+client.uploadStatus //An enum TUSStatus - either set to `uploading` `paused` `finished`
+client.retryAll()
 client.resumeAll()
+client.cancelAll()
+client.cleanUp() //Deletes local files of canceled or failed uploads - Files cannot be resumed after this is fired
 
 //Now upload
 client.createOrResumeUpload(TUSUploadObjectHere)
@@ -40,11 +56,12 @@ client.createOrResumeUpload(TUSUploadObjectHere, withRetries: 3)
 
 //TUSKitDelegate
 
-func TUSKitProgress(FileID, bytesUploaded, bytesRemaining)
-func TUSKitProgress(FileID, bytesUploaded, bytesRemaining)
+func TUSProgress(bytesUploaded, bytesRemaining) //overall current upload progress
 
-func TUSKitSuccess(FileID, TUSResponse)
+func TUSProgress(TUSUpload, bytesUploaded, bytesRemaining) //Per file upload progress
 
-func TUSKitError(FileID, TUSResponse, Error)
+func TUSSuccess(TUSUpload, TUSResponse)
+
+func TUSFailure(TUSUpload, TUSResponse, Error)
 
 ```

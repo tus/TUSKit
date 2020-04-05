@@ -44,6 +44,10 @@ class TUSClient: NSObject {
         }
     }
     
+    private func fileExists(withName name: String) -> Bool {
+        return FileManager.default.fileExists(atPath: fileStorePath().appending(name))
+    }
+    
     private func moveFile(atLocation location: URL, withFileName name: String) {
         do {
             try FileManager.default.moveItem(at: location, to: URL(string: fileStorePath().appending(name))!)
@@ -71,6 +75,32 @@ class TUSClient: NSObject {
            //
     }
     
+    // MARK: Mass methods
+      
+      func resumeAll() {
+          for upload in currentUploads! {
+              resume(forUpload: upload)
+          }
+      }
+      
+      func retryAll() {
+          for upload in currentUploads! {
+              retry(forUpload: upload)
+          }
+      }
+      
+      func cancelAll() {
+           for upload in currentUploads! {
+               cancel(forUpload: upload)
+           }
+      }
+      
+      func cleanUp() {
+          for upload in currentUploads! {
+              cleanUp(forUpload: upload)
+          }
+      }
+    
     
     // MARK: Methods for one upload
     
@@ -88,32 +118,6 @@ class TUSClient: NSObject {
     
     func cleanUp(forUpload upload: TUSUpload) {
         
-    }
-    
-    // MARK: Mass methods
-    
-    func resumeAll() {
-        for upload in currentUploads! {
-            resume(forUpload: upload)
-        }
-    }
-    
-    func retryAll() {
-        for upload in currentUploads! {
-            retry(forUpload: upload)
-        }
-    }
-    
-    func cancelAll() {
-         for upload in currentUploads! {
-             cancel(forUpload: upload)
-         }
-    }
-    
-    func cleanUp() {
-        for upload in currentUploads! {
-            cleanUp(forUpload: upload)
-        }
     }
     
     // MARK: Private Networking / Upload methods

@@ -28,6 +28,37 @@ class TUSClient: NSObject {
         self.uploadURL = uploadURL
     }
     
+    // MARK: Private file storage methods
+    
+    private func fileStorePath() -> String {
+        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+        let documentsDirectory: String = paths[0]
+        return documentsDirectory.appending("TUS")
+    }
+    
+    private func createFileDirectory() {
+        do {
+            try FileManager.default.createDirectory(atPath: fileStorePath(), withIntermediateDirectories: false, attributes: nil)
+        } catch let error as NSError {
+            print(error.localizedDescription);
+        }
+    }
+    
+    private func moveFile(atLocation location: URL, withFileName name: String) {
+        do {
+            try FileManager.default.moveItem(at: location, to: URL(string: fileStorePath().appending(name))!)
+        } catch(let error){
+            print(error)
+        }
+    }
+    
+    private func writeData(withData data: Data, andFileName name: String) {
+        do {
+            try data.write(to: URL(string: fileStorePath().appending(name))!)
+        } catch (let error) {
+            print(error)
+        }
+    }
     
     // MARK: Create methods
     
@@ -85,7 +116,7 @@ class TUSClient: NSObject {
         }
     }
     
-    // MARK: Pricate Networking / Upload methods
+    // MARK: Private Networking / Upload methods
     
     
 }

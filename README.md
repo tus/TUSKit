@@ -35,12 +35,11 @@ var newUpload = TUSUpload(withId: "Some Id to refrence a file", andFile: "FilePa
 var anotherNewUpload = TUSUpload(withId: "Another Id to refrence a file", andData: DataObject)
 var previousUpload = TUSUpload(withId: "Just an ID of a past upload")
 
-//Misc functions for TUSUpload
-newUpload.cancel()
-newUpload.retry()
-
-
 //Misc functions for client
+client.cancel(TUSUpload) ///Cancel the upload of a specific upload
+client.retry(TUSUpload) ///Retry the upload of a specific upload
+client.cancelAll() //Cancels all uploads
+client.retryAll() //retires all uploads 
 client.currentUploads() //an array of TUSUpload objects of uploads unfinished
 client.uploadStatus //An enum TUSStatus - either set to `uploading` `paused` `finished`
 client.retryAll()

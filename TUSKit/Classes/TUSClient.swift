@@ -11,6 +11,7 @@ class TUSClient: NSObject {
     
     // MARK: Properties
     
+    var session: URLSession = TUSSession.shared.session
     var uploadURL: URL?
     var delegate: TUSDelegate?
     
@@ -165,5 +166,21 @@ class TUSClient: NSObject {
     
     // MARK: Private Networking / Upload methods
     
+    private func urlRequest(withEndpoint endpoint: String, andContentLength contentLength: String, andUploadLength uploadLength: String, andFilename fileName: String) -> URLRequest {
+        
+        var request: URLRequest = URLRequest(url: (uploadURL?.appendingPathComponent(endpoint))!, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
+        request.addValue("Content-Length", forHTTPHeaderField: contentLength)
+        request.addValue("Upload-Length", forHTTPHeaderField: uploadLength)
+        request.addValue("Tus-Resumable", forHTTPHeaderField: TUSConstants.TUSProtocolVersion)
+        request.addValue("Upload-Metadata", forHTTPHeaderField: fileName)
+        
+        return request
+    }
+    
+    private func create(forUpload upload: TUSUpload) {
+        session.dataTask(with: urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)) { (data, response, error) in
+            //
+        }
+    }
     
 }

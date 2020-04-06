@@ -270,11 +270,11 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
 - (void)task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
     __weak TUSResumableUpload * weakself = self;
     if (self.state == TUSResumableUploadStateUploadingFile && self.currentTask == task) {
-        [self uploadFileCompletion:self response:task.response error:error];
+        [self uploadFileCompletionHandler:weakself response:task.response error:error];
     } else if (self.state == TUSResumableUploadStateCreatingFile && self.currentTask == task) {
-        [self createFileHandler:self.delegate.createUploadURL weakself:self response:task.response error:error];
+        [self createFileCompletionHandler:weakself.delegate.createUploadURL weakself:weakself response:task.response error:error];
     } else if (self.state == TUSResumableUploadStateCheckingFile && self.currentTask == task) {
-        [self checkFileHandler:self response:task.response error:error];
+        [self checkFileCompletionHandler:weakself response:task.response error:error];
     }
 }
 
@@ -336,8 +336,6 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     [request setHTTPShouldHandleCookies:NO];
     [request setAllHTTPHeaderFields:mutableHeader];
     
-    __weak TUSResumableUpload * weakself = self;
-    
     #if TARGET_OS_IPHONE && !defined(TUSKIT_APP_EXTENSIONS)
     UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
         [weakself cancel];
@@ -352,7 +350,78 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     return YES;
 }
 
-- (void)createFileHandler:(NSURL *)createUploadURL weakself:(__weak TUSResumableUpload *)weakself response:(NSURLResponse *)response error:(NSError *)error {
+- (BOOL) checkFile
+{
+    self.state = TUSResumableUploadStateCheckingFile;
+    
+    NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
+    [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
+    [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
+    
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.uploadUrl
+                                                                cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
+                                                            timeoutInterval:REQUEST_TIMEOUT];
+    
+    [request setHTTPMethod:HTTP_HEAD];
+    [request setHTTPShouldHandleCookies:NO];
+    [request setAllHTTPHeaderFields:mutableHeader];
+    
+    #if TARGET_OS_IPHONE && !defined(TUSKIT_APP_EXTENSIONS)
+        UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+        [weakself cancel];
+        }];
+    #endif
+    self.currentTask = [self.delegate.session dataTaskWithRequest:request];
+    [self.delegate addTask:self.currentTask forUpload:self];
+    self.idle = NO;
+    [self.currentTask resume]; // Now everything done on currentTask will be done in the callbacks.
+    return YES;
+}
+
+-(BOOL)uploadFile
+{
+    self.state = TUSResumableUploadStateUploadingFile;
+
+    NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
+    [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
+    [mutableHeader setObject:[NSString stringWithFormat:@"%lld", self.offset] forKey:HTTP_OFFSET];
+    [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
+    [mutableHeader setObject:@"application/offset+octet-stream" forKey:@"Content-Type"];
+
+    TUSLog(@"Resuming upload to %@ with id %@ from offset %lld",
+            self.uploadUrl, self.uploadId, self.offset);
+
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.uploadUrl
+                                                                cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
+                                                            timeoutInterval:REQUEST_TIMEOUT];
+    [request setHTTPMethod:HTTP_PATCH];
+    [request setHTTPShouldHandleCookies:NO];
+    [request setAllHTTPHeaderFields:mutableHeader];
+
+    [self.data setOffset:self.offset]; // Advance the offset of data to the expected value
+
+    //If we are using chunked sizes, set the chunkSize and retrieve the data
+    //with the offset and size of self.chunkSize
+    if (self.chunkSize > 0) {
+        request.HTTPBody = [self.data dataChunk:self.chunkSize];
+        TUSLog(@"Uploading chunk sized %lu / %lld ", request.HTTPBody.length, self.chunkSize);
+    } else {
+        request.HTTPBodyStream = self.data.dataStream;
+    }
+
+    #if TARGET_OS_IPHONE && !defined(TUSKIT_APP_EXTENSIONS)
+        UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+                [weakself cancel];
+            }];
+    #endif
+    self.currentTask = [self.delegate.session dataTaskWithRequest:request];
+    [self.delegate addTask:self.currentTask forUpload:self];
+    self.idle = NO;
+    [self.currentTask resume]; // Now everything done on currentTask will be done in the callbacks.
+    return YES;
+}
+
+- (void)createFileCompletionHandler:(NSURL *)createUploadURL weakself:(__weak TUSResumableUpload *)weakself response:(NSURLResponse *)response error:(NSError *)error {
     if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
         [weakself.delegate removeTask:weakself.currentTask];
         weakself.currentTask = nil;
@@ -411,7 +480,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         //TODO: FAIL after a certain number of errors.
         delayTime = DELAY_TIME;
         TUSLog(@"Server responded to create file with %ld. Trying again. Attempt %i",
-               (long)httpResponse.statusCode, self.attempts);
+                (long)httpResponse.statusCode, self.attempts);
     } else {
         // Got a valid status code, so update url
         NSString *location = [httpResponse.allHeaderFields valueForKey:HTTP_LOCATION];
@@ -443,37 +512,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     }
 }
 
-
-- (BOOL) checkFile
-{
-    self.state = TUSResumableUploadStateCheckingFile;
-    
-    NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
-    [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
-    [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
-    
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.uploadUrl
-                                                                cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
-                                                            timeoutInterval:REQUEST_TIMEOUT];
-    
-    [request setHTTPMethod:HTTP_HEAD];
-    [request setHTTPShouldHandleCookies:NO];
-    [request setAllHTTPHeaderFields:mutableHeader];
-    
-    __weak TUSResumableUpload * weakself = self;
-    #if TARGET_OS_IPHONE && !defined(TUSKIT_APP_EXTENSIONS)
-        UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
-        [weakself cancel];
-        }];
-    #endif
-    self.currentTask = [self.delegate.session dataTaskWithRequest:request];
-    [self.delegate addTask:self.currentTask forUpload:self];
-    self.idle = NO;
-    [self.currentTask resume]; // Now everything done on currentTask will be done in the callbacks.
-    return YES;
-}
-
-- (void)checkFileHandler:(__weak TUSResumableUpload *)weakself response:(NSURLResponse *)response error:(NSError *)error {
+- (void)checkFileCompletionHandler:(__weak TUSResumableUpload *)weakself response:(NSURLResponse *)response error:(NSError *)error {
     if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
         [weakself.delegate removeTask:weakself.currentTask];
         weakself.currentTask = nil;
@@ -549,54 +588,7 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
     }
 }
 
--(BOOL)uploadFile
-{
-    self.state = TUSResumableUploadStateUploadingFile;
-    
-    NSMutableDictionary *mutableHeader = [NSMutableDictionary dictionary];
-    [mutableHeader addEntriesFromDictionary:[self uploadHeaders]];
-    [mutableHeader setObject:[NSString stringWithFormat:@"%lld", self.offset] forKey:HTTP_OFFSET];
-    [mutableHeader setObject:HTTP_TUS_VERSION forKey:HTTP_TUS];
-    [mutableHeader setObject:@"application/offset+octet-stream" forKey:@"Content-Type"];
-
-    TUSLog(@"Resuming upload to %@ with id %@ from offset %lld",
-           self.uploadUrl, self.uploadId, self.offset);
-    
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.uploadUrl
-                                                                cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
-                                                            timeoutInterval:REQUEST_TIMEOUT];
-    [request setHTTPMethod:HTTP_PATCH];
-    [request setHTTPShouldHandleCookies:NO];
-    [request setAllHTTPHeaderFields:mutableHeader];
-    
-    [self.data setOffset:self.offset]; // Advance the offset of data to the expected value
-    
-    //If we are using chunked sizes, set the chunkSize and retrieve the data
-    //with the offset and size of self.chunkSize
-    if (self.chunkSize > 0) {
-        request.HTTPBody = [self.data dataChunk:self.chunkSize];
-        TUSLog(@"Uploading chunk sized %lu / %lld ", request.HTTPBody.length, self.chunkSize);
-    } else {
-        request.HTTPBodyStream = self.data.dataStream;
-    }
-    
-    __weak TUSResumableUpload * weakself = self;
-    #if TARGET_OS_IPHONE && !defined(TUSKIT_APP_EXTENSIONS)
-        UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
-            [weakself cancel];
-        }];
-    #endif
-//    self.currentTask = [self.delegate.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error){
-//        [self uploadFileCompletion:weakself response:response error:error];
-//    }];
-    self.currentTask = [self.delegate.session dataTaskWithRequest:request];
-    [self.delegate addTask:self.currentTask forUpload:self];
-    self.idle = NO;
-    [self.currentTask resume]; // Now everything done on currentTask will be done in the callbacks.
-    return YES;
-}
-
-- (void)uploadFileCompletion:(__weak TUSResumableUpload *)weakself response:(NSURLResponse *)response error:(NSError *)error {
+- (void)uploadFileCompletionHandler:(__weak TUSResumableUpload *)weakself response:(NSURLResponse *)response error:(NSError *)error {
     if (weakself.currentTask){ // Should only be false if self has been destroyed, but we need to account for that because of the removeTask call.
         [weakself.delegate removeTask:weakself.currentTask];
         weakself.currentTask = nil;

@@ -242,4 +242,9 @@
     [self.tasks[task] task:task didSendBodyData:bytesSent totalBytesSent:totalBytesSent totalBytesExpectedToSend:totalBytesExpectedToSend];
 }
 
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
+    [self.tasks[task] task:task didCompleteWithError:error];
+}
+
+
 @end

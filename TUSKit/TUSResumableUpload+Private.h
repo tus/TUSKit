@@ -84,6 +84,9 @@
  */
 -(void)task:(NSURLSessionTask * _Nonnull)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
 
+
+-(void)task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error;
+
 /** Serialize to a dictionary for saving */
 -(NSDictionary * _Nonnull) serialize;
 @end

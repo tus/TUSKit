@@ -70,5 +70,6 @@ typedef void (^TUSUploadProgressBlock)(int64_t bytesWritten, int64_t bytesTotal)
  */
 - (void)setChunkSize:(long long)chunkSize;
 
+- (void)task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error;
 @end
 

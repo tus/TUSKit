@@ -16,13 +16,13 @@ class TUSUpload: NSObject {
     var data: Data?
     var status: TUSUploadStatus? {
        get {
-        guard let status = UserDefaults.standard.value(forKey: String(format: "%@%@", TUSConstants.kSavedTUSStatusDefaultsKey, id!)) as? String else {
+        guard let status = UserDefaults.standard.value(forKey: TUSConstants.defaultsKey(forId: id!)) as? String else {
                return nil
            }
            return TUSUploadStatus(rawValue: status)
        }
        set(status) {
-        UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@%@", TUSConstants.kSavedTUSStatusDefaultsKey, id!))
+        UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@%@", TUSConstants.defaultsKey(forId: id!)))
        }
     }
     

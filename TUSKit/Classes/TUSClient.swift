@@ -27,9 +27,17 @@ class TUSClient: NSObject {
        }
     }
     
-    
-    
-    var currentStatus: TUSUploadStatus?
+    var status: TUSUploadStatus? {
+       get {
+        guard let status = UserDefaults.standard.value(forKey: TUSConstants.kSavedTUSClientStatusDefaultsKey) as? String else {
+               return nil
+           }
+           return TUSUploadStatus(rawValue: status)
+       }
+       set(status) {
+        UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@%@", TUSConstants.kSavedTUSClientStatusDefaultsKey))
+       }
+    }
     
     //MARK: Initializers
     

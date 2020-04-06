@@ -13,7 +13,22 @@ class TUSClient: NSObject {
     
     var uploadURL: URL?
     var delegate: TUSDelegate?
-    var currentUploads: [TUSUpload]?
+    
+    var currentUploads: [TUSUpload]? {
+       get {
+        guard let data = UserDefaults.standard.object(forKey: TUSConstants.kSavedTUSUploadsDefaultsKey) as? Data else {
+            return nil
+        }
+            return NSKeyedUnarchiver.unarchiveObject(with: data) as? [TUSUpload]
+       }
+        set(currentUploads) {
+            let data = NSKeyedArchiver.archivedData(withRootObject: currentUploads!)
+            UserDefaults.standard.set(data, forKey: TUSConstants.kSavedTUSUploadsDefaultsKey)
+       }
+    }
+    
+    
+    
     var currentStatus: TUSUploadStatus?
     
     //MARK: Initializers

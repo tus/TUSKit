@@ -85,7 +85,7 @@ class TUSClient: NSObject {
         case .paused:
             //Resume
             break
-        case .new:
+        case nil:
             //create
             break
         default:

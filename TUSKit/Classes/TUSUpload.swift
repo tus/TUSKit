@@ -15,15 +15,15 @@ class TUSUpload: NSObject {
     var filePath: URL?
     var data: Data?
     var status: TUSUploadStatus? {
-       get {
-        guard let status = UserDefaults.standard.value(forKey: TUSConstants.defaultsKey(forId: id!)) as? String else {
-               return nil
-           }
-           return TUSUploadStatus(rawValue: status)
-       }
-       set(status) {
-        UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@%@", TUSConstants.defaultsKey(forId: id!)))
-       }
+        get {
+            guard let status = UserDefaults.standard.value(forKey: TUSConstants.defaultsKey(forId: id!)) as? String else {
+                return nil
+            }
+            return TUSUploadStatus(rawValue: status)
+        }
+        set(status) {
+            UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@%@", TUSConstants.defaultsKey(forId: id!)))
+        }
     }
     
     init(withId id: String, andFilePathString filePathString: String) {

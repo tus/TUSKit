@@ -15,28 +15,28 @@ class TUSClient: NSObject {
     var delegate: TUSDelegate?
     
     var currentUploads: [TUSUpload]? {
-       get {
-        guard let data = UserDefaults.standard.object(forKey: TUSConstants.kSavedTUSUploadsDefaultsKey) as? Data else {
-            return nil
-        }
+        get {
+            guard let data = UserDefaults.standard.object(forKey: TUSConstants.kSavedTUSUploadsDefaultsKey) as? Data else {
+                return nil
+            }
             return NSKeyedUnarchiver.unarchiveObject(with: data) as? [TUSUpload]
-       }
+        }
         set(currentUploads) {
             let data = NSKeyedArchiver.archivedData(withRootObject: currentUploads!)
             UserDefaults.standard.set(data, forKey: TUSConstants.kSavedTUSUploadsDefaultsKey)
-       }
+        }
     }
     
     var status: TUSUploadStatus? {
-       get {
-        guard let status = UserDefaults.standard.value(forKey: TUSConstants.kSavedTUSClientStatusDefaultsKey) as? String else {
-               return nil
-           }
-           return TUSUploadStatus(rawValue: status)
-       }
-       set(status) {
-        UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@%@", TUSConstants.kSavedTUSClientStatusDefaultsKey))
-       }
+        get {
+            guard let status = UserDefaults.standard.value(forKey: TUSConstants.kSavedTUSClientStatusDefaultsKey) as? String else {
+                return nil
+            }
+            return TUSUploadStatus(rawValue: status)
+        }
+        set(status) {
+            UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@%@", TUSConstants.kSavedTUSClientStatusDefaultsKey))
+        }
     }
     
     //MARK: Initializers
@@ -119,30 +119,30 @@ class TUSClient: NSObject {
     }
     
     // MARK: Mass methods
-      
-      func resumeAll() {
-          for upload in currentUploads! {
-              resume(forUpload: upload)
-          }
-      }
-      
-      func retryAll() {
-          for upload in currentUploads! {
-              retry(forUpload: upload)
-          }
-      }
-      
-      func cancelAll() {
-           for upload in currentUploads! {
-               cancel(forUpload: upload)
-           }
-      }
-      
-      func cleanUp() {
-          for upload in currentUploads! {
-              cleanUp(forUpload: upload)
-          }
-      }
+    
+    func resumeAll() {
+        for upload in currentUploads! {
+            resume(forUpload: upload)
+        }
+    }
+    
+    func retryAll() {
+        for upload in currentUploads! {
+            retry(forUpload: upload)
+        }
+    }
+    
+    func cancelAll() {
+        for upload in currentUploads! {
+            cancel(forUpload: upload)
+        }
+    }
+    
+    func cleanUp() {
+        for upload in currentUploads! {
+            cleanUp(forUpload: upload)
+        }
+    }
     
     
     // MARK: Methods for one upload

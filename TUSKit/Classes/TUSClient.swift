@@ -33,7 +33,7 @@ class TUSClient: NSObject {
     private func fileStorePath() -> String {
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let documentsDirectory: String = paths[0]
-        return documentsDirectory.appending("TUS")
+        return documentsDirectory.appending(TUSConstants.TUSFileDirectoryName)
     }
     
     private func createFileDirectory() {
@@ -72,7 +72,27 @@ class TUSClient: NSObject {
     }
     
     func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
-           //
+        let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
+        if (self.fileExists(withName: fileName) == false) {
+            if (upload.filePath != nil) {
+                self.moveFile(atLocation: upload.filePath!, withFileName: fileName)
+            } else if(upload.data != nil) {
+                self.writeData(withData: upload.data!, andFileName: fileName)
+            }
+        }
+        
+        switch upload.status {
+        case .paused:
+            //Resume
+            break
+        case .new:
+            //create
+            break
+        default:
+            print()
+        }
+        
+        
     }
     
     // MARK: Mass methods

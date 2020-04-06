@@ -11,8 +11,20 @@ class TUSUpload: NSObject {
     
     // MARK: Properties
     var id: String?
+    var fileType: String?
     var filePath: URL?
     var data: Data?
+    var status: TUSUploadStatus? {
+       get {
+        guard let status = UserDefaults.standard.value(forKey: String(format: "%@%@", TUSConstants.kSavedTUSStatusDefaultsKey, id!)) as? String else {
+               return nil
+           }
+           return TUSUploadStatus(rawValue: status)
+       }
+       set(status) {
+        UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@%@", TUSConstants.kSavedTUSStatusDefaultsKey, id!))
+       }
+    }
     
     init(withId id: String, andFilePathString filePathString: String) {
         self.id = id

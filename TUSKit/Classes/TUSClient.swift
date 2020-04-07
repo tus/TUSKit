@@ -44,12 +44,6 @@ class TUSClient: NSObject {
     }
     
     //MARK: Initializers
-    struct TUSConfig {
-        var uploadURL: URL
-        var URLSessionConfig: URLSessionConfiguration = URLSessionConfiguration.default
-    }
-
-
     class func setup(with config:TUSConfig){
         TUSClient.config = config
     }

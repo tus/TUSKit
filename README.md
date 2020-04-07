@@ -6,6 +6,9 @@
 
 An iOS client written in `Objective-C` for [tus resumable upload protocol](http://tus.io/).
 
+## Swift Rewrite
+The library is currenlty being rewritten in Swift. Check the `swift-development` branch and [this issue](https://github.com/tus/TUSKit/issues/65) for discussion. 
+
 ## Pull Requests
 Pull requests are always welcome! However, please submit a PR to the `development` branch in order to keep the `master` branch match up with the `TUSKit` pod at all times.
 

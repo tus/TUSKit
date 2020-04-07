@@ -14,6 +14,9 @@ class TUSClient: NSObject {
     var session: URLSession?
     var uploadURL: URL?
     var delegate: TUSDelegate?
+    static let shared = TUSClient()
+    private static var config: TUSConfig?
+
     
     var currentUploads: [TUSUpload]? {
         get {
@@ -41,30 +44,22 @@ class TUSClient: NSObject {
     }
     
     //MARK: Initializers
-    
-    init(withUploadURLString uploadURLString: String) {
-        super.init()
-        self.uploadURL = URL(string: uploadURLString)
-        self.session = TUSSession().session
+    struct TUSConfig {
+        var uploadURL: URL
+        var URLSessionConfig: URLSessionConfiguration = URLSessionConfiguration.default
     }
-    
-    init(withUploadURL uploadURL: URL) {
-        super.init()
-        self.uploadURL = uploadURL
-        self.session = TUSSession().session
-    }
-    
-    init(withUploadURLString uploadURLString: String, andCustomSessionConfiguration customSessionConfig: URLSessionConfiguration) {
-        super.init()
-        self.uploadURL = URL(string: uploadURLString)
-        self.session = TUSSession(customConfiguration: customSessionConfig).session
 
+
+    class func setup(with config:TUSConfig){
+        TUSClient.config = config
     }
-    
-    init(withUploadURL uploadURL: URL, andCustomSessionConfiguration customSessionConfig: URLSessionConfiguration) {
-        super.init()
-        self.uploadURL = uploadURL
-        self.session = TUSSession(customConfiguration: customSessionConfig).session
+
+    private override init() {
+        guard let config = TUSClient.config else {
+            fatalError("Error - you must call setup before accessing TUSClient")
+        }
+        uploadURL = config.uploadURL
+        session = URLSession(configuration: config.URLSessionConfig)
     }
     
     // MARK: Private file storage methods
@@ -193,7 +188,7 @@ class TUSClient: NSObject {
     }
     
     private func create(forUpload upload: TUSUpload) {
-        session!.dataTask(with: urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)) { (data, response, error) in
+        self.session!.dataTask(with: urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)) { (data, response, error) in
             //
         }
     }

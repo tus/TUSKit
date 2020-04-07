@@ -11,7 +11,7 @@ class TUSClient: NSObject {
     
     // MARK: Properties
     
-    var session: URLSession = TUSSession.shared.session
+    var session: URLSession?
     var uploadURL: URL?
     var delegate: TUSDelegate?
     
@@ -45,11 +45,26 @@ class TUSClient: NSObject {
     init(withUploadURLString uploadURLString: String) {
         super.init()
         self.uploadURL = URL(string: uploadURLString)
+        self.session = TUSSession().session
     }
     
     init(withUploadURL uploadURL: URL) {
         super.init()
         self.uploadURL = uploadURL
+        self.session = TUSSession().session
+    }
+    
+    init(withUploadURLString uploadURLString: String, andCustomSessionConfiguration customSessionConfig: URLSessionConfiguration) {
+        super.init()
+        self.uploadURL = URL(string: uploadURLString)
+        self.session = TUSSession(customConfiguration: customSessionConfig).session
+
+    }
+    
+    init(withUploadURL uploadURL: URL, andCustomSessionConfiguration customSessionConfig: URLSessionConfiguration) {
+        super.init()
+        self.uploadURL = uploadURL
+        self.session = TUSSession(customConfiguration: customSessionConfig).session
     }
     
     // MARK: Private file storage methods
@@ -178,7 +193,7 @@ class TUSClient: NSObject {
     }
     
     private func create(forUpload upload: TUSUpload) {
-        session.dataTask(with: urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)) { (data, response, error) in
+        session!.dataTask(with: urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)) { (data, response, error) in
             //
         }
     }

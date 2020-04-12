@@ -7,14 +7,14 @@
 
 import UIKit
 
-class TUSClient: NSObject {
+public class TUSClient: NSObject {
     
     // MARK: Properties
     
     var session: URLSession?
     var uploadURL: URL?
     var delegate: TUSDelegate?
-    static let shared = TUSClient()
+    static public let shared = TUSClient()
     private static var config: TUSConfig?
 
     

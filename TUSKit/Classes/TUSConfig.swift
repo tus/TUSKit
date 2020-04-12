@@ -7,7 +7,17 @@
 
 import Foundation
 
-struct TUSConfig {
+public struct TUSConfig {
     var uploadURL: URL
     var URLSessionConfig: URLSessionConfiguration = URLSessionConfiguration.default
+    
+    public init(withUploadURLString uploadURLString: String, andSessionConfig sessionConfig: URLSessionConfiguration = URLSessionConfiguration.default) {
+        self.uploadURL = URL(string: uploadURLString)!
+        self.URLSessionConfig = sessionConfig
+    }
+    
+    public init(withUploadURL uploadURL: URL, andSessionConfig sessionConfig: URLSessionConfiguration = URLSessionConfiguration.default) {
+        self.uploadURL = uploadURL
+        self.URLSessionConfig = sessionConfig
+    }
 }

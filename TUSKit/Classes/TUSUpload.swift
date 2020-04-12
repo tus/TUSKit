@@ -7,7 +7,7 @@
 
 import UIKit
 
-class TUSUpload: NSObject {
+public class TUSUpload: NSObject {
     
     // MARK: Properties
     var id: String?

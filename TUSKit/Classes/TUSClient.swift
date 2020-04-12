@@ -18,7 +18,7 @@ public class TUSClient: NSObject {
     private static var config: TUSConfig?
 
     
-    var currentUploads: [TUSUpload]? {
+    public var currentUploads: [TUSUpload]? {
         get {
             guard let data = UserDefaults.standard.object(forKey: TUSConstants.kSavedTUSUploadsDefaultsKey) as? Data else {
                 return nil
@@ -31,7 +31,7 @@ public class TUSClient: NSObject {
         }
     }
     
-    var status: TUSUploadStatus? {
+    public var status: TUSUploadStatus? {
         get {
             guard let status = UserDefaults.standard.value(forKey: TUSConstants.kSavedTUSClientStatusDefaultsKey) as? String else {
                 return nil
@@ -44,7 +44,7 @@ public class TUSClient: NSObject {
     }
     
     //MARK: Initializers
-    class func setup(with config:TUSConfig){
+    public class func setup(with config:TUSConfig){
         TUSClient.config = config
     }
 

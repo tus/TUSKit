@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TUSUploadStatus: String {
+public enum TUSUploadStatus: String {
     case uploading = "uploading"
     case paused = "paused"
     case canceled = "canceled"

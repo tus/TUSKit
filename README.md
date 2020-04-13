@@ -15,7 +15,7 @@ An iOS client written in `Swift` for [tus resumable upload protocol](http://tus.
 - Make it easier for multiple file uploads
 - Better support for background sessions
 
-### New usage
+### Proposed new usage
 
 ```Swift
 
@@ -63,4 +63,22 @@ func TUSSuccess(TUSUpload, TUSResponse)
 
 func TUSFailure(TUSUpload, TUSResponse, Error)
 
+```
+
+# Usage
+
+## Installation
+
+Before using TUSKit, you must configure your `TUSClient`  using `TUSClient.setup()`. It is recomended to put this in your `AppDelegate`.
+
+**Parameters**
+- uploadURL : The upload URL that TUSKit should upload to
+- sessionConfiguration: A URLSessionConfiguration that  TUSKit will use for it's network sessions. `URLSessionConfiguration.default` will be used if omitted.
+
+```Swift
+func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+    // Override point for customization after application launch.
+    TUSClient.setup(with: TUSConfig(withUploadURLString: "https://master.tus.io/files", andSessionConfig: URLSessionConfiguration.default))
+    return true
+}
 ```

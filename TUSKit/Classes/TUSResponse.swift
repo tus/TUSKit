@@ -7,6 +7,6 @@
 
 import Foundation
 
-struct TUSResponse: Codable {
+public struct TUSResponse: Codable {
     
 }

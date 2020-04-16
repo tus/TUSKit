@@ -52,22 +52,22 @@ public class TUSUpload: NSObject {
         }
     }
     
-    init(withId id: String, andFilePathString filePathString: String) {
+    public init(withId id: String, andFilePathString filePathString: String) {
         self.id = id
         filePath = URL(string: filePathString)
     }
     
-    init(withId id: String, andFilePathURL filePathURL: URL) {
+    public init(withId id: String, andFilePathURL filePathURL: URL) {
         self.id = id
         filePath = filePathURL
     }
     
-    init(withId id: String, andData data: Data) {
+    public init(withId id: String, andData data: Data) {
         self.id = id
         self.data = data
     }
     
-    init(withId id: String) {
+    public init(withId id: String) {
         self.id = id
     }
 }

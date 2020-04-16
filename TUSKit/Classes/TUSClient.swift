@@ -11,9 +11,9 @@ public class TUSClient: NSObject {
     
     // MARK: Properties
     
-    var session: URLSession?
-    var uploadURL: URL?
-    var delegate: TUSDelegate?
+    internal var session: URLSession?
+    public var uploadURL: URL?
+    public var delegate: TUSDelegate?
     private let executor: TUSExecutor = TUSExecutor()
     private let fileManager: TUSFileManager = TUSFileManager()
     static public let shared = TUSClient()
@@ -60,7 +60,7 @@ public class TUSClient: NSObject {
     
     // MARK: Create methods
     
-    func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
+    public func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
         let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
         if (fileManager.fileExists(withName: fileName) == false) {
             if (upload.filePath != nil) {
@@ -82,32 +82,32 @@ public class TUSClient: NSObject {
         }
     }
     
-    func createOrResume(forUpload upload: TUSUpload) {
+   public  func createOrResume(forUpload upload: TUSUpload) {
         //
         createOrResume(forUpload: upload, withRetries: 0)
     }
     
     // MARK: Mass methods
     
-    func resumeAll() {
+    public func resumeAll() {
         for upload in currentUploads! {
             createOrResume(forUpload: upload)
         }
     }
     
-    func retryAll() {
+    public func retryAll() {
         for upload in currentUploads! {
             retry(forUpload: upload)
         }
     }
     
-    func cancelAll() {
+    public func cancelAll() {
         for upload in currentUploads! {
             cancel(forUpload: upload)
         }
     }
     
-    func cleanUp() {
+    public func cleanUp() {
         for upload in currentUploads! {
             cleanUp(forUpload: upload)
         }
@@ -116,15 +116,15 @@ public class TUSClient: NSObject {
     
     // MARK: Methods for one upload
     
-    func retry(forUpload upload: TUSUpload) {
+    public func retry(forUpload upload: TUSUpload) {
         executor.upload(forUpload: upload, withChunkSizeInMB: chunckSize)
     }
     
-    func cancel(forUpload upload: TUSUpload) {
+    public func cancel(forUpload upload: TUSUpload) {
         executor.cancel(forUpload: upload)
     }
     
-    func cleanUp(forUpload upload: TUSUpload) {
+    public func cleanUp(forUpload upload: TUSUpload) {
         //Delete stuff here
     }
     

@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol TUSDelegate {
+public protocol TUSDelegate {
     
     func TUSProgress(bytesUploaded uploaded: Int, bytesRemaining remaining: Int)
 

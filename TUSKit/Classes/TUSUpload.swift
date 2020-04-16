@@ -24,7 +24,7 @@ public class TUSUpload: NSObject {
                return contentLength
            }
            set(contentLength) {
-               UserDefaults.standard.set(contentLength, forKey: String(format: "%@%@", TUSConstants.defaultsContentLengthKey(forId: id!)))
+               UserDefaults.standard.set(contentLength, forKey: String(format: "%@", TUSConstants.defaultsContentLengthKey(forId: id!)))
            }
        }
     
@@ -36,7 +36,7 @@ public class TUSUpload: NSObject {
             return uploadLength
         }
         set(uploadLength) {
-            UserDefaults.standard.set(uploadLength, forKey: String(format: "%@%@", TUSConstants.defaultsUploadLengthKey(forId: id!)))
+            UserDefaults.standard.set(uploadLength, forKey: String(format: "%@", TUSConstants.defaultsUploadLengthKey(forId: id!)))
         }
     }
     
@@ -48,7 +48,7 @@ public class TUSUpload: NSObject {
             return TUSUploadStatus(rawValue: status)
         }
         set(status) {
-            UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@%@", TUSConstants.defaultsStatusKey(forId: id!)))
+            UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@", TUSConstants.defaultsStatusKey(forId: id!)))
         }
     }
     

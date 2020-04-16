@@ -33,15 +33,15 @@ public class TUSClient: NSObject {
         }
     }
     
-    public var status: TUSUploadStatus? {
+    public var status: TUSClientStaus? {
         get {
             guard let status = UserDefaults.standard.value(forKey: TUSConstants.kSavedTUSClientStatusDefaultsKey) as? String else {
-                return nil
+                return .ready
             }
-            return TUSUploadStatus(rawValue: status)
+            return TUSClientStaus(rawValue: status)
         }
         set(status) {
-            UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@%@", TUSConstants.kSavedTUSClientStatusDefaultsKey))
+            UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@", TUSConstants.kSavedTUSClientStatusDefaultsKey))
         }
     }
     

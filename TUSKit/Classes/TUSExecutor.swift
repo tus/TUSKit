@@ -41,7 +41,10 @@ class TUSExecutor: NSObject {
         self.session!.uploadTask(with: request, from: chunk) { (data, response, error) in
             //
         }
+    }
+    
+    internal func cancel(forUpload upload: TUSUpload) {
         
     }
-
+    
 }

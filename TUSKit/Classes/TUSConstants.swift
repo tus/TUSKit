@@ -16,6 +16,7 @@ struct TUSConstants {
     static let kSavedTUSUploadLengthDefaultsKey = "tusUploadSavedUploadLengthForId-"
     static let kSavedTUSUContentLengthDefaultsKey = "tusUploadSavedContentLengthForId-"
 
+    static let chunkSize = 100;
 
     static func defaultsStatusKey(forId id: String) -> String {
         return String(format: "%@%@", TUSConstants.kSavedTUSUploadStatusDefaultsKey, id)

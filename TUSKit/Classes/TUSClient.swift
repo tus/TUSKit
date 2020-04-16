@@ -15,9 +15,10 @@ public class TUSClient: NSObject {
     var uploadURL: URL?
     var delegate: TUSDelegate?
     private let executor: TUSExecutor = TUSExecutor()
+    private let fileManager: TUSFileManager = TUSFileManager()
     static public let shared = TUSClient()
     private static var config: TUSConfig?
-    
+    private var chunckSize: Int = TUSConstants.chunkSize //Default chunksize can be overwritten
     
     public var currentUploads: [TUSUpload]? {
         get {
@@ -57,62 +58,21 @@ public class TUSClient: NSObject {
         session = URLSession(configuration: config.URLSessionConfig)
     }
     
-    // MARK: Private file storage methods
-    
-    private func fileStorePath() -> String {
-        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
-        let documentsDirectory: String = paths[0]
-        return documentsDirectory.appending(TUSConstants.TUSFileDirectoryName)
-    }
-    
-    private func createFileDirectory() {
-        do {
-            try FileManager.default.createDirectory(atPath: fileStorePath(), withIntermediateDirectories: false, attributes: nil)
-        } catch let error as NSError {
-            print(error.localizedDescription);
-        }
-    }
-    
-    private func fileExists(withName name: String) -> Bool {
-        return FileManager.default.fileExists(atPath: fileStorePath().appending(name))
-    }
-    
-    private func moveFile(atLocation location: URL, withFileName name: String) {
-        do {
-            try FileManager.default.moveItem(at: location, to: URL(string: fileStorePath().appending(name))!)
-        } catch(let error){
-            print(error)
-        }
-    }
-    
-    private func writeData(withData data: Data, andFileName name: String) {
-        do {
-            try data.write(to: URL(string: fileStorePath().appending(name))!)
-        } catch (let error) {
-            print(error)
-        }
-    }
-    
     // MARK: Create methods
-    
-    func createOrResume(forUpload upload: TUSUpload) {
-        //
-        createOrResume(forUpload: upload, withRetries: 0)
-    }
     
     func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
         let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
-        if (self.fileExists(withName: fileName) == false) {
+        if (fileManager.fileExists(withName: fileName) == false) {
             if (upload.filePath != nil) {
-                self.moveFile(atLocation: upload.filePath!, withFileName: fileName)
+                fileManager.moveFile(atLocation: upload.filePath!, withFileName: fileName)
             } else if(upload.data != nil) {
-                self.writeData(withData: upload.data!, andFileName: fileName)
+                fileManager.writeData(withData: upload.data!, andFileName: fileName)
             }
         }
         
         switch upload.status {
         case .paused, .created:
-            executor.upload(forUpload: upload, withChunkSize: 100)
+            executor.upload(forUpload: upload, withChunkSize: chunckSize)
             break
         case .new:
             executor.create(forUpload: upload)
@@ -120,8 +80,11 @@ public class TUSClient: NSObject {
         default:
             print()
         }
-        
-        
+    }
+    
+    func createOrResume(forUpload upload: TUSUpload) {
+        //
+        createOrResume(forUpload: upload, withRetries: 0)
     }
     
     // MARK: Mass methods
@@ -154,15 +117,15 @@ public class TUSClient: NSObject {
     // MARK: Methods for one upload
     
     func retry(forUpload upload: TUSUpload) {
-        
+        executor.upload(forUpload: upload, withChunkSize: chunckSize)
     }
     
     func cancel(forUpload upload: TUSUpload) {
-        
+        executor.cancel(forUpload: upload)
     }
     
     func cleanUp(forUpload upload: TUSUpload) {
-        
+        //Delete stuff here
     }
     
     

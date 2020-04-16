@@ -8,6 +8,8 @@
 import Foundation
 
 public enum TUSUploadStatus: String {
+    case new = "new"
+    case created = "created"
     case uploading = "uploading"
     case paused = "paused"
     case canceled = "canceled"

@@ -14,9 +14,10 @@ public class TUSClient: NSObject {
     var session: URLSession?
     var uploadURL: URL?
     var delegate: TUSDelegate?
+    private let executor: TUSExecutor = TUSExecutor()
     static public let shared = TUSClient()
     private static var config: TUSConfig?
-
+    
     
     public var currentUploads: [TUSUpload]? {
         get {
@@ -110,11 +111,11 @@ public class TUSClient: NSObject {
         }
         
         switch upload.status {
-        case .paused:
-            //Resume
+        case .paused, .created:
+            executor.upload(forUpload: upload, withChunkSize: 100)
             break
-        case nil:
-            //create
+        case .new:
+            executor.create(forUpload: upload)
             break
         default:
             print()
@@ -127,7 +128,7 @@ public class TUSClient: NSObject {
     
     func resumeAll() {
         for upload in currentUploads! {
-            resume(forUpload: upload)
+            createOrResume(forUpload: upload)
         }
     }
     
@@ -152,10 +153,6 @@ public class TUSClient: NSObject {
     
     // MARK: Methods for one upload
     
-    func resume(forUpload upload: TUSUpload) {
-        
-    }
-    
     func retry(forUpload upload: TUSUpload) {
         
     }
@@ -168,23 +165,6 @@ public class TUSClient: NSObject {
         
     }
     
-    // MARK: Private Networking / Upload methods
     
-    private func urlRequest(withEndpoint endpoint: String, andContentLength contentLength: String, andUploadLength uploadLength: String, andFilename fileName: String) -> URLRequest {
-        
-        var request: URLRequest = URLRequest(url: (uploadURL?.appendingPathComponent(endpoint))!, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
-        request.addValue("Content-Length", forHTTPHeaderField: contentLength)
-        request.addValue("Upload-Length", forHTTPHeaderField: uploadLength)
-        request.addValue("Tus-Resumable", forHTTPHeaderField: TUSConstants.TUSProtocolVersion)
-        request.addValue("Upload-Metadata", forHTTPHeaderField: fileName)
-        
-        return request
-    }
-    
-    private func create(forUpload upload: TUSUpload) {
-        self.session!.dataTask(with: urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)) { (data, response, error) in
-            //
-        }
-    }
     
 }

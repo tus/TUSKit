@@ -43,7 +43,7 @@ public class TUSUpload: NSObject {
     var status: TUSUploadStatus? {
         get {
             guard let status = UserDefaults.standard.value(forKey: TUSConstants.defaultsStatusKey(forId: id!)) as? String else {
-                return nil
+                return .new
             }
             return TUSUploadStatus(rawValue: status)
         }

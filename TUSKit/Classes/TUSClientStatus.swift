@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TUSClientStaus: String {
+public enum TUSClientStaus: String {
     case ready = "ready"
     case uploading = "uploading"
 }

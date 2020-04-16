@@ -72,7 +72,7 @@ public class TUSClient: NSObject {
         
         switch upload.status {
         case .paused, .created:
-            executor.upload(forUpload: upload, withChunkSize: chunckSize)
+            executor.upload(forUpload: upload, withChunkSizeInMB: chunckSize)
             break
         case .new:
             executor.create(forUpload: upload)
@@ -117,7 +117,7 @@ public class TUSClient: NSObject {
     // MARK: Methods for one upload
     
     func retry(forUpload upload: TUSUpload) {
-        executor.upload(forUpload: upload, withChunkSize: chunckSize)
+        executor.upload(forUpload: upload, withChunkSizeInMB: chunckSize)
     }
     
     func cancel(forUpload upload: TUSUpload) {

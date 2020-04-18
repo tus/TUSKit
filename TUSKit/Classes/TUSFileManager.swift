@@ -20,7 +20,9 @@ class TUSFileManager: NSObject {
         do {
             try FileManager.default.createDirectory(atPath: fileStorePath(), withIntermediateDirectories: false, attributes: nil)
         } catch let error as NSError {
-            print(error.localizedDescription);
+            if (error.code != 516) { //516 is failed creating due to already existing
+                print(error.localizedDescription)
+            }
         }
     }
     
@@ -30,17 +32,31 @@ class TUSFileManager: NSObject {
     
     internal func moveFile(atLocation location: URL, withFileName name: String) {
         do {
-            try FileManager.default.moveItem(at: location, to: URL(string: fileStorePath().appending(name))!)
-        } catch(let error){
-            print(error)
+            try FileManager.default.moveItem(at: location, to: URL(fileURLWithPath: fileStorePath().appending(name)))
+        } catch let error as NSError {
+            print(error.localizedDescription)
         }
     }
     
     internal func writeData(withData data: Data, andFileName name: String) {
         do {
             try data.write(to: URL(string: fileStorePath().appending(name))!)
-        } catch (let error) {
-            print(error)
+        } catch let error as NSError {
+            print(error.localizedDescription)
         }
+    }
+    
+    internal func sizeForLocalFilePath(filePath:String) -> UInt64 {
+        do {
+            let fileAttributes = try FileManager.default.attributesOfItem(atPath: filePath)
+            if let fileSize = fileAttributes[FileAttributeKey.size]  {
+                return (fileSize as! NSNumber).uint64Value
+            } else {
+                print("Failed to get a size attribute from path: \(filePath)")
+            }
+        } catch {
+            print("Failed to get file attributes for local path: \(filePath) with error: \(error)")
+        }
+        return 0
     }
 }

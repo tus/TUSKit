@@ -9,7 +9,7 @@ import Foundation
 
 struct TUSConstants {
     static let TUSProtocolVersion = "1.0.0"
-    static let TUSFileDirectoryName = "TUS"
+    static let TUSFileDirectoryName = "/TUS/"
     static let kSavedTUSUploadsDefaultsKey = "tusCurrentUploads"
     static let kSavedTUSClientStatusDefaultsKey = "tusClientSavedStatus"
     static let kSavedTUSUploadStatusDefaultsKey = "tusUploadSavedStatusForId-"

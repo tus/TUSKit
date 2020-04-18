@@ -5,7 +5,7 @@ target 'TUSKit_Example' do
 
   target 'TUSKit_Tests' do
     inherit! :search_paths
-
+    pod 'AppSpectorSDK'
     pod 'Quick', '~> 1.2.0'
     pod 'Nimble', '~> 7.0'
     pod 'FBSnapshotTestCase' , '~> 2.1.4'

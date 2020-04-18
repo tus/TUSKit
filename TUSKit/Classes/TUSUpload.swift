@@ -14,6 +14,7 @@ public class TUSUpload: NSObject {
     var fileType: String?
     var filePath: URL?
     var data: Data?
+    internal var uploadLocationURL: URL?
 
     
     var contentLength: String? {
@@ -53,13 +54,17 @@ public class TUSUpload: NSObject {
     }
     
     public init(withId id: String, andFilePathString filePathString: String) {
+        super.init()
         self.id = id
         filePath = URL(string: filePathString)
+        fileType = filePath?.lastPathComponent
     }
     
     public init(withId id: String, andFilePathURL filePathURL: URL) {
+        super.init()
         self.id = id
         filePath = filePathURL
+        fileType = filePath?.lastPathComponent
     }
     
     public init(withId id: String, andData data: Data) {

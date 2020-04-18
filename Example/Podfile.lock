@@ -1,4 +1,5 @@
 PODS:
+  - AppSpectorSDK (1.2.9)
   - FBSnapshotTestCase (2.1.4):
     - FBSnapshotTestCase/SwiftSupport (= 2.1.4)
   - FBSnapshotTestCase/Core (2.1.4)
@@ -14,6 +15,7 @@ PODS:
   - TUSKit (0.1.0)
 
 DEPENDENCIES:
+  - AppSpectorSDK
   - FBSnapshotTestCase (~> 2.1.4)
   - Nimble (~> 7.0)
   - Nimble-Snapshots (~> 6.3.0)
@@ -22,6 +24,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - AppSpectorSDK
     - FBSnapshotTestCase
     - Nimble
     - Nimble-Snapshots
@@ -32,12 +35,13 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
+  AppSpectorSDK: 7e24097809d39d868e9ecdc76377fd519ac95aa6
   FBSnapshotTestCase: 094f9f314decbabe373b87cc339bea235a63e07a
   Nimble: 051e3d8912d40138fa5591c78594f95fb172af37
   Nimble-Snapshots: f5459b5b091678dc942d03ec4741cacb58ba4a52
   Quick: 58d203b1c5e27fff7229c4c1ae445ad7069a7a08
   TUSKit: 7626bfb27096011d3eb55f515b53b08f005913be
 
-PODFILE CHECKSUM: 60d3bc130a390a4c28905f454bddbc5c543df052
+PODFILE CHECKSUM: 572a5d87651b95d2aa1ecdf921075dfd78b37d95
 
 COCOAPODS: 1.9.1

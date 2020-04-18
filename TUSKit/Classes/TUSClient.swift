@@ -15,10 +15,10 @@ public class TUSClient: NSObject {
     public var uploadURL: URL?
     public var delegate: TUSDelegate?
     private let executor: TUSExecutor = TUSExecutor()
-    private let fileManager: TUSFileManager = TUSFileManager()
+    internal let fileManager: TUSFileManager = TUSFileManager()
     static public let shared = TUSClient()
     private static var config: TUSConfig?
-    private var chunckSize: Int = TUSConstants.chunkSize //Default chunksize can be overwritten
+    public var chunkSize: Int = TUSConstants.chunkSize //Default chunksize can be overwritten
     
     public var currentUploads: [TUSUpload]? {
         get {
@@ -56,6 +56,7 @@ public class TUSClient: NSObject {
         }
         uploadURL = config.uploadURL
         session = URLSession(configuration: config.URLSessionConfig)
+        fileManager.createFileDirectory()
     }
     
     // MARK: Create methods
@@ -72,9 +73,11 @@ public class TUSClient: NSObject {
         
         switch upload.status {
         case .paused, .created:
-            executor.upload(forUpload: upload, withChunkSizeInMB: chunckSize)
+            executor.upload(forUpload: upload)
             break
         case .new:
+            upload.contentLength = "0"
+            upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
             executor.create(forUpload: upload)
             break
         default:
@@ -117,7 +120,7 @@ public class TUSClient: NSObject {
     // MARK: Methods for one upload
     
     public func retry(forUpload upload: TUSUpload) {
-        executor.upload(forUpload: upload, withChunkSizeInMB: chunckSize)
+        executor.upload(forUpload: upload)
     }
     
     public func cancel(forUpload upload: TUSUpload) {

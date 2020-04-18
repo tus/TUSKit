@@ -31,7 +31,7 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
             guard let imageURL = info[.imageURL] else {
                 return
             }
-            let upload: TUSUpload = TUSUpload(withId: "image-1", andFilePathURL: imageURL as! URL)
+            let upload: TUSUpload = TUSUpload(withId: "image-2", andFilePathURL: imageURL as! URL)
             TUSClient.shared.createOrResume(forUpload: upload)
 
         } else {

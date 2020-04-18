@@ -11,10 +11,10 @@ public class TUSClient: NSObject {
     
     // MARK: Properties
     
-    internal var session: URLSession?
+    internal var tusSession: TUSSession
     public var uploadURL: URL?
     public var delegate: TUSDelegate?
-    private let executor: TUSExecutor = TUSExecutor()
+    private let executor: TUSExecutor
     internal let fileManager: TUSFileManager = TUSFileManager()
     static public let shared = TUSClient()
     private static var config: TUSConfig?
@@ -55,7 +55,8 @@ public class TUSClient: NSObject {
             fatalError("Error - you must call setup before accessing TUSClient")
         }
         uploadURL = config.uploadURL
-        session = URLSession(configuration: config.URLSessionConfig)
+        tusSession = TUSSession(customConfiguration: config.URLSessionConfig)
+        executor = TUSExecutor(withSession: tusSession)
         fileManager.createFileDirectory()
     }
     

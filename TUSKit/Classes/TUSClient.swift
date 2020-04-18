@@ -18,6 +18,7 @@ public class TUSClient: NSObject {
     internal let fileManager: TUSFileManager = TUSFileManager()
     static public let shared = TUSClient()
     private static var config: TUSConfig?
+    internal var logger: TUSLogger
     public var chunkSize: Int = TUSConstants.chunkSize //Default chunksize can be overwritten
     
     public var currentUploads: [TUSUpload]? {
@@ -56,7 +57,8 @@ public class TUSClient: NSObject {
         }
         uploadURL = config.uploadURL
         tusSession = TUSSession(customConfiguration: config.URLSessionConfig)
-        executor = TUSExecutor(withSession: tusSession)
+        executor = TUSExecutor()
+        logger = TUSLogger(config.debugLogEnabled)
         fileManager.createFileDirectory()
     }
     
@@ -74,9 +76,11 @@ public class TUSClient: NSObject {
         
         switch upload.status {
         case .paused, .created:
+            logger.log(String(format: "Upload with ID %@ has been previously been created. Resuming upload.", fileName))
             executor.upload(forUpload: upload)
             break
         case .new:
+            logger.log(String(format: "Creating file with ID %@ on server.", fileName))
             upload.contentLength = "0"
             upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
             executor.create(forUpload: upload)

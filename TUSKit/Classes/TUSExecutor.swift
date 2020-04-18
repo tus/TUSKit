@@ -9,12 +9,6 @@ import UIKit
 
 class TUSExecutor: NSObject {
     
-    let tusSession: TUSSession
-    
-    init(withSession session: TUSSession) {
-        self.tusSession = session
-    }
-    
     // MARK: Private Networking / Upload methods
     
     private func urlRequest(withEndpoint endpoint: String, andContentLength contentLength: String, andUploadLength uploadLength: String, andFilename fileName: String) -> URLRequest {
@@ -32,7 +26,8 @@ class TUSExecutor: NSObject {
     
     internal func create(forUpload upload: TUSUpload) {
         let request: URLRequest = urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)
-        let task = tusSession.session.dataTask(with: request) { (data, response, error) in
+        let task =  TUSClient.shared.tusSession.session.dataTask(with: request) { (data, response, error) in
+            TUSClient.shared.logger.log(response.debugDescription)
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 {
                     // Set the new status and other props for the upload
@@ -65,7 +60,7 @@ class TUSExecutor: NSObject {
     
     private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int ) {
         let request: URLRequest = urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)
-        tusSession.session.uploadTask(with: request, from: chunks[position], completionHandler: { (data, response, error) in
+         TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[position], completionHandler: { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
                 switch httpResponse.statusCode {
                 case 200..<300:

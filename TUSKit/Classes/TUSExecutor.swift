@@ -29,7 +29,7 @@ class TUSExecutor: NSObject {
         let task =  TUSClient.shared.tusSession.session.dataTask(with: request) { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 {
-                    TUSClient.shared.logger.log(String(format: "File with ID %@ created.", upload.id!))
+                    TUSClient.shared.logger.log(String(format: "File %@ created", upload.id!))
                     // Set the new status and other props for the upload
                     upload.status = .created
                     upload.contentLength = httpResponse.allHeaderFields["Content-Length"] as? String
@@ -49,6 +49,7 @@ class TUSExecutor: NSObject {
          */
         //First we create chunks
         //MARK: FIX THIS
+        TUSClient.shared.logger.log(String(format: "Preparing upload data for file %@", upload.id!))
         let uploadData = try! Data(contentsOf: URL(fileURLWithPath: String(format: "%@%@%@", TUSClient.shared.fileManager.fileStorePath(), upload.id!, upload.fileType!)))
         
 //        let chunks: [Data] = createChunks(forData: uploadData)
@@ -59,6 +60,7 @@ class TUSExecutor: NSObject {
     }
     
     private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int ) {
+        TUSClient.shared.logger.log(String(format: "Upload starting for file %@", upload.id!))
         let request: URLRequest = urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)
          TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[position], completionHandler: { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {

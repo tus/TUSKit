@@ -76,11 +76,11 @@ public class TUSClient: NSObject {
         
         switch upload.status {
         case .paused, .created:
-            logger.log(String(format: "Upload with ID %@ has been previously been created. Resuming upload.", fileName))
+            logger.log(String(format: "Upload with ID %@ has been previously been created. Resuming upload.", upload.id!))
             executor.upload(forUpload: upload)
             break
         case .new:
-            logger.log(String(format: "Creating file with ID %@ on server.", fileName))
+            logger.log(String(format: "Creating file with ID %@ on server.", upload.id!))
             upload.contentLength = "0"
             upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
             executor.create(forUpload: upload)

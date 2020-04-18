@@ -31,13 +31,16 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
             guard let imageURL = info[.imageURL] else {
                 return
             }
-            let upload: TUSUpload = TUSUpload(withId: "image", andFilePathURL: imageURL as! URL)
+            let number = Int.random(in: 0 ..< 100) //TODO: Remove before release: this is only set so we can run multiple files while developer
+            let upload: TUSUpload = TUSUpload(withId: String(format: "%@%@", "image", String(number)), andFilePathURL: imageURL as! URL)
             TUSClient.shared.createOrResume(forUpload: upload)
 
         } else {
             // Fallback on earlier versions
         }
-        dismiss(animated: true, completion: nil)
+        dismiss(animated: true) {
+            self.present(self.imagePicker, animated: true, completion: nil) //Force reopen on close for testing purposes
+        }
     }
 //
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {

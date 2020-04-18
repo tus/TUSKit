@@ -27,9 +27,9 @@ class TUSExecutor: NSObject {
     internal func create(forUpload upload: TUSUpload) {
         let request: URLRequest = urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)
         let task =  TUSClient.shared.tusSession.session.dataTask(with: request) { (data, response, error) in
-            TUSClient.shared.logger.log(response.debugDescription)
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 {
+                    TUSClient.shared.logger.log(String(format: "File with ID %@ created.", upload.id!))
                     // Set the new status and other props for the upload
                     upload.status = .created
                     upload.contentLength = httpResponse.allHeaderFields["Content-Length"] as? String

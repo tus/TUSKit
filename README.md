@@ -77,10 +77,11 @@ var uploadObject = TUSUpload(withId: "Just an ID of a past upload") //Will fail 
 You can create an upload and start the upload process by passing an upload object.
 
 **Parameters**
+
 withRetries: The number of silent retries to take place before failing out to the delegate
 
 ```Swift
-TUSClient.shared.createOrResume(uploadObject) //Create and start upload
+TUSClient.shared.createOrResume(uploadObject, withRetries: 3) //Create and start upload
 ```
 
 ### Pause

@@ -78,9 +78,10 @@ You can create an upload and start the upload process by passing an upload objec
 
 **Parameters**
 
-withRetries: The number of silent retries to take place before failing out to the delegate
+- *optional* withRetries: The number of silent retries to take place before failing out to the delegate
 
 ```Swift
+TUSClient.shared.createOrResume(uploadObject) //Create and start upload
 TUSClient.shared.createOrResume(uploadObject, withRetries: 3) //Create and start upload
 ```
 

@@ -16,11 +16,12 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+        //Image picker setup for example.
         imagePicker.sourceType = .photoLibrary
         imagePicker.delegate = self
         present(imagePicker, animated: true, completion: nil)
         
+        //Set the deleagte of TUSClient
         TUSClient.shared.delegate = self
     }
     
@@ -32,12 +33,14 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
                 return
             }
             let number = Int.random(in: 0 ..< 100) //TODO: Remove before release: this is only set so we can run multiple files while developer
+            
+            //When you have a file, create an upload, and give it a Id.
             let upload: TUSUpload = TUSUpload(withId: String(format: "%@%@", "image", String(number)), andFilePathURL: imageURL as! URL)
+            //Create or resume upload
             TUSClient.shared.createOrResume(forUpload: upload)
 
-        } else {
-            // Fallback on earlier versions
         }
+        
         dismiss(animated: true) {
             self.present(self.imagePicker, animated: true, completion: nil) //Force reopen on close for testing purposes
         }
@@ -46,6 +49,8 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         dismiss(animated: true, completion: nil)
     }
+    
+    //MARK: TUSClient Deleagte
     
     func TUSProgress(bytesUploaded uploaded: Int, bytesRemaining remaining: Int) {
         //

@@ -95,16 +95,16 @@ TUSClient.shared.pauseAll() //Pause all uploads
 You can resume a specific upload, or all uploads that have previously been paused- not canceled or failed. If an upload is resumed it will resume the upload from where it last left off.
 
 ```Swift
-TUSClient.shared.createOrResume(uploadObject) //Cancel a specific upload
-TUSClient.shared.resumeAll() //Cancel all uploads
+TUSClient.shared.createOrResume(uploadObject) //Resume a specific upload
+TUSClient.shared.resumeAll() //Resume all uploads
 ```
 
 ### Retry
 You can retry a specific upload, or all uploads that have previously been canceled or failed - not paused. If an upload is retired it will attempt to create the file on your `TUS` server, if already existing it will begin or resume the upload from where it last left off.
 
 ```Swift
-TUSClient.shared.retry(uploadObject) //Cancel a specific upload
-TUSClient.shared.retryAll() //Cancel all uploads
+TUSClient.shared.retry(uploadObject) //retry a specific upload
+TUSClient.shared.retryAll() //retry all uploads
 ```
 
 ### Cancel

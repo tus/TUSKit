@@ -53,18 +53,19 @@ public class TUSUpload: NSObject {
         }
     }
     
-    public init(withId id: String, andFilePathString filePathString: String) {
+    public init(withId id: String, andFilePathString filePathString: String, andFileType fileType: String) {
         super.init()
         self.id = id
         filePath = URL(string: filePathString)
-        fileType = filePath?.lastPathComponent
+        self.fileType = fileType
+
     }
     
-    public init(withId id: String, andFilePathURL filePathURL: URL) {
+    public init(withId id: String, andFilePathURL filePathURL: URL, andFileType fileType: String) {
         super.init()
         self.id = id
         filePath = filePathURL
-        fileType = filePath?.lastPathComponent
+        self.fileType = fileType
     }
     
     public init(withId id: String, andData data: Data) {

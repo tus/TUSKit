@@ -4,10 +4,10 @@
 [![License](https://img.shields.io/cocoapods/l/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit)
 [![Platform](https://img.shields.io/cocoapods/p/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit)
 
-An iOS client written in `Objective-C` for [tus resumable upload protocol](http://tus.io/).
+An iOS client for [tus resumable upload protocol](http://tus.io/).
 
-## Swift Rewrite
-The library is currenlty being rewritten in Swift. Check the `swift-development` branch and [this issue](https://github.com/tus/TUSKit/issues/65) for discussion. 
+# V2
+The `Objective-C` version of this library is being deprecated and replaced by a `Swift` version. Check the [`swift-development`](https://github.com/tus/TUSKit/tree/swift-development) branch and [this issue](https://github.com/tus/TUSKit/issues/65) for discussion. An early pre-release (`2.0.0.alpha`) is available via CocoaPods.
 
 ## Pull Requests
 Pull requests are always welcome! However, please submit a PR to the `development` branch in order to keep the `master` branch match up with the `TUSKit` pod at all times.

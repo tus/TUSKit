@@ -41,6 +41,18 @@ public class TUSUpload: NSObject {
         }
     }
     
+    var uploadOffset: String? {
+        get {
+            guard let uploadLength = UserDefaults.standard.value(forKey: TUSConstants.defaultsUploadOffsetKey(forId: id!)) as? String else {
+                return nil
+            }
+            return uploadLength
+        }
+        set(uploadLength) {
+            UserDefaults.standard.set(uploadLength, forKey: String(format: "%@", TUSConstants.defaultsUploadOffsetKey(forId: id!)))
+        }
+    }
+    
     var status: TUSUploadStatus? {
         get {
             guard let status = UserDefaults.standard.value(forKey: TUSConstants.defaultsStatusKey(forId: id!)) as? String else {

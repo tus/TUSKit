@@ -82,6 +82,7 @@ public class TUSClient: NSObject {
         case .new:
             logger.log(String(format: "Creating file %@ on server", upload.id!))
             upload.contentLength = "0"
+            upload.uploadOffset = "0"
             upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
             executor.create(forUpload: upload)
             break

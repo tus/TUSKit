@@ -67,12 +67,12 @@ class TUSExecutor: NSObject {
         
         let chunks = dataIntoChunks(data: uploadData as NSData, chunkSize: 200000) as [Data]
         //Then we start the upload from the first chunk
-        self.upload(forChunks: chunks, withUpload: upload, atPosition: 0, andOffset: "0")
+        self.upload(forChunks: chunks, withUpload: upload, atPosition: 0)
     }
     
-    private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int, andOffset offset: String ) {
+    private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int) {
         TUSClient.shared.logger.log(String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id!, position + 1, chunks.count))
-        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Content-Type":"application/offset+octet-stream", "Upload-Offset": offset, "Content-Length": String(chunks[position].count)])
+        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Content-Type":"application/offset+octet-stream", "Upload-Offset": upload.uploadOffset!, "Content-Length": String(chunks[position].count)])
          let task = TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[position], completionHandler: { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
                 print(httpResponse.debugDescription)
@@ -80,7 +80,8 @@ class TUSExecutor: NSObject {
                 case 200..<300:
                     //success
                     if (chunks.count > position+1 ){
-                        self.upload(forChunks: chunks, withUpload: upload, atPosition: position+1, andOffset: httpResponse.allHeaderFields["upload-offset"] as! String)
+                        upload.uploadOffset = httpResponse.allHeaderFields["upload-offset"] as! String
+                        self.upload(forChunks: chunks, withUpload: upload, atPosition: position+1)
                     } else
                     if (httpResponse.statusCode == 204) {
                         TUSClient.shared.logger.log(String(format: "Chunk %u / %u complete", position + 1, chunks.count))

@@ -7,11 +7,12 @@
 
 import UIKit
 
-public class TUSClient: NSObject {
+public class TUSClient: NSObject, URLSessionTaskDelegate {
+
     
     // MARK: Properties
     
-    internal var tusSession: TUSSession
+    internal var tusSession: TUSSession = TUSSession()
     public var uploadURL: URL?
     public var delegate: TUSDelegate?
     private let executor: TUSExecutor
@@ -20,19 +21,20 @@ public class TUSClient: NSObject {
     private static var config: TUSConfig?
     internal var logger: TUSLogger
     public var chunkSize: Int = TUSConstants.chunkSize //Default chunksize can be overwritten
-    
-    public var currentUploads: [TUSUpload]? {
-        get {
-            guard let data = UserDefaults.standard.object(forKey: TUSConstants.kSavedTUSUploadsDefaultsKey) as? Data else {
-                return nil
-            }
-            return NSKeyedUnarchiver.unarchiveObject(with: data) as? [TUSUpload]
-        }
-        set(currentUploads) {
-            let data = NSKeyedArchiver.archivedData(withRootObject: currentUploads!)
-            UserDefaults.standard.set(data, forKey: TUSConstants.kSavedTUSUploadsDefaultsKey)
-        }
-    }
+    public var currentUploads: [TUSUpload]?
+    //TODO: Fix this
+//    public var currentUploads: [TUSUpload]? {
+//        get {
+//            guard let data = UserDefaults.standard.object(forKey: TUSConstants.kSavedTUSUploadsDefaultsKey) as? Data else {
+//                return nil
+//            }
+//            return NSKeyedUnarchiver.unarchiveObject(with: data) as? [TUSUpload]
+//        }
+//        set(currentUploads) {
+//            let data = NSKeyedArchiver.archivedData(withRootObject: currentUploads!)
+//            UserDefaults.standard.set(data, forKey: TUSConstants.kSavedTUSUploadsDefaultsKey)
+//        }
+//    }
     
     public var status: TUSClientStaus? {
         get {
@@ -56,15 +58,19 @@ public class TUSClient: NSObject {
             fatalError("Error - you must call setup before accessing TUSClient")
         }
         uploadURL = config.uploadURL
-        tusSession = TUSSession(customConfiguration: config.URLSessionConfig)
         executor = TUSExecutor()
         logger = TUSLogger(config.debugLogEnabled)
         fileManager.createFileDirectory()
+        super.init()
+        tusSession = TUSSession(customConfiguration: config.URLSessionConfig, andDelegate: self)
+        currentUploads = []
+
     }
     
     // MARK: Create methods
     
     public func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
+        currentUploads?.append(upload)
         let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
         if (fileManager.fileExists(withName: fileName) == false) {
             if (upload.filePath != nil) {
@@ -137,6 +143,9 @@ public class TUSClient: NSObject {
         //Delete stuff here
     }
     
-    
+    public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
+        var upload = currentUploads![0]
+        self.delegate?.TUSProgress(bytesUploaded: Int(upload.uploadOffset!)!, bytesRemaining: Int(upload.uploadLength!)!)
+    }
     
 }

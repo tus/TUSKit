@@ -14,7 +14,7 @@ public class TUSUpload: NSObject {
     var fileType: String? // TODO: Make sure only ".fileExtension" gets set. Current setup sets fileType as something like "1A1F31FE6-BB39-4A78-AECD-3C9BDE6D129E.jpeg"
     var filePath: URL?
     var data: Data?
-    internal var uploadLocationURL: URL?
+    public var uploadLocationURL: URL?
 
     
     var contentLength: String? {

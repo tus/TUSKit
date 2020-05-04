@@ -54,13 +54,18 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     
     func TUSProgress(bytesUploaded uploaded: Int, bytesRemaining remaining: Int) {
         //
+        print(uploaded)
+               print(remaining)
     }
     
     func TUSProgress(forUpload upload: TUSUpload, bytesUploaded uploaded: Int, bytesRemaining remaining: Int) {
         //
+        print(uploaded)
+        print(remaining)
     }
     
-    func TUSSuccess(forUpload upload: TUSUpload, withResponse response: TUSResponse) {
+    func TUSSuccess(forUpload upload: TUSUpload) {
+        print(upload.uploadLocationURL)
         //
     }
     

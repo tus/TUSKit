@@ -9,12 +9,17 @@ import Foundation
 
 class TUSSession {
     var session: URLSession
-
+    
     init() {
-        session = URLSession(configuration: .default)
+        //
+        session = URLSession()
+    }
+
+    init(withDelegate delegate: URLSessionTaskDelegate) {
+        session = URLSession(configuration: .default, delegate: delegate, delegateQueue: OperationQueue.main)
     }
     
-    init(customConfiguration configuration: URLSessionConfiguration) {
-        session = URLSession(configuration: configuration)
+    init(customConfiguration configuration: URLSessionConfiguration, andDelegate delegate: URLSessionTaskDelegate) {
+        session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: OperationQueue.main)
     }
 }

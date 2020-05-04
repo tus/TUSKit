@@ -13,7 +13,7 @@ public protocol TUSDelegate {
 
     func TUSProgress(forUpload upload: TUSUpload, bytesUploaded uploaded: Int, bytesRemaining remaining: Int)
 
-    func TUSSuccess(forUpload upload: TUSUpload, withResponse response: TUSResponse)
+    func TUSSuccess(forUpload upload: TUSUpload)
 
     func TUSFailure(forUpload upload: TUSUpload, withResponse response: TUSResponse, andError error: Error)
 

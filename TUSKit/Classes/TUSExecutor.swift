@@ -11,28 +11,38 @@ class TUSExecutor: NSObject {
     
     // MARK: Private Networking / Upload methods
     
-    private func urlRequest(withEndpoint endpoint: String, andContentLength contentLength: String, andUploadLength uploadLength: String, andFilename fileName: String) -> URLRequest {
+    private func urlRequest(withEndpoint endpoint: String, andMethod method: String, andContentLength contentLength: String, andUploadLength uploadLength: String, andFilename fileName: String, andHeaders headers: [String: String]) -> URLRequest {
+
+        return urlRequest(withFullURL: ((TUSClient.shared.uploadURL?.appendingPathComponent(endpoint))!), andMethod: method, andContentLength: contentLength, andUploadLength: uploadLength, andFilename: fileName, andHeaders: headers)
+    }
+    
+    private func urlRequest(withFullURL url: URL, andMethod method: String, andContentLength contentLength: String, andUploadLength uploadLength: String, andFilename fileName: String, andHeaders headers: [String: String]) -> URLRequest {
         
-        var request: URLRequest = URLRequest(url: (TUSClient.shared.uploadURL?.appendingPathComponent(endpoint))!, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
-        request.httpMethod = "POST"
-        request.addValue(contentLength, forHTTPHeaderField: "Content-Length")
-        request.addValue(uploadLength, forHTTPHeaderField: "Upload-Length")
+        var request: URLRequest = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
+        request.httpMethod = method
+//        request.addValue(contentLength, forHTTPHeaderField: "Content-Length")
+//        request.addValue(uploadLength, forHTTPHeaderField: "Upload-Length")
         request.addValue(TUSConstants.TUSProtocolVersion, forHTTPHeaderField: "TUS-Resumable")
         request.addValue(String(format: "%@ %@", "filename", fileName.toBase64()), forHTTPHeaderField: "Upload-Metadata")
-        request.addValue("creation", forHTTPHeaderField: "Upload-Extension")
+        
+        for header in headers {
+            request.addValue(header.value, forHTTPHeaderField: header.key)
+        }
 
         return request
     }
     
     internal func create(forUpload upload: TUSUpload) {
-        let request: URLRequest = urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)
+        var request: URLRequest = urlRequest(withEndpoint: "", andMethod: "POST", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Upload-Extension": "creation"])
+        request.addValue(upload.contentLength!, forHTTPHeaderField: "Content-Length")
+        request.addValue(upload.uploadLength!, forHTTPHeaderField: "Upload-Length")
         let task =  TUSClient.shared.tusSession.session.dataTask(with: request) { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 {
                     TUSClient.shared.logger.log(String(format: "File %@ created", upload.id!))
                     // Set the new status and other props for the upload
                     upload.status = .created
-                    upload.contentLength = httpResponse.allHeaderFields["Content-Length"] as? String
+//                    upload.contentLength = httpResponse.allHeaderFields["Content-Length"] as? String
                     upload.uploadLocationURL = URL(string: httpResponse.allHeaderFields["Location"] as! String)
                     //Begin the upload
                     self.upload(forUpload: upload)
@@ -61,12 +71,20 @@ class TUSExecutor: NSObject {
     
     private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int ) {
         TUSClient.shared.logger.log(String(format: "Upload starting for file %@", upload.id!))
-        let request: URLRequest = urlRequest(withEndpoint: "", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!)
-         TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[position], completionHandler: { (data, response, error) in
+        print(chunks[0].count)
+        var request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Content-Type":"application/offset+octet-stream", "Upload-Offset": "0"])
+        //print(chunks[0].count.byteSize)
+        print(upload.uploadLength)
+        print(upload.contentLength)
+        request.httpBody = chunks[0]
+         let task = TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[0], completionHandler: { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
+                print(httpResponse.debugDescription)
+                print(data.debugDescription)
                 switch httpResponse.statusCode {
                 case 200..<300:
                     //success
+//                    upload.contentLength = httpResponse.allHeaderFields["Content-Length"] as! String
                     if (chunks.count < position){
                         self.upload(forChunks: chunks, withUpload: upload, atPosition: position+1)
                     }
@@ -81,6 +99,7 @@ class TUSExecutor: NSObject {
                 }
             }
         })
+        task.resume()
     }
     
     internal func cancel(forUpload upload: TUSUpload) {
@@ -88,6 +107,8 @@ class TUSExecutor: NSObject {
     }
     
     private func createChunks(forData data: Data) -> [Data] {
+        print("data")
+        print(data.count)
         let mbSize = TUSClient.shared.chunkSize
         //Thanks Sean Behan!
         let data = Data()
@@ -112,4 +133,11 @@ class TUSExecutor: NSObject {
         return chunks
     }
     
+}
+
+
+extension Int {
+    var byteSize: String {
+        return ByteCountFormatter().string(fromByteCount: Int64(self))
+    }
 }

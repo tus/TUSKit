@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'TUSKit'
-  s.version          = 'swift-v0.1.0-alpha'
+  s.version          = 'swift-v0.1.0.alpha'
   s.summary          = 'A rewrite of TUSKit, in Swift'
 
 # This description is used to generate tags and improve search results.

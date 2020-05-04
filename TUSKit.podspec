@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'TUSKit'
-  s.version          = 'swift-v0.1.0.alpha'
+  s.version          = '2.0.0.alpha'
   s.summary          = 'A rewrite of TUSKit, in Swift'
 
 # This description is used to generate tags and improve search results.
@@ -21,11 +21,11 @@ Pod::Spec.new do |s|
 TODO: Add long description of the pod here.
                        DESC
 
-  s.homepage         = 'https://github.com/mmasterson/TUSKit'
+  s.homepage         = 'https://github.com/tus/tus-ios-client'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Mark Masterson' => 'mark@masterson.io' }
-  s.source           = { :git => 'https://github.com/mmasterson/TUSKit.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/tus/tus-ios-client.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
   s.ios.deployment_target = '8.0'

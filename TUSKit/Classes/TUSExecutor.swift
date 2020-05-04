@@ -61,24 +61,26 @@ class TUSExecutor: NSObject {
         //MARK: FIX THIS
         TUSClient.shared.logger.log(String(format: "Preparing upload data for file %@", upload.id!))
         let uploadData = try! Data(contentsOf: URL(fileURLWithPath: String(format: "%@%@%@", TUSClient.shared.fileManager.fileStorePath(), upload.id!, upload.fileType!)))
-        
+        upload.data = uploadData
 //        let chunks: [Data] = createChunks(forData: uploadData)
 //        print(chunks.count)
-        let chunks: [Data] = [uploadData]
+        
+        let chunks = dataIntoChunks(data: uploadData as NSData, chunkSize: 200000) as [Data]
         //Then we start the upload from the first chunk
-        self.upload(forChunks: chunks, withUpload: upload, atPosition: 0)
+        self.upload(forChunks: chunks, withUpload: upload, atPosition: 0, andOffset: "0")
     }
     
-    private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int ) {
+    private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int, andOffset offset: String ) {
         TUSClient.shared.logger.log(String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id!, position + 1, chunks.count))
-        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Content-Type":"application/offset+octet-stream", "Upload-Offset": "0"])
-         let task = TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[0], completionHandler: { (data, response, error) in
+        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Content-Type":"application/offset+octet-stream", "Upload-Offset": offset, "Content-Length": String(chunks[position].count)])
+         let task = TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[position], completionHandler: { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
+                print(httpResponse.debugDescription)
                 switch httpResponse.statusCode {
                 case 200..<300:
                     //success
-                    if (chunks.count < position ){
-                        self.upload(forChunks: chunks, withUpload: upload, atPosition: position+1)
+                    if (chunks.count > position+1 ){
+                        self.upload(forChunks: chunks, withUpload: upload, atPosition: position+1, andOffset: httpResponse.allHeaderFields["upload-offset"] as! String)
                     } else
                     if (httpResponse.statusCode == 204) {
                         TUSClient.shared.logger.log(String(format: "Chunk %u / %u complete", position + 1, chunks.count))
@@ -100,42 +102,24 @@ class TUSExecutor: NSObject {
         task.resume()
     }
     
+    
+    
     internal func cancel(forUpload upload: TUSUpload) {
         
     }
     
-    private func createChunks(forData data: Data) -> [Data] {
-        print("data")
-        print(data.count)
-        let mbSize = TUSClient.shared.chunkSize
-        //Thanks Sean Behan!
-        let data = Data()
-        let dataLen = data.count
-        let chunkSize = ((1024 * 1000) * mbSize)
-        let fullChunks = Int(dataLen / chunkSize)
-        let totalChunks = fullChunks + (dataLen % 1024 != 0 ? 1 : 0)
-        print(totalChunks)
-        var chunks:[Data] = [Data]()
-        for chunkCounter in 0..<totalChunks {
-            var chunk:Data
-            let chunkBase = chunkCounter * chunkSize
-            var diff = chunkSize
-            if(chunkCounter == totalChunks - 1) {
-                diff = dataLen - chunkBase
-            }
-            let range:Range<Data.Index> = chunkBase..<(chunkBase + diff)
-            chunk = data.subdata(in: range)
-            print(chunk.debugDescription)
-            chunks.append(chunk)
+    private func dataIntoChunks(data: NSData, chunkSize: Int) -> [NSData] {
+        var chunks = [NSData]()
+        let length = data.length
+        var offset = 0
+        while(offset < length) {
+            let size = length - offset > chunkSize ? chunkSize : length - offset
+            let chunk = data.subdata(with: NSMakeRange(offset, size))
+            chunks.append(chunk as NSData)
+            offset += size
         }
         return chunks
     }
-    
 }
 
 
-extension Int {
-    var byteSize: String {
-        return ByteCountFormatter().string(fromByteCount: Int64(self))
-    }
-}

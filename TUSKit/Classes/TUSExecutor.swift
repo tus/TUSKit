@@ -70,23 +70,21 @@ class TUSExecutor: NSObject {
     }
     
     private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int ) {
-        TUSClient.shared.logger.log(String(format: "Upload starting for file %@", upload.id!))
-        print(chunks[0].count)
-        var request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Content-Type":"application/offset+octet-stream", "Upload-Offset": "0"])
-        //print(chunks[0].count.byteSize)
-        print(upload.uploadLength)
-        print(upload.contentLength)
-        request.httpBody = chunks[0]
+        TUSClient.shared.logger.log(String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id!, position + 1, chunks.count))
+        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Content-Type":"application/offset+octet-stream", "Upload-Offset": "0"])
          let task = TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[0], completionHandler: { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
-                print(httpResponse.debugDescription)
-                print(data.debugDescription)
                 switch httpResponse.statusCode {
                 case 200..<300:
                     //success
-//                    upload.contentLength = httpResponse.allHeaderFields["Content-Length"] as! String
-                    if (chunks.count < position){
+                    if (chunks.count < position ){
                         self.upload(forChunks: chunks, withUpload: upload, atPosition: position+1)
+                    } else
+                    if (httpResponse.statusCode == 204) {
+                        TUSClient.shared.logger.log(String(format: "Chunk %u / %u complete", position + 1, chunks.count))
+                        if (position + 1 == chunks.count) {
+                            TUSClient.shared.logger.log(String(format: "File %@ uploaded at %@", upload.id!, upload.uploadLocationURL!.absoluteString))
+                        }
                     }
                     break
                 case 400..<500:

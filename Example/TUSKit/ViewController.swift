@@ -36,7 +36,6 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
             
             //When you have a file, create an upload, and give it a Id.
             let upload: TUSUpload = TUSUpload(withId: String(format: "%@%@", "image", String(number)), andFilePathURL: imageURL as! URL, andFileType: ".jpeg")
-            print (imageURL)
             //Create or resume upload
             TUSClient.shared.createOrResume(forUpload: upload)
 

@@ -12,7 +12,7 @@ PODS:
     - FBSnapshotTestCase (~> 2.0)
     - Nimble (~> 7.0)
   - Quick (1.2.0)
-  - TUSKit (0.1.0)
+  - TUSKit (2.0.0.alpha)
 
 DEPENDENCIES:
   - AppSpectorSDK
@@ -40,7 +40,7 @@ SPEC CHECKSUMS:
   Nimble: 051e3d8912d40138fa5591c78594f95fb172af37
   Nimble-Snapshots: f5459b5b091678dc942d03ec4741cacb58ba4a52
   Quick: 58d203b1c5e27fff7229c4c1ae445ad7069a7a08
-  TUSKit: 7626bfb27096011d3eb55f515b53b08f005913be
+  TUSKit: 95b4ad77dd21df1cc6662e6041d117104cd3cafe
 
 PODFILE CHECKSUM: 572a5d87651b95d2aa1ecdf921075dfd78b37d95
 

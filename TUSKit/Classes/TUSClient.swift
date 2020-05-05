@@ -74,9 +74,15 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
         if (fileManager.fileExists(withName: fileName) == false) {
             if (upload.filePath != nil) {
-                fileManager.moveFile(atLocation: upload.filePath!, withFileName: fileName)
+                if fileManager.moveFile(atLocation: upload.filePath!, withFileName: fileName) == false{
+                    //fail out
+                    return
+                }
             } else if(upload.data != nil) {
-                fileManager.writeData(withData: upload.data!, andFileName: fileName)
+                if fileManager.writeData(withData: upload.data!, andFileName: fileName) == false {
+                    //fail out
+                    return
+                }
             }
         }
         

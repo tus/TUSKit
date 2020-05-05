@@ -9,4 +9,6 @@ import Foundation
 
 public struct TUSResponse: Codable {
     
+    public var message: String?
+    
 }

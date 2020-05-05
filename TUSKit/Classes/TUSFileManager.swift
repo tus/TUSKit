@@ -21,7 +21,9 @@ class TUSFileManager: NSObject {
             try FileManager.default.createDirectory(atPath: fileStorePath(), withIntermediateDirectories: false, attributes: nil)
         } catch let error as NSError {
             if (error.code != 516) { //516 is failed creating due to already existing
-                print(error.localizedDescription)
+                let response: TUSResponse = TUSResponse(message: "Failed creating TUS directory in documents")
+                TUSClient.shared.delegate?.TUSFailure(forUpload: nil, withResponse: response, andError: error)
+
             }
         }
     }
@@ -30,19 +32,25 @@ class TUSFileManager: NSObject {
         return FileManager.default.fileExists(atPath: fileStorePath().appending(name))
     }
     
-    internal func moveFile(atLocation location: URL, withFileName name: String) {
+    internal func moveFile(atLocation location: URL, withFileName name: String) -> Bool {
         do {
             try FileManager.default.moveItem(at: location, to: URL(fileURLWithPath: fileStorePath().appending(name)))
+            return true
         } catch let error as NSError {
-            print(error.localizedDescription)
+            let response: TUSResponse = TUSResponse(message: "Failed moving file \(location.absoluteString) to \(fileStorePath().appending(name)) for TUS folder storage")
+            TUSClient.shared.delegate?.TUSFailure(forUpload: nil, withResponse: response, andError: error)
+            return false
         }
     }
     
-    internal func writeData(withData data: Data, andFileName name: String) {
+    internal func writeData(withData data: Data, andFileName name: String) -> Bool {
         do {
             try data.write(to: URL(string: fileStorePath().appending(name))!)
+            return true
         } catch let error as NSError {
-            print(error.localizedDescription)
+            let response: TUSResponse = TUSResponse(message: "Failed writing data to file \(fileStorePath().appending(name))")
+            TUSClient.shared.delegate?.TUSFailure(forUpload: nil, withResponse: response, andError: error)
+            return false
         }
     }
     
@@ -52,10 +60,12 @@ class TUSFileManager: NSObject {
             if let fileSize = fileAttributes[FileAttributeKey.size]  {
                 return (fileSize as! NSNumber).uint64Value
             } else {
-                print("Failed to get a size attribute from path: \(filePath)")
+                let response: TUSResponse = TUSResponse(message: "Failed to get a size attribute from path: \(filePath)")
+                TUSClient.shared.delegate?.TUSFailure(forUpload: nil, withResponse: response, andError: nil)
             }
         } catch {
-            print("Failed to get file attributes for local path: \(filePath) with error: \(error)")
+            let response: TUSResponse = TUSResponse(message: "Failed to get a size attribute from path: \(filePath)")
+            TUSClient.shared.delegate?.TUSFailure(forUpload: nil, withResponse: response, andError: error)
         }
         return 0
     }

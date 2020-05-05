@@ -15,6 +15,6 @@ public protocol TUSDelegate {
 
     func TUSSuccess(forUpload upload: TUSUpload)
 
-    func TUSFailure(forUpload upload: TUSUpload, withResponse response: TUSResponse, andError error: Error)
+    func TUSFailure(forUpload upload: TUSUpload?, withResponse response: TUSResponse?, andError error: Error?)
 
 }

@@ -35,6 +35,8 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
             let number = Int.random(in: 0 ..< 100) //TODO: Remove before release: this is only set so we can run multiple files while developer
             
             //When you have a file, create an upload, and give it a Id.
+            
+            
             let upload: TUSUpload = TUSUpload(withId: String(format: "%@%@", "im", String(number)), andFilePathURL: imageURL as! URL, andFileType: ".jpeg")
             //Create or resume upload
             TUSClient.shared.createOrResume(forUpload: upload)
@@ -69,8 +71,14 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
         //
     }
     
-    func TUSFailure(forUpload upload: TUSUpload, withResponse response: TUSResponse, andError error: Error) {
+    func TUSFailure(forUpload upload: TUSUpload?, withResponse response: TUSResponse?, andError error: Error?) {
         //
+        if (response != nil) {
+            print(response!.message!)
+        }
+        if (error != nil) {
+            print(error!.localizedDescription)
+        }
     }
 
     override func didReceiveMemoryWarning() {

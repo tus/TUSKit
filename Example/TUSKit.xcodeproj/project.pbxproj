@@ -29,7 +29,7 @@
 
 /* Begin PBXFileReference section */
 		178E27EB1EA228D2A68B13FE /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
-		20578BE9B2C33456E6BC8985 /* TUSKit.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = TUSKit.podspec; path = ../TUSKit.podspec; sourceTree = "<group>"; };
+		20578BE9B2C33456E6BC8985 /* TUSKit.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = TUSKit.podspec; path = ../TUSKit.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		40C0ABED9802BD92047C4052 /* Pods-TUSKit_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TUSKit_Tests.debug.xcconfig"; path = "Target Support Files/Pods-TUSKit_Tests/Pods-TUSKit_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* TUSKit_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TUSKit_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };

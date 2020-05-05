@@ -43,7 +43,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                     // Set the new status and other props for the upload
                     upload.status = .created
 //                    upload.contentLength = httpResponse.allHeaderFields["Content-Length"] as? String
-                    upload.uploadLocationURL = URL(string: httpResponse.allHeaderFields["Location"] as! String)
+                    upload.uploadLocationURL = URL(string: httpResponse.allHeaderFieldsUpper()["LOCATION"]!, relativeTo: TUSClient.shared.uploadURL)
                     //Begin the upload
                     self.upload(forUpload: upload)
                 }
@@ -79,7 +79,8 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                 case 200..<300:
                     //success
                     if (chunks.count > position+1 ){
-                        upload.uploadOffset = httpResponse.allHeaderFields["upload-offset"] as! String
+                        
+                        upload.uploadOffset = httpResponse.allHeaderFieldsUpper()["UPLOAD-OFFSET"]
                         self.upload(forChunks: chunks, withUpload: upload, atPosition: position+1)
                     } else
                     if (httpResponse.statusCode == 204) {

@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="13771" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
-    <device id="retina4_7" orientation="portrait">
-        <adaptation id="fullscreen"/>
-    </device>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15705" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
+    <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="13772"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15706"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -20,11 +18,63 @@
                     <view key="view" contentMode="scaleToFill" id="kh9-bI-dsS">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="8Ah-xZ-IKx">
+                                <rect key="frame" x="145" y="332" width="85" height="30"/>
+                                <state key="normal" title="Upload Files"/>
+                                <connections>
+                                    <action selector="uploadAction:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="XO4-Hd-j6t"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="npe-mI-BQB">
+                                <rect key="frame" x="161" y="294" width="52" height="30"/>
+                                <state key="normal" title="Add file"/>
+                                <connections>
+                                    <action selector="addFileAction:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="c7v-Ob-QFe"/>
+                                </connections>
+                            </button>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="# of files ready for upload" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="B9l-rY-Gks">
+                                <rect key="frame" x="89" y="265" width="196" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="00/00" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fjF-aG-1VC">
+                                <rect key="frame" x="89" y="370" width="196" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="SkZ-Hi-3fU">
+                                <rect key="frame" x="16" y="399" width="343" height="3"/>
+                            </progressView>
+                        </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="SkZ-Hi-3fU" firstAttribute="top" secondItem="fjF-aG-1VC" secondAttribute="bottom" constant="8" id="7PR-aC-goc"/>
+                            <constraint firstItem="npe-mI-BQB" firstAttribute="top" secondItem="B9l-rY-Gks" secondAttribute="bottom" constant="8" id="8UO-3R-iYR"/>
+                            <constraint firstItem="B9l-rY-Gks" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="73" id="DPC-a5-hEh"/>
+                            <constraint firstItem="8Ah-xZ-IKx" firstAttribute="top" secondItem="npe-mI-BQB" secondAttribute="bottom" constant="8" id="F5n-jy-cob"/>
+                            <constraint firstItem="SkZ-Hi-3fU" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" id="GBP-ZS-Tk8"/>
+                            <constraint firstItem="8Ah-xZ-IKx" firstAttribute="centerX" secondItem="fjF-aG-1VC" secondAttribute="centerX" id="Hqp-2K-Kvo"/>
+                            <constraint firstItem="B9l-rY-Gks" firstAttribute="trailing" secondItem="fjF-aG-1VC" secondAttribute="trailing" id="JDj-ke-Szb"/>
+                            <constraint firstItem="B9l-rY-Gks" firstAttribute="leading" secondItem="fjF-aG-1VC" secondAttribute="leading" id="L3r-jA-nBu"/>
+                            <constraint firstItem="SkZ-Hi-3fU" firstAttribute="trailing" secondItem="kh9-bI-dsS" secondAttribute="trailingMargin" id="YbE-mC-VTk"/>
+                            <constraint firstItem="B9l-rY-Gks" firstAttribute="centerX" secondItem="npe-mI-BQB" secondAttribute="centerX" id="Zpp-uB-gin"/>
+                            <constraint firstItem="B9l-rY-Gks" firstAttribute="top" secondItem="jyV-Pf-zRb" secondAttribute="bottom" constant="265" id="jfL-vh-4fW"/>
+                            <constraint firstItem="fjF-aG-1VC" firstAttribute="centerX" secondItem="SkZ-Hi-3fU" secondAttribute="centerX" id="lVy-se-78v"/>
+                            <constraint firstItem="fjF-aG-1VC" firstAttribute="top" secondItem="8Ah-xZ-IKx" secondAttribute="bottom" constant="8" id="wTt-a8-kRM"/>
+                        </constraints>
                     </view>
+                    <connections>
+                        <outlet property="numberOfFilesLabel" destination="B9l-rY-Gks" id="hnq-nF-n90"/>
+                        <outlet property="progressBar" destination="SkZ-Hi-3fU" id="Kma-IO-ZFv"/>
+                        <outlet property="progressLabel" destination="fjF-aG-1VC" id="fc6-Ew-IQc"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="x5A-6p-PRh" sceneMemberID="firstResponder"/>
             </objects>
+            <point key="canvasLocation" x="136.80000000000001" y="124.58770614692655"/>
         </scene>
     </scenes>
 </document>

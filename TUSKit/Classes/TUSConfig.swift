@@ -10,7 +10,7 @@ import Foundation
 public struct TUSConfig {
     var uploadURL: URL
     var URLSessionConfig: URLSessionConfiguration = URLSessionConfiguration.default
-    public var debugLogEnabled: Bool = false
+    public var logLevel: TUSLogLevel = .Off
     
     public init(withUploadURLString uploadURLString: String, andSessionConfig sessionConfig: URLSessionConfiguration = URLSessionConfiguration.default) {
         self.uploadURL = URL(string: uploadURLString)!

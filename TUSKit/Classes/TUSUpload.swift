@@ -7,7 +7,34 @@
 
 import UIKit
 
-public class TUSUpload: NSObject {
+public class TUSUpload: NSObject, NSCoding {
+    public func encode(with coder: NSCoder) {
+        //
+        coder.encode(id, forKey: "id")
+        coder.encode(fileType, forKey: "fileType")
+        coder.encode(filePath, forKey: "filePath")
+        coder.encode(data, forKey: "data")
+        coder.encode(uploadLocationURL, forKey: "uploadLocationURL")
+        coder.encode(contentLength, forKey: "contentLength")
+        coder.encode(uploadLength, forKey: "uploadLength")
+        coder.encode(uploadOffset, forKey: "uploadOffset")
+        coder.encode(status, forKey: "status")
+
+    }
+    
+    public required init?(coder: NSCoder) {
+        //
+        id = coder.decodeObject(forKey:"id") as? String
+        fileType = coder.decodeObject(forKey:"fileType") as? String
+        filePath = coder.decodeObject(forKey:"filePath") as? URL
+        data = coder.decodeObject(forKey:"datas") as? Data
+        uploadLocationURL = coder.decodeObject(forKey:"uploadLocationURL") as? URL
+        contentLength = coder.decodeObject(forKey:"contentLength") as? String
+        uploadLength = coder.decodeObject(forKey:"uploadLength") as? String
+        uploadOffset = coder.decodeObject(forKey:"uploadOffset") as? String
+        status = coder.decodeObject(forKey:"status") as? TUSUploadStatus
+    }
+    
     
     // MARK: Properties
     var id: String?
@@ -15,55 +42,10 @@ public class TUSUpload: NSObject {
     var filePath: URL?
     var data: Data?
     public var uploadLocationURL: URL?
-
-    
-    var contentLength: String? {
-           get {
-               guard let contentLength = UserDefaults.standard.value(forKey: TUSConstants.defaultsContentLengthKey(forId: id!)) as? String else {
-                   return nil
-               }
-               return contentLength
-           }
-           set(contentLength) {
-               UserDefaults.standard.set(contentLength, forKey: String(format: "%@", TUSConstants.defaultsContentLengthKey(forId: id!)))
-           }
-       }
-    
-    var uploadLength: String? {
-        get {
-            guard let uploadLength = UserDefaults.standard.value(forKey: TUSConstants.defaultsUploadLengthKey(forId: id!)) as? String else {
-                return nil
-            }
-            return uploadLength
-        }
-        set(uploadLength) {
-            UserDefaults.standard.set(uploadLength, forKey: String(format: "%@", TUSConstants.defaultsUploadLengthKey(forId: id!)))
-        }
-    }
-    
-    var uploadOffset: String? {
-        get {
-            guard let uploadLength = UserDefaults.standard.value(forKey: TUSConstants.defaultsUploadOffsetKey(forId: id!)) as? String else {
-                return nil
-            }
-            return uploadLength
-        }
-        set(uploadLength) {
-            UserDefaults.standard.set(uploadLength, forKey: String(format: "%@", TUSConstants.defaultsUploadOffsetKey(forId: id!)))
-        }
-    }
-    
-    var status: TUSUploadStatus? {
-        get {
-            guard let status = UserDefaults.standard.value(forKey: TUSConstants.defaultsStatusKey(forId: id!)) as? String else {
-                return .new
-            }
-            return TUSUploadStatus(rawValue: status)
-        }
-        set(status) {
-            UserDefaults.standard.set(status?.rawValue, forKey: String(format: "%@", TUSConstants.defaultsStatusKey(forId: id!)))
-        }
-    }
+    var contentLength: String?
+    var uploadLength: String?
+    var uploadOffset: String?
+    var status: TUSUploadStatus?
     
     public init(withId id: String, andFilePathString filePathString: String, andFileType fileType: String) {
         super.init()

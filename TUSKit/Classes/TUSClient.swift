@@ -21,9 +21,10 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     private static var config: TUSConfig?
     internal var logger: TUSLogger
     public var chunkSize: Int = TUSConstants.chunkSize //Default chunksize can be overwritten
-    public var currentUploads: [TUSUpload]?
+//    public var currentUploads: [TUSUpload]?
     //TODO: Fix this
-//    public var currentUploads: [TUSUpload]? {
+    public var currentUploads: [TUSUpload]?
+    //{
 //        get {
 //            guard let data = UserDefaults.standard.object(forKey: TUSConstants.kSavedTUSUploadsDefaultsKey) as? Data else {
 //                return nil
@@ -59,20 +60,25 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         }
         uploadURL = config.uploadURL
         executor = TUSExecutor()
-        logger = TUSLogger(config.debugLogEnabled)
+        logger = TUSLogger(withLevel: config.logLevel, true)
         fileManager.createFileDirectory()
         super.init()
         tusSession = TUSSession(customConfiguration: config.URLSessionConfig, andDelegate: self)
-        currentUploads = []
-
+        
+        //If we have already ran this library and uploads, a currentUploads object would exist,
+        //if not, we'll get nil and won't be able to append. So create a blank array.
+        if (currentUploads == nil) {
+            currentUploads = []
+        }
+        
     }
     
     // MARK: Create methods
     
     public func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
-        currentUploads?.append(upload)
         let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
         if (fileManager.fileExists(withName: fileName) == false) {
+            upload.status = .new
             if (upload.filePath != nil) {
                 if fileManager.moveFile(atLocation: upload.filePath!, withFileName: fileName) == false{
                     //fail out
@@ -86,20 +92,25 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
             }
         }
         
-        switch upload.status {
-        case .paused, .created:
-            logger.log(String(format: "File %@ has been previously been created", upload.id!))
-            executor.upload(forUpload: upload)
-            break
-        case .new:
-            logger.log(String(format: "Creating file %@ on server", upload.id!))
-            upload.contentLength = "0"
-            upload.uploadOffset = "0"
-            upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
-            executor.create(forUpload: upload)
-            break
-        default:
-            print()
+        if (status == .ready) {
+            status = .uploading
+            
+            switch upload.status {
+            case .paused, .created:
+                logger.log(forLevel: .Info, withMessage:String(format: "File %@ has been previously been created", upload.id!))
+                executor.upload(forUpload: upload)
+                break
+            case .new:
+                logger.log(forLevel: .Info, withMessage:String(format: "Creating file %@ on server", upload.id!))
+                upload.contentLength = "0"
+                upload.uploadOffset = "0"
+                upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
+                currentUploads?.append(upload) //Save before creating on server
+                executor.create(forUpload: upload)
+                break
+            default:
+                print()
+            }
         }
     }
     
@@ -152,6 +163,16 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
         var upload = currentUploads![0]
         self.delegate?.TUSProgress(bytesUploaded: Int(upload.uploadOffset!)!, bytesRemaining: Int(upload.uploadLength!)!)
+    }
+    
+    //MARK: Helpers
+    
+    //TODO: Update the persistance
+    func updateUpload(_ upload: TUSUpload) {
+        let needleUploadIndex = currentUploads?.firstIndex(where: { $0.id == upload.id })
+        currentUploads![needleUploadIndex!] = upload
+        var updated = currentUploads
+        self.currentUploads = updated
     }
     
 }

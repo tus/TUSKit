@@ -39,12 +39,13 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         let task =  TUSClient.shared.tusSession.session.dataTask(with: request) { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 {
-                    TUSClient.shared.logger.log(String(format: "File %@ created", upload.id!))
+                    TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "File %@ created", upload.id!))
                     // Set the new status and other props for the upload
                     upload.status = .created
 //                    upload.contentLength = httpResponse.allHeaderFields["Content-Length"] as? String
                     upload.uploadLocationURL = URL(string: httpResponse.allHeaderFieldsUpper()["LOCATION"]!, relativeTo: TUSClient.shared.uploadURL)
                     //Begin the upload
+                    TUSClient.shared.updateUpload(upload)
                     self.upload(forUpload: upload)
                 }
             }
@@ -59,7 +60,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
          */
         //First we create chunks
         //MARK: FIX THIS
-        TUSClient.shared.logger.log(String(format: "Preparing upload data for file %@", upload.id!))
+        TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "Preparing upload data for file %@", upload.id!))
         let uploadData = try! Data(contentsOf: URL(fileURLWithPath: String(format: "%@%@%@", TUSClient.shared.fileManager.fileStorePath(), upload.id!, upload.fileType!)))
         upload.data = uploadData
 //        let chunks: [Data] = createChunks(forData: uploadData)
@@ -71,7 +72,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     }
     
     private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int) {
-        TUSClient.shared.logger.log(String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id!, position + 1, chunks.count))
+        TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id!, position + 1, chunks.count))
         let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Content-Type":"application/offset+octet-stream", "Upload-Offset": upload.uploadOffset!, "Content-Length": String(chunks[position].count)])
          let task = TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[position], completionHandler: { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
@@ -81,13 +82,20 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                     if (chunks.count > position+1 ){
                         
                         upload.uploadOffset = httpResponse.allHeaderFieldsUpper()["UPLOAD-OFFSET"]
+                        TUSClient.shared.updateUpload(upload)
                         self.upload(forChunks: chunks, withUpload: upload, atPosition: position+1)
                     } else
                     if (httpResponse.statusCode == 204) {
-                        TUSClient.shared.logger.log(String(format: "Chunk %u / %u complete", position + 1, chunks.count))
+                        TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "Chunk %u / %u complete", position + 1, chunks.count))
                         if (position + 1 == chunks.count) {
-                            TUSClient.shared.logger.log(String(format: "File %@ uploaded at %@", upload.id!, upload.uploadLocationURL!.absoluteString))
+                            TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "File %@ uploaded at %@", upload.id!, upload.uploadLocationURL!.absoluteString))
+                            TUSClient.shared.updateUpload(upload)
                             TUSClient.shared.delegate?.TUSSuccess(forUpload: upload)
+                            TUSClient.shared.currentUploads?.remove(at: 0)
+                            if (TUSClient.shared.currentUploads!.count > 0) {
+                                TUSClient.shared.status = .ready
+                                TUSClient.shared.createOrResume(forUpload: TUSClient.shared.currentUploads![0])
+                            }
                         }
                     }
                     break

@@ -11,11 +11,11 @@ internal class TUSLogger: NSObject {
     
     var enabled: Bool
     
-    init(_ enabled: Bool) {
+    init(withLevel level: TUSLogLevel ,_ enabled: Bool) {
         self.enabled = enabled
     }
     
-    func log(_ string: String) {
+    func log(forLevel level: TUSLogLevel ,withMessage string: String) {
         if enabled {
             print(String(format: "TUSKit: %@", string))
         }

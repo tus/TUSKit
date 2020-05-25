@@ -13,16 +13,40 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     
     let imagePicker = UIImagePickerController()
 
+    @IBOutlet weak var numberOfFilesLabel: UILabel!
+    @IBOutlet weak var progressLabel: UILabel!
+    @IBOutlet weak var progressBar: UIProgressView!
+    
+    var files: [URL] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
         //Image picker setup for example.
         imagePicker.sourceType = .photoLibrary
         imagePicker.delegate = self
-        present(imagePicker, animated: true, completion: nil)
         
         //Set the deleagte of TUSClient
         TUSClient.shared.delegate = self
+    }
+    
+    func updateLabel() {
+        numberOfFilesLabel.text = "\(files.count) of files ready for upload"
+    }
+    
+    @IBAction func addFileAction(_ sender: Any) {
+        present(imagePicker, animated: true, completion: nil)
+    }
+    
+    @IBAction func uploadAction(_ sender: Any) {
+        for file in files {
+            let number = Int.random(in: 0 ..< 100) //TODO: Remove before release: this is only set so we can run multiple files while developer
+            
+            //When you have a file, create an upload, and give it a Id.
+            let upload: TUSUpload = TUSUpload(withId: String(format: "%@%@", "img", String(number)), andFilePathURL: file, andFileType: ".jpeg")
+            //Create or resume upload
+        
+            TUSClient.shared.createOrResume(forUpload: upload)
+        }
     }
     
    
@@ -32,19 +56,12 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
             guard let imageURL = info[.imageURL] else {
                 return
             }
-            let number = Int.random(in: 0 ..< 100) //TODO: Remove before release: this is only set so we can run multiple files while developer
             
-            //When you have a file, create an upload, and give it a Id.
-            
-            
-            let upload: TUSUpload = TUSUpload(withId: String(format: "%@%@", "im", String(number)), andFilePathURL: imageURL as! URL, andFileType: ".jpeg")
-            //Create or resume upload
-            TUSClient.shared.createOrResume(forUpload: upload)
-
+            files.append(imageURL as! URL)
+            updateLabel()
         }
         
         dismiss(animated: true) {
-            self.present(self.imagePicker, animated: true, completion: nil) //Force reopen on close for testing purposes
         }
     }
 //
@@ -58,6 +75,8 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
         //
         print(uploaded)
                print(remaining)
+        self.progressLabel.text = "\(uploaded)/\(remaining)"
+        self.progressBar.progress = Float(uploaded) / Float(remaining)
     }
     
     func TUSProgress(forUpload upload: TUSUpload, bytesUploaded uploaded: Int, bytesRemaining remaining: Int) {

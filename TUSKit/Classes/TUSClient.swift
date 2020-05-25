@@ -79,6 +79,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
         if (fileManager.fileExists(withName: fileName) == false) {
             upload.status = .new
+            currentUploads?.append(upload)
             if (upload.filePath != nil) {
                 if fileManager.moveFile(atLocation: upload.filePath!, withFileName: fileName) == false{
                     //fail out
@@ -105,7 +106,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                 upload.contentLength = "0"
                 upload.uploadOffset = "0"
                 upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
-                currentUploads?.append(upload) //Save before creating on server
+                //currentUploads?.append(upload) //Save before creating on server
                 executor.create(forUpload: upload)
                 break
             default:

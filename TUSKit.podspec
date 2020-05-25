@@ -34,6 +34,8 @@ TODO: Add long description of the pod here.
 
   s.source_files = 'TUSKit/Classes/**/*'
   
+  s.dependency 'TLPhotoPicker'
+
   # s.resource_bundles = {
   #   'TUSKit' => ['TUSKit/Assets/*.png']
   # }

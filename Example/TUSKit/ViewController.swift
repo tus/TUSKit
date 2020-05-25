@@ -16,8 +16,11 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     @IBOutlet weak var numberOfFilesLabel: UILabel!
     @IBOutlet weak var progressLabel: UILabel!
     @IBOutlet weak var progressBar: UIProgressView!
+    @IBOutlet weak var numberOfFilesUploadingLabel: UILabel!
+    @IBOutlet weak var numberOfFileUploadLabel: UILabel!
     
     var files: [URL] = []
+    var numOfUploaded = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,6 +34,8 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     
     func updateLabel() {
         numberOfFilesLabel.text = "\(files.count) of files ready for upload"
+        numberOfFilesUploadingLabel.text = "\(String(describing: TUSClient.shared.currentUploads!.count)) files uploading"
+        numberOfFileUploadLabel.text = "\(numOfUploaded) files uploaded"
     }
     
     @IBAction func addFileAction(_ sender: Any) {
@@ -47,6 +52,7 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
         
             TUSClient.shared.createOrResume(forUpload: upload)
         }
+        updateLabel()
     }
     
    
@@ -87,6 +93,8 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     
     func TUSSuccess(forUpload upload: TUSUpload) {
         print(upload.uploadLocationURL)
+        numOfUploaded = numOfUploaded + 1
+        updateLabel()
         //
     }
     

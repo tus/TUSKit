@@ -27,14 +27,20 @@
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="npe-mI-BQB">
-                                <rect key="frame" x="161" y="294" width="52" height="30"/>
+                                <rect key="frame" x="161.5" y="294" width="52" height="30"/>
                                 <state key="normal" title="Add file"/>
                                 <connections>
                                     <action selector="addFileAction:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="c7v-Ob-QFe"/>
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="# of files ready for upload" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="B9l-rY-Gks">
-                                <rect key="frame" x="89" y="265" width="196" height="21"/>
+                                <rect key="frame" x="89" y="209" width="196" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="# of files uploaded" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cR9-w5-0PQ">
+                                <rect key="frame" x="116.5" y="267" width="142" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -46,28 +52,41 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="SkZ-Hi-3fU">
-                                <rect key="frame" x="16" y="399" width="343" height="3"/>
+                                <rect key="frame" x="16" y="399" width="343" height="2"/>
                             </progressView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="# of files uploading" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KZq-SQ-2ov">
+                                <rect key="frame" x="74" y="238" width="227" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="SkZ-Hi-3fU" firstAttribute="top" secondItem="fjF-aG-1VC" secondAttribute="bottom" constant="8" id="7PR-aC-goc"/>
-                            <constraint firstItem="npe-mI-BQB" firstAttribute="top" secondItem="B9l-rY-Gks" secondAttribute="bottom" constant="8" id="8UO-3R-iYR"/>
-                            <constraint firstItem="B9l-rY-Gks" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="73" id="DPC-a5-hEh"/>
-                            <constraint firstItem="8Ah-xZ-IKx" firstAttribute="top" secondItem="npe-mI-BQB" secondAttribute="bottom" constant="8" id="F5n-jy-cob"/>
-                            <constraint firstItem="SkZ-Hi-3fU" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" id="GBP-ZS-Tk8"/>
-                            <constraint firstItem="8Ah-xZ-IKx" firstAttribute="centerX" secondItem="fjF-aG-1VC" secondAttribute="centerX" id="Hqp-2K-Kvo"/>
-                            <constraint firstItem="B9l-rY-Gks" firstAttribute="trailing" secondItem="fjF-aG-1VC" secondAttribute="trailing" id="JDj-ke-Szb"/>
-                            <constraint firstItem="B9l-rY-Gks" firstAttribute="leading" secondItem="fjF-aG-1VC" secondAttribute="leading" id="L3r-jA-nBu"/>
-                            <constraint firstItem="SkZ-Hi-3fU" firstAttribute="trailing" secondItem="kh9-bI-dsS" secondAttribute="trailingMargin" id="YbE-mC-VTk"/>
-                            <constraint firstItem="B9l-rY-Gks" firstAttribute="centerX" secondItem="npe-mI-BQB" secondAttribute="centerX" id="Zpp-uB-gin"/>
-                            <constraint firstItem="B9l-rY-Gks" firstAttribute="top" secondItem="jyV-Pf-zRb" secondAttribute="bottom" constant="265" id="jfL-vh-4fW"/>
-                            <constraint firstItem="fjF-aG-1VC" firstAttribute="centerX" secondItem="SkZ-Hi-3fU" secondAttribute="centerX" id="lVy-se-78v"/>
-                            <constraint firstItem="fjF-aG-1VC" firstAttribute="top" secondItem="8Ah-xZ-IKx" secondAttribute="bottom" constant="8" id="wTt-a8-kRM"/>
+                            <constraint firstItem="8Ah-xZ-IKx" firstAttribute="top" secondItem="npe-mI-BQB" secondAttribute="bottom" constant="8" id="0fq-gf-UTo"/>
+                            <constraint firstItem="cR9-w5-0PQ" firstAttribute="centerX" secondItem="npe-mI-BQB" secondAttribute="centerX" id="6EN-us-5Uz"/>
+                            <constraint firstItem="npe-mI-BQB" firstAttribute="top" secondItem="cR9-w5-0PQ" secondAttribute="bottom" constant="6" id="6dS-nf-8xV"/>
+                            <constraint firstItem="cR9-w5-0PQ" firstAttribute="top" secondItem="KZq-SQ-2ov" secondAttribute="bottom" constant="8" id="AWZ-dh-Bgu"/>
+                            <constraint firstItem="KZq-SQ-2ov" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="58" id="KHT-7o-4Gv"/>
+                            <constraint firstItem="B9l-rY-Gks" firstAttribute="trailing" secondItem="fjF-aG-1VC" secondAttribute="trailing" id="PF1-sJ-PJr"/>
+                            <constraint firstItem="B9l-rY-Gks" firstAttribute="top" secondItem="jyV-Pf-zRb" secondAttribute="bottom" constant="209" id="RTJ-3M-cB7"/>
+                            <constraint firstItem="B9l-rY-Gks" firstAttribute="centerX" secondItem="KZq-SQ-2ov" secondAttribute="centerX" id="S2O-mt-IbG"/>
+                            <constraint firstItem="KZq-SQ-2ov" firstAttribute="centerX" secondItem="cR9-w5-0PQ" secondAttribute="centerX" id="SZg-Cy-iTd"/>
+                            <constraint firstItem="fjF-aG-1VC" firstAttribute="top" secondItem="8Ah-xZ-IKx" secondAttribute="bottom" constant="8" id="Sh4-rx-XYn"/>
+                            <constraint firstItem="B9l-rY-Gks" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="73" id="UmS-ul-Qx6"/>
+                            <constraint firstItem="fjF-aG-1VC" firstAttribute="centerX" secondItem="SkZ-Hi-3fU" secondAttribute="centerX" id="aL7-a8-mRo"/>
+                            <constraint firstItem="8Ah-xZ-IKx" firstAttribute="centerX" secondItem="fjF-aG-1VC" secondAttribute="centerX" id="cGj-wY-Tjt"/>
+                            <constraint firstItem="KZq-SQ-2ov" firstAttribute="top" secondItem="B9l-rY-Gks" secondAttribute="bottom" constant="8" id="h10-So-KMp"/>
+                            <constraint firstItem="SkZ-Hi-3fU" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" id="iUs-hp-Iri"/>
+                            <constraint firstItem="SkZ-Hi-3fU" firstAttribute="trailing" secondItem="kh9-bI-dsS" secondAttribute="trailingMargin" id="tR3-ce-mN0"/>
+                            <constraint firstItem="B9l-rY-Gks" firstAttribute="leading" secondItem="fjF-aG-1VC" secondAttribute="leading" id="uPU-cE-EQh"/>
+                            <constraint firstItem="SkZ-Hi-3fU" firstAttribute="top" secondItem="fjF-aG-1VC" secondAttribute="bottom" constant="8" id="wlU-nH-Zp7"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="numberOfFileUploadLabel" destination="cR9-w5-0PQ" id="PpA-vY-EO5"/>
                         <outlet property="numberOfFilesLabel" destination="B9l-rY-Gks" id="hnq-nF-n90"/>
+                        <outlet property="numberOfFilesUploadingLabel" destination="KZq-SQ-2ov" id="oeW-Zj-Yf1"/>
                         <outlet property="progressBar" destination="SkZ-Hi-3fU" id="Kma-IO-ZFv"/>
                         <outlet property="progressLabel" destination="fjF-aG-1VC" id="fc6-Ew-IQc"/>
                     </connections>

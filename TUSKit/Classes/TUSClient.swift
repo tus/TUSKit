@@ -77,6 +77,24 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     
     public func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
         let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
+        let tusName = String(format: "TUS-%@", fileName)
+        
+        if((UserDefaults.standard.data(forKey: tusName)) == nil) {
+            upload.status = .new
+            currentUploads?.append(upload)
+            if (upload.filePath != nil) {
+                do {
+                    let path = URL(fileURLWithPath: upload.filePath!.absoluteString)
+                    try UserDefaults.standard.set(Data(contentsOf: path), forKey: tusName)
+                } catch let error as NSError {
+                    logger.log(forLevel: .All, withMessage: error.debugDescription)
+                }
+            } else if(upload.data != nil) {
+                try UserDefaults.standard.set(upload.data!, forKey: tusName)
+            }
+        }
+        
+        /*
         if (fileManager.fileExists(withName: fileName) == false) {
             upload.status = .new
             currentUploads?.append(upload)
@@ -92,6 +110,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                 }
             }
         }
+         */
         
         if (status == .ready) {
             status = .uploading
@@ -105,7 +124,8 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                 logger.log(forLevel: .Info, withMessage:String(format: "Creating file %@ on server", upload.id!))
                 upload.contentLength = "0"
                 upload.uploadOffset = "0"
-                upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
+                //upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
+                upload.uploadLength = String(UserDefaults.standard.data(forKey: tusName)!.count)
                 //currentUploads?.append(upload) //Save before creating on server
                 executor.create(forUpload: upload)
                 break

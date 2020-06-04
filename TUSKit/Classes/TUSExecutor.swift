@@ -61,12 +61,15 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         //First we create chunks
         //MARK: FIX THIS
         TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "Preparing upload data for file %@", upload.id!))
-        let uploadData = try! Data(contentsOf: URL(fileURLWithPath: String(format: "%@%@%@", TUSClient.shared.fileManager.fileStorePath(), upload.id!, upload.fileType!)))
+//        let uploadData = try! Data(contentsOf: URL(fileURLWithPath: String(format: "%@%@%@", TUSClient.shared.fileManager.fileStorePath(), upload.id!, upload.fileType!)))
+        let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
+        let tusName = String(format: "TUS-%@", fileName)
+        let uploadData = try! UserDefaults.standard.data(forKey: tusName)
         upload.data = uploadData
 //        let chunks: [Data] = createChunks(forData: uploadData)
 //        print(chunks.count)
         
-        let chunks = dataIntoChunks(data: uploadData as NSData, chunkSize: 200000) as [Data]
+        let chunks = dataIntoChunks(data: uploadData as! NSData, chunkSize: 200000) as [Data]
         //Then we start the upload from the first chunk
         self.upload(forChunks: chunks, withUpload: upload, atPosition: 0)
     }

@@ -30,6 +30,16 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
         
         //Set the deleagte of TUSClient
         TUSClient.shared.delegate = self
+        
+        
+//        if let path = Bundle.main.path(forResource: "test", ofType:"mp4") {
+//           let number = Int.random(in: 0 ..< 100) //TODO: Remove before release: this is only set so we can run multiple files while developer
+//            let upload: TUSUpload = TUSUpload(withId: String(format: "%@%@", "video", String(number)), andFilePathURL: URL(fileURLWithPath: path), andFileType: ".mp4")
+//                //Create or resume upload
+//
+//                TUSClient.shared.createOrResume(forUpload: upload)
+//        }
+        
     }
     
     func updateLabel() {

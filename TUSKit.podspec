@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'TUSKit'
-  s.version          = '2.0.5.alpha'
+  s.version          = '2.0.6.alpha'
   s.summary          = 'A rewrite of TUSKit, in Swift'
   s.swift_version = '5.0'
 

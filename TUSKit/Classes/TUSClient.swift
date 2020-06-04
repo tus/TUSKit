@@ -90,7 +90,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                     logger.log(forLevel: .All, withMessage: error.debugDescription)
                 }
             } else if(upload.data != nil) {
-                try UserDefaults.standard.set(upload.data!, forKey: tusName)
+                UserDefaults.standard.set(upload.data!, forKey: tusName)
             }
         }
         

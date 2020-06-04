@@ -62,9 +62,10 @@ public class TUSUpload: NSObject, NSCoding {
         self.fileType = fileType
     }
     
-    public init(withId id: String, andData data: Data) {
+    public init(withId id: String, andData data: Data, andFileType fileType: String) {
         self.id = id
         self.data = data
+        self.fileType = fileType
     }
     
     public init(withId id: String) {

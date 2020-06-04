@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'TUSKit'
-  s.version          = '2.0.4.alpha'
+  s.version          = '2.0.5.alpha'
   s.summary          = 'A rewrite of TUSKit, in Swift'
   s.swift_version = '5.0'
 
@@ -34,8 +34,6 @@ TODO: Add long description of the pod here.
 
   s.source_files = 'TUSKit/Classes/**/*'
   
-  s.dependency 'TLPhotoPicker'
-
   # s.resource_bundles = {
   #   'TUSKit' => ['TUSKit/Assets/*.png']
   # }

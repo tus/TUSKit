@@ -15,7 +15,7 @@
 #import <UIKit/UIKit.h>
 #endif
 
-#define TUS_LOGGING_ENABLED 1
+#define TUS_LOGGING_ENABLED 0
 #if TUS_LOGGING_ENABLED
 #define TUSLog( s, ... ) NSLog( @"<%@:(%d)> %@", \
 [[NSString stringWithUTF8String:__FILE__] lastPathComponent], \

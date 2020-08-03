@@ -408,8 +408,6 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         [weakself.delegate saveUpload:weakself]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
         #if TARGET_OS_IPHONE
             [[UIApplication sharedApplication] endBackgroundTask:bgTask];
-        #elif defined TARGET_OS_OSX
-            [weakself cancel];
         #endif
         
         if (delayTime > 0) {
@@ -514,8 +512,6 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         [weakself.delegate saveUpload:weakself]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
         #if TARGET_OS_IPHONE
             [[UIApplication sharedApplication] endBackgroundTask:bgTask];
-        #elif defined TARGET_OS_OSX
-            [weakself cancel];
         #endif
         if (delayTime > 0) {
             __weak NSOperationQueue *weakQueue = [NSOperationQueue currentQueue];
@@ -610,8 +606,6 @@ typedef void(^NSURLSessionTaskCompletionHandler)(NSData * _Nullable data, NSURLR
         [weakself.delegate saveUpload:weakself]; // Save current state for reloading - only save when we get a call back, not at the start of one (because this is the only time the state changes)
         #if TARGET_OS_IPHONE
             [[UIApplication sharedApplication] endBackgroundTask:bgTask];
-        #elif defined TARGET_OS_OSX
-            [weakself cancel];
         #endif
         [weakself continueUpload]; // Continue upload, not resume, because we do not want to continue if cancelled.
     }];

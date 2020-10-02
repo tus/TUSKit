@@ -14,7 +14,7 @@
 #import <Photos/Photos.h>
 
 
-static NSString* const UPLOAD_ENDPOINT = @"https://master.tus.io/files/";
+static NSString* const UPLOAD_ENDPOINT = @"https://tusd.tusdemo.net/files/";
 static NSString* const FILE_NAME = @"tuskit_example";
 
 @interface TKViewController ()

@@ -21,7 +21,6 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     private static var config: TUSConfig?
     internal var logger: TUSLogger
     public var chunkSize: Int = TUSConstants.chunkSize //Default chunksize can be overwritten
-//    public var currentUploads: [TUSUpload]?
     //TODO: Fix this
     public var currentUploads: [TUSUpload]?
     //{
@@ -143,6 +142,11 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     
    public  func createOrResume(forUpload upload: TUSUpload) {
         //
+        createOrResume(forUpload: upload, withRetries: 0)
+    }
+    
+    public  func createOrResume(forUpload upload: TUSUpload, withCustomHeaders headers: [String: String]) {
+        self.executor.customHeaders = headers
         createOrResume(forUpload: upload, withRetries: 0)
     }
     

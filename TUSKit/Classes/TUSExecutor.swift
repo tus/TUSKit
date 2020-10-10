@@ -9,10 +9,12 @@ import UIKit
 
 class TUSExecutor: NSObject, URLSessionDelegate {
     
+    var customHeaders: [String: String] = [:]
+    
     // MARK: Private Networking / Upload methods
     
     private func urlRequest(withEndpoint endpoint: String, andMethod method: String, andContentLength contentLength: String, andUploadLength uploadLength: String, andFilename fileName: String, andHeaders headers: [String: String]) -> URLRequest {
-
+        
         return urlRequest(withFullURL: ((TUSClient.shared.uploadURL?.appendingPathComponent(endpoint))!), andMethod: method, andContentLength: contentLength, andUploadLength: uploadLength, andFilename: fileName, andHeaders: headers)
     }
     
@@ -25,7 +27,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         request.addValue(TUSConstants.TUSProtocolVersion, forHTTPHeaderField: "TUS-Resumable")
         request.addValue(String(format: "%@ %@", "filename", fileName.toBase64()), forHTTPHeaderField: "Upload-Metadata")
         
-        for header in headers {
+        for header in headers.merging(customHeaders, uniquingKeysWith: { (current, _) in current }) {
             request.addValue(header.value, forHTTPHeaderField: header.key)
         }
 

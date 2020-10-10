@@ -54,15 +54,15 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     
     @IBAction func uploadAction(_ sender: Any) {
         for file in files {
-            let number = Int.random(in: 0 ..< 100) //TODO: Remove before release: this is only set so we can run multiple files while developer
+            let number = Int.random(in: 0 ..< 1000) //TODO: Remove before release: this is only set so we can run multiple files while developer
             
             //When you have a file, create an upload, and give it a Id.
-            //let upload: TUSUpload = TUSUpload(withId: String(format: "%@%@", "img", String(number)), andFilePathURL: file, andFileType: ".jpeg")
-            var fileData = try! Data(contentsOf: file)
-            let upload: TUSUpload = TUSUpload(withId:  String(number), andData: fileData, andFileType: "jpeg")
-
+            let upload: TUSUpload = TUSUpload(withId: String(format: "%@%@", "img", String(number)), andFilePathURL: file, andFileType: ".jpeg")
+            //var fileData = try! Data(contentsOf: file)
+           // let upload: TUSUpload = TUSUpload(withId:  String(number), andData: fileData, andFileType: "jpeg")
+           // TUSUpload(withId: <#T##String#>, andFilePathURL: <#T##URL#>, andFileType: <#T##String#>)
             //Create or resume upload
-        
+           // URL(fileURLWithPath: String)
             TUSClient.shared.createOrResume(forUpload: upload)
         }
         updateLabel()

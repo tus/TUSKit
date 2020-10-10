@@ -79,38 +79,44 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
         let tusName = String(format: "TUS-%@", fileName)
         
-        if((UserDefaults.standard.data(forKey: tusName)) == nil) {
-            upload.status = .new
-            currentUploads?.append(upload)
-            if (upload.filePath != nil) {
-                do {
-                    let path = URL(fileURLWithPath: upload.filePath!.absoluteString)
-                    try UserDefaults.standard.set(Data(contentsOf: path), forKey: tusName)
-                } catch let error as NSError {
-                    logger.log(forLevel: .All, withMessage: error.debugDescription)
-                }
-            } else if(upload.data != nil) {
-                UserDefaults.standard.set(upload.data!, forKey: tusName)
-            }
-        }
+//        if((UserDefaults.standard.data(forKey: tusName)) == nil) {
+//            upload.status = .new
+//            currentUploads?.append(upload)
+//
+//            if (upload.filePath != nil) {
+//                do {
+//                    let path = URL(fileURLWithPath: upload.filePath!.absoluteString)
+//                    try UserDefaults.standard.set(Data(contentsOf: path), forKey: tusName)
+//                } catch let error as NSError {
+//                    logger.log(forLevel: .All, withMessage: error.debugDescription)
+//                }
+//            } else if(upload.data != nil) {
+//                UserDefaults.standard.set(upload.data!, forKey: tusName)
+//            }
+//        }
         
-        /*
+        
         if (fileManager.fileExists(withName: fileName) == false) {
+            logger.log(forLevel: .Info, withMessage:String(format: "File not found in local storage.", upload.id!))
             upload.status = .new
             currentUploads?.append(upload)
             if (upload.filePath != nil) {
                 if fileManager.moveFile(atLocation: upload.filePath!, withFileName: fileName) == false{
                     //fail out
+                    logger.log(forLevel: .Error, withMessage:String(format: "Failed to move file.", upload.id!))
+
                     return
                 }
             } else if(upload.data != nil) {
                 if fileManager.writeData(withData: upload.data!, andFileName: fileName) == false {
                     //fail out
+                    logger.log(forLevel: .Error, withMessage:String(format: "Failed to create file in local storage from data.", upload.id!))
+
                     return
                 }
             }
         }
-         */
+         
         
         if (status == .ready) {
             status = .uploading
@@ -124,8 +130,8 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                 logger.log(forLevel: .Info, withMessage:String(format: "Creating file %@ on server", upload.id!))
                 upload.contentLength = "0"
                 upload.uploadOffset = "0"
-                //upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
-                upload.uploadLength = String(UserDefaults.standard.data(forKey: tusName)!.count)
+                upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
+                //upload.uploadLength = String(UserDefaults.standard.data(forKey: tusName)!.count)
                 //currentUploads?.append(upload) //Save before creating on server
                 executor.create(forUpload: upload)
                 break

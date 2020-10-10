@@ -106,6 +106,7 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     
     func TUSSuccess(forUpload upload: TUSUpload) {
         print(upload.uploadLocationURL)
+        TUSClient.shared.getFile(forUpload: upload)
         numOfUploaded = numOfUploaded + 1
         updateLabel()
         //

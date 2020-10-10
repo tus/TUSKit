@@ -130,7 +130,6 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                 upload.contentLength = "0"
                 upload.uploadOffset = "0"
                 upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
-                //upload.uploadLength = String(UserDefaults.standard.data(forKey: tusName)!.count)
                 //currentUploads?.append(upload) //Save before creating on server
                 executor.create(forUpload: upload)
                 break
@@ -195,6 +194,13 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         var upload = currentUploads![0]
         self.delegate?.TUSProgress(bytesUploaded: Int(upload.uploadOffset!)!, bytesRemaining: Int(upload.uploadLength!)!)
     }
+    
+    // MARK: Methods for already uploaded files
+    
+    public func getFile(forUpload upload: TUSUpload) {
+        executor.get(forUpload: upload)
+    }
+
     
     //MARK: Helpers
     

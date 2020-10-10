@@ -97,8 +97,8 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                             TUSClient.shared.updateUpload(upload)
                             TUSClient.shared.delegate?.TUSSuccess(forUpload: upload)
                             TUSClient.shared.currentUploads?.remove(at: 0)
+                            TUSClient.shared.status = .ready
                             if (TUSClient.shared.currentUploads!.count > 0) {
-                                TUSClient.shared.status = .ready
                                 TUSClient.shared.createOrResume(forUpload: TUSClient.shared.currentUploads![0])
                             }
                         }
@@ -134,6 +134,16 @@ class TUSExecutor: NSObject, URLSessionDelegate {
             offset += size
         }
         return chunks
+    }
+    
+    // MARK: Private Networking / Other methods
+
+    internal func get(forUpload upload: TUSUpload) {
+        var request: URLRequest = URLRequest(url: upload.uploadLocationURL!, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
+        request.httpMethod = "GET"
+        let task = TUSClient.shared.tusSession.session.downloadTask(with: request) { (url, response, error) in
+            TUSClient.shared.logger.log(forLevel: .Info, withMessage:response!.description)
+        }
     }
 }
 

@@ -45,7 +45,7 @@ class TUSFileManager: NSObject {
     
     internal func writeData(withData data: Data, andFileName name: String) -> Bool {
         do {
-            try data.write(to: URL(string: fileStorePath().appending(name))!)
+            try data.write(to: URL(fileURLWithPath: fileStorePath().appending(name)))
             return true
         } catch let error as NSError {
             let response: TUSResponse = TUSResponse(message: "Failed writing data to file \(fileStorePath().appending(name))")

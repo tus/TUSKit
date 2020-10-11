@@ -18,7 +18,7 @@ public class TUSUpload: NSObject, NSCoding {
         coder.encode(contentLength, forKey: "contentLength")
         coder.encode(uploadLength, forKey: "uploadLength")
         coder.encode(uploadOffset, forKey: "uploadOffset")
-        coder.encode(status, forKey: "status")
+        coder.encode(status?.rawValue, forKey: "status")
 
     }
     
@@ -32,7 +32,7 @@ public class TUSUpload: NSObject, NSCoding {
         contentLength = coder.decodeObject(forKey:"contentLength") as? String
         uploadLength = coder.decodeObject(forKey:"uploadLength") as? String
         uploadOffset = coder.decodeObject(forKey:"uploadOffset") as? String
-        status = coder.decodeObject(forKey:"status") as? TUSUploadStatus
+        status = TUSUploadStatus(rawValue: coder.decodeObject(forKey: "status") as! String)
     }
     
     

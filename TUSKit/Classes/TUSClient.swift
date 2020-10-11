@@ -23,18 +23,18 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     public var chunkSize: Int = TUSConstants.chunkSize //Default chunksize can be overwritten
     //TODO: Fix this
     public var currentUploads: [TUSUpload]?
-    //{
-//        get {
-//            guard let data = UserDefaults.standard.object(forKey: TUSConstants.kSavedTUSUploadsDefaultsKey) as? Data else {
-//                return nil
-//            }
-//            return NSKeyedUnarchiver.unarchiveObject(with: data) as? [TUSUpload]
-//        }
-//        set(currentUploads) {
-//            let data = NSKeyedArchiver.archivedData(withRootObject: currentUploads!)
-//            UserDefaults.standard.set(data, forKey: TUSConstants.kSavedTUSUploadsDefaultsKey)
-//        }
-//    }
+    {
+        get {
+            guard let data = UserDefaults.standard.object(forKey: TUSConstants.kSavedTUSUploadsDefaultsKey) as? Data else {
+                return nil
+            }
+            return NSKeyedUnarchiver.unarchiveObject(with: data) as? [TUSUpload]
+        }
+        set(currentUploads) {
+            let data = NSKeyedArchiver.archivedData(withRootObject: currentUploads!)
+            UserDefaults.standard.set(data, forKey: TUSConstants.kSavedTUSUploadsDefaultsKey)
+        }
+    }
     
     public var status: TUSClientStaus? {
         get {

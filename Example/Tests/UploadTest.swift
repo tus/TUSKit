@@ -36,7 +36,7 @@ class UploadTest: XCTestCase, TUSDelegate {
         // Put setup code here. This method is called before the invocation of each test method in the class.
         uploadExpectation = expectation(description: "Success")
 
-        var config = TUSConfig(withUploadURLString: "https://master.tus.io/files")
+        var config = TUSConfig(withUploadURLString: "https://tusd.tusdemo.net/files")
         config.logLevel = .Off
         TUSClient.setup(with: config)
         TUSClient.shared.delegate = self

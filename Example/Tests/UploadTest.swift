@@ -32,12 +32,14 @@ class UploadTest: XCTestCase, TUSDelegate {
     
     private var uploadExpectation: XCTestExpectation!
     var uploadOne: TUSUpload?
+    var uploadTwo: TUSUpload?
+
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
         uploadExpectation = expectation(description: "Success")
 
         var config = TUSConfig(withUploadURLString: "https://tusd.tusdemo.net/files")
-        config.logLevel = .Off
+        config.logLevel = .All
         TUSClient.setup(with: config)
         TUSClient.shared.delegate = self
         let testBundle = Bundle.main
@@ -45,7 +47,8 @@ class UploadTest: XCTestCase, TUSDelegate {
         else { fatalError() }
         
         uploadOne = TUSUpload(withId: "TestFile", andFilePathURL: fileURL, andFileType: "jpg")
-        
+        uploadTwo = TUSUpload(withId: "TestFile", andData: Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")!, andFileType: "jpg")
+
         
     }
 
@@ -53,11 +56,13 @@ class UploadTest: XCTestCase, TUSDelegate {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
     
-    func uploadTest() throws {
-       
+    func testDataupload() throws {
+        TUSClient.shared.createOrResume(forUpload: uploadTwo!)
+        waitForExpectations(timeout: 100)
+        XCTAssertNotNil(uploadOne?.uploadLocationURL)
     }
 
-    func testExample() throws {
+    func testFileUpload() throws {
                TUSClient.shared.createOrResume(forUpload: uploadOne!)
                waitForExpectations(timeout: 100)
                XCTAssertNotNil(uploadOne?.uploadLocationURL)

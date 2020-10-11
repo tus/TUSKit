@@ -6,11 +6,12 @@
 //
 
 import Foundation
-public enum TUSLogLevel: String {
-    case Off = "off"
-    case All = "all"
-    case Debug = "debug"
-    case Info = "info"
-    case Warn = "warn"
-    case Error = "error"
+public enum TUSLogLevel: Int {
+    case Off = 0
+    case Debug = 2
+    case Info = 3
+    case Warn = 4
+    case Error = 5
+    case All = 6
+
 }

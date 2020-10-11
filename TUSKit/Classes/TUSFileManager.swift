@@ -54,6 +54,17 @@ class TUSFileManager: NSObject {
         }
     }
     
+    internal func deleteFile(withName name: String) -> Bool {
+        do {
+            try FileManager.default.removeItem(at: URL(fileURLWithPath: fileStorePath().appending(name)))
+                return true
+        } catch let error as NSError {
+            let response: TUSResponse = TUSResponse(message: "Failed deleting file \(name) from TUS folder storage")
+            TUSClient.shared.delegate?.TUSFailure(forUpload: nil, withResponse: response, andError: error)
+            return false
+        }
+    }
+    
     internal func sizeForLocalFilePath(filePath:String) -> UInt64 {
         do {
             let fileAttributes = try FileManager.default.attributesOfItem(atPath: filePath)

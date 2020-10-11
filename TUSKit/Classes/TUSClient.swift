@@ -74,6 +74,10 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     
     // MARK: Create methods
     
+    /// Create a file and upload to your TUS server with retries
+    /// - Parameters:
+    ///   - upload: the upload object
+    ///   - retries: number of retires to take if a call fails
     public func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
         let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
         let tusName = String(format: "TUS-%@", fileName)
@@ -139,11 +143,17 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         }
     }
     
+    /// Create a file and upload to your TUS server without retries
+    /// - Parameter upload: the upload object
    public  func createOrResume(forUpload upload: TUSUpload) {
         //
         createOrResume(forUpload: upload, withRetries: 0)
     }
     
+    /// Create a file and upload to your TUS server with custom headers
+    /// - Parameters:
+    ///   - upload: rhe upload object
+    ///   - headers: a dictionary of custom headers to send with the create/upload
     public  func createOrResume(forUpload upload: TUSUpload, withCustomHeaders headers: [String: String]) {
         self.executor.customHeaders = headers
         createOrResume(forUpload: upload, withRetries: 0)
@@ -151,24 +161,28 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     
     // MARK: Mass methods
     
+    /// Resume all uploads
     public func resumeAll() {
         for upload in currentUploads! {
             createOrResume(forUpload: upload)
         }
     }
     
+    /// Retry all uploads, even ones that failed
     public func retryAll() {
         for upload in currentUploads! {
             retry(forUpload: upload)
         }
     }
     
+    /// Cancel all uploads
     public func cancelAll() {
         for upload in currentUploads! {
             cancel(forUpload: upload)
         }
     }
     
+    /// Delete all temporary files
     public func cleanUp() {
         for upload in currentUploads! {
             cleanUp(forUpload: upload)
@@ -178,16 +192,26 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     
     // MARK: Methods for one upload
     
+    /// Retry an upload
+    /// - Parameter upload: the upload object
     public func retry(forUpload upload: TUSUpload) {
         executor.upload(forUpload: upload)
     }
     
+    /// Cancel an upload
+    /// - Parameter upload: the upload object
     public func cancel(forUpload upload: TUSUpload) {
         executor.cancel(forUpload: upload)
     }
     
+    /// Delete temporary files for an upload
+    /// - Parameter upload: the upload object
     public func cleanUp(forUpload upload: TUSUpload) {
         //Delete stuff here
+        let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
+        currentUploads?.remove(at: 0)
+        fileManager.deleteFile(withName: fileName)
+        logger.log(forLevel: .Info, withMessage: "file \(upload.id!) cleaned up")
     }
     
     public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
@@ -204,7 +228,15 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     
     //MARK: Helpers
     
+    /// Reset the state of TUSClient - maily used for debugging, can be very destructive
+    /// - Parameter newState: the new state
+    func resetState(to newState: TUSClientStaus) {
+        self.status = newState
+    }
+    
     //TODO: Update the persistance
+    /// Update an uploads data, used for persistence - not useful outside of the library
+    /// - Parameter upload: the upload object
     func updateUpload(_ upload: TUSUpload) {
         let needleUploadIndex = currentUploads?.firstIndex(where: { $0.id == upload.id })
         currentUploads![needleUploadIndex!] = upload

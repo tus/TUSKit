@@ -96,7 +96,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                             TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "File %@ uploaded at %@", upload.id!, upload.uploadLocationURL!.absoluteString))
                             TUSClient.shared.updateUpload(upload)
                             TUSClient.shared.delegate?.TUSSuccess(forUpload: upload)
-                            TUSClient.shared.currentUploads?.remove(at: 0)
+                            TUSClient.shared.cleanUp(forUpload: upload)
                             TUSClient.shared.status = .ready
                             if (TUSClient.shared.currentUploads!.count > 0) {
                                 TUSClient.shared.createOrResume(forUpload: TUSClient.shared.currentUploads![0])

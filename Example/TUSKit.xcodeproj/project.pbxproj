@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4D3BD4E125328B0F00084000 /* UploadTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3BD4E025328B0F00084000 /* UploadTest.swift */; };
+		4D3BD4E325328D4400084000 /* memeCat.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4D3BD4E225328D4400084000 /* memeCat.jpg */; };
 		4DA4E6EB2488BA8700F4581F /* test.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 4DA4E6EA2488BA8700F4581F /* test.mp4 */; };
 		4DE4B777247B7258009E5E4C /* TLPhotoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE4B775247B7258009E5E4C /* TLPhotoViewController.swift */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
@@ -14,7 +16,6 @@
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
-		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
 		9FCCF87CE1081395A0C8AAEB /* Pods_TUSKit_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6FBB424E4C6D62D374DF73A6 /* Pods_TUSKit_Example.framework */; };
 		AEB5243A79C258EA726EF0FA /* Pods_TUSKit_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9B7D55D4B450D6EEA518B111 /* Pods_TUSKit_Tests.framework */; };
 /* End PBXBuildFile section */
@@ -33,6 +34,8 @@
 		178E27EB1EA228D2A68B13FE /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		20578BE9B2C33456E6BC8985 /* TUSKit.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = TUSKit.podspec; path = ../TUSKit.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		40C0ABED9802BD92047C4052 /* Pods-TUSKit_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TUSKit_Tests.debug.xcconfig"; path = "Target Support Files/Pods-TUSKit_Tests/Pods-TUSKit_Tests.debug.xcconfig"; sourceTree = "<group>"; };
+		4D3BD4E025328B0F00084000 /* UploadTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadTest.swift; sourceTree = "<group>"; };
+		4D3BD4E225328D4400084000 /* memeCat.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = memeCat.jpg; sourceTree = "<group>"; };
 		4DA4E6EA2488BA8700F4581F /* test.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = test.mp4; sourceTree = "<group>"; };
 		4DE4B775247B7258009E5E4C /* TLPhotoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TLPhotoViewController.swift; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* TUSKit_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TUSKit_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -44,7 +47,6 @@
 		607FACDF1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		607FACE51AFB9204008FA782 /* TUSKit_Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TUSKit_Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
 		6FBB424E4C6D62D374DF73A6 /* Pods_TUSKit_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_TUSKit_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		81713AE59C42A73E3042DFD3 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		9B7D55D4B450D6EEA518B111 /* Pods_TUSKit_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_TUSKit_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -130,8 +132,8 @@
 		607FACE81AFB9204008FA782 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				607FACEB1AFB9204008FA782 /* Tests.swift */,
 				607FACE91AFB9204008FA782 /* Supporting Files */,
+				4D3BD4E025328B0F00084000 /* UploadTest.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -139,6 +141,7 @@
 		607FACE91AFB9204008FA782 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				4D3BD4E225328D4400084000 /* memeCat.jpg */,
 				607FACEA1AFB9204008FA782 /* Info.plist */,
 			);
 			name = "Supporting Files";
@@ -255,6 +258,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4D3BD4E325328D4400084000 /* memeCat.jpg in Resources */,
 				607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */,
 				607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */,
 				4DA4E6EB2488BA8700F4581F /* test.mp4 in Resources */,
@@ -379,7 +383,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				607FACEC1AFB9204008FA782 /* Tests.swift in Sources */,
+				4D3BD4E125328B0F00084000 /* UploadTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

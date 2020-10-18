@@ -4,8 +4,8 @@
 //
 //  Created by Mark Robert Masterson on 4/5/20.
 //
+import Foundation
 
-import UIKit
 
 public class TUSClient: NSObject, URLSessionTaskDelegate {
 

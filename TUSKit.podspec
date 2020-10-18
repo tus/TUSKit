@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'TUSKit'
-  s.version          = '2.1.0.alpha'
+  s.version          = '2.1.1.alpha'
   s.summary          = 'A rewrite of TUSKit, in Swift'
   s.swift_version = '5.0'
 
@@ -31,6 +31,7 @@ TODO: Add long description of the pod here.
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
   s.ios.deployment_target = '8.0'
+  s.osx.deployment_target = '10.10'
 
   s.source_files = 'TUSKit/Classes/**/*'
   

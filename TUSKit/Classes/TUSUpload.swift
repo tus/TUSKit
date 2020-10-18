@@ -5,7 +5,7 @@
 //  Created by Mark Robert Masterson on 4/5/20.
 //
 
-import UIKit
+import Foundation
 
 public class TUSUpload: NSObject, NSCoding {
     public func encode(with coder: NSCoder) {

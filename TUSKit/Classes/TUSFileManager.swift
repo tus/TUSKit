@@ -5,7 +5,7 @@
 //  Created by Mark Robert Masterson on 4/16/20.
 //
 
-import UIKit
+import Foundation
 
 class TUSFileManager: NSObject {
     // MARK: Private file storage methods

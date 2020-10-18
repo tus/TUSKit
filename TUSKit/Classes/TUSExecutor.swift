@@ -5,7 +5,7 @@
 //  Created by Mark Robert Masterson on 4/16/20.
 //
 
-import UIKit
+import Foundation
 
 class TUSExecutor: NSObject, URLSessionDelegate {
     

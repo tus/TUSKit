@@ -5,7 +5,7 @@
 //  Created by Mark Robert Masterson on 4/18/20.
 //
 
-import UIKit
+import Foundation
 
 internal class TUSLogger: NSObject {
     

@@ -69,6 +69,10 @@ var uploadObject = TUSUpload(withId: "Another Id to reference a file", andData: 
 //An existing upload
 var uploadObject = TUSUpload(withId: "Just an ID of a past upload") //Will fail out if data on the device matching the ID isn't found.
 
+//An upload with metadata
+var uploadObject = TUSUpload(withId: "Some Id to reference a file", andFile: "FilePathHere")
+uploadObject.metadata = ["hello": "world"]
+
 ```
 
 ## TUSClient

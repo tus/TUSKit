@@ -19,6 +19,7 @@ public class TUSUpload: NSObject, NSCoding {
         coder.encode(uploadLength, forKey: "uploadLength")
         coder.encode(uploadOffset, forKey: "uploadOffset")
         coder.encode(status?.rawValue, forKey: "status")
+        coder.encode(metadata, forKey: "metadata")
 
     }
     
@@ -33,6 +34,7 @@ public class TUSUpload: NSObject, NSCoding {
         id = coder.decodeObject(forKey: "id") as! String
         data = coder.decodeObject(forKey: "data") as? Data
         status = TUSUploadStatus(rawValue: coder.decodeObject(forKey: "status") as! String)
+        metadata = coder.decodeObject(forKey: "metadata") as! [String : String]
     }
     
     
@@ -46,6 +48,13 @@ public class TUSUpload: NSObject, NSCoding {
     var uploadLength: String?
     var uploadOffset: String?
     var status: TUSUploadStatus?
+    public var metadata: [String : String] = [:]
+    var encodedMetadata: String {
+        metadata["filename"] = id
+        return metadata.map { (key, value) in
+            "\(key) \(value.toBase64())"
+        }.joined(separator: ",")
+    }
     
     public init(withId id: String, andFilePathString filePathString: String, andFileType fileType: String) {
         self.id = id

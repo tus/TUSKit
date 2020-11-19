@@ -27,11 +27,11 @@ public class TUSUpload: NSObject, NSCoding {
         id = coder.decodeObject(forKey:"id") as? String
         fileType = coder.decodeObject(forKey:"fileType") as? String
         filePath = coder.decodeObject(forKey:"filePath") as? URL
-        data = coder.decodeObject(forKey:"datas") as? Data
         uploadLocationURL = coder.decodeObject(forKey:"uploadLocationURL") as? URL
         contentLength = coder.decodeObject(forKey:"contentLength") as? String
         uploadLength = coder.decodeObject(forKey:"uploadLength") as? String
         uploadOffset = coder.decodeObject(forKey:"uploadOffset") as? String
+        data = coder.decodeObject(forKey: "data") as? Data
         status = TUSUploadStatus(rawValue: coder.decodeObject(forKey: "status") as! String)
     }
     

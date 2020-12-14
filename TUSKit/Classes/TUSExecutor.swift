@@ -25,8 +25,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
 //        request.addValue(contentLength, forHTTPHeaderField: "Content-Length")
 //        request.addValue(uploadLength, forHTTPHeaderField: "Upload-Length")
         request.addValue(TUSConstants.TUSProtocolVersion, forHTTPHeaderField: "TUS-Resumable")
-        request.addValue(String(format: "%@ %@", "filename", fileName.toBase64()), forHTTPHeaderField: "Upload-Metadata")
-        
+
         for header in headers.merging(customHeaders, uniquingKeysWith: { (current, _) in current }) {
             request.addValue(header.value, forHTTPHeaderField: header.key)
         }
@@ -35,13 +34,13 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     }
     
     internal func create(forUpload upload: TUSUpload) {
-        var request: URLRequest = urlRequest(withEndpoint: "", andMethod: "POST", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Upload-Extension": "creation"])
+        var request: URLRequest = urlRequest(withEndpoint: "", andMethod: "POST", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id, andHeaders: ["Upload-Extension": "creation", "Upload-Metadata": upload.encodedMetadata])
         request.addValue(upload.contentLength!, forHTTPHeaderField: "Content-Length")
         request.addValue(upload.uploadLength!, forHTTPHeaderField: "Upload-Length")
         let task =  TUSClient.shared.tusSession.session.dataTask(with: request) { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 {
-                    TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "File %@ created", upload.id!))
+                    TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "File %@ created", upload.id))
                     // Set the new status and other props for the upload
                     upload.status = .created
 //                    upload.contentLength = httpResponse.allHeaderFields["Content-Length"] as? String
@@ -62,9 +61,9 @@ class TUSExecutor: NSObject, URLSessionDelegate {
          */
         //First we create chunks
         //MARK: FIX THIS
-        TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "Preparing upload data for file %@", upload.id!))
-        let uploadData = try! Data(contentsOf: URL(fileURLWithPath: String(format: "%@%@%@", TUSClient.shared.fileManager.fileStorePath(), upload.id!, upload.fileType!)))
-        let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
+        TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "Preparing upload data for file %@", upload.id))
+        let uploadData = try! Data(contentsOf: URL(fileURLWithPath: String(format: "%@%@%@", TUSClient.shared.fileManager.fileStorePath(), upload.id, upload.fileType!)))
+        let fileName = String(format: "%@%@", upload.id, upload.fileType!)
         let tusName = String(format: "TUS-%@", fileName)
         //let uploadData = try! UserDefaults.standard.data(forKey: tusName)
         //upload.data = uploadData
@@ -77,8 +76,8 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     }
     
     private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int) {
-        TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id!, position + 1, chunks.count))
-        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id!, andHeaders: ["Content-Type":"application/offset+octet-stream", "Upload-Offset": upload.uploadOffset!, "Content-Length": String(chunks[position].count)])
+        TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id, position + 1, chunks.count))
+        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id, andHeaders: ["Content-Type":"application/offset+octet-stream", "Upload-Offset": upload.uploadOffset!, "Content-Length": String(chunks[position].count), "Upload-Metadata": upload.encodedMetadata])
          let task = TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[position], completionHandler: { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
                 switch httpResponse.statusCode {
@@ -93,7 +92,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                     if (httpResponse.statusCode == 204) {
                         TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "Chunk %u / %u complete", position + 1, chunks.count))
                         if (position + 1 == chunks.count) {
-                            TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "File %@ uploaded at %@", upload.id!, upload.uploadLocationURL!.absoluteString))
+                            TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "File %@ uploaded at %@", upload.id, upload.uploadLocationURL!.absoluteString))
                             TUSClient.shared.updateUpload(upload)
                             TUSClient.shared.delegate?.TUSSuccess(forUpload: upload)
                             TUSClient.shared.cleanUp(forUpload: upload)

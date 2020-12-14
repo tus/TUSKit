@@ -79,25 +79,25 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     ///   - upload: the upload object
     ///   - retries: number of retires to take if a call fails
     public func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
-        let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
+        let fileName = String(format: "%@%@", upload.id, upload.fileType!)
         let tusName = String(format: "TUS-%@", fileName)
         
         
         if (fileManager.fileExists(withName: fileName) == false) {
-            logger.log(forLevel: .Info, withMessage:String(format: "File not found in local storage.", upload.id!))
+            logger.log(forLevel: .Info, withMessage:String(format: "File not found in local storage.", upload.id))
             upload.status = .new
             currentUploads?.append(upload)
             if (upload.filePath != nil) {
                 if fileManager.moveFile(atLocation: upload.filePath!, withFileName: fileName) == false{
                     //fail out
-                    logger.log(forLevel: .Error, withMessage:String(format: "Failed to move file.", upload.id!))
+                    logger.log(forLevel: .Error, withMessage:String(format: "Failed to move file.", upload.id))
 
                     return
                 }
             } else if(upload.data != nil) {
                 if fileManager.writeData(withData: upload.data!, andFileName: fileName) == false {
                     //fail out
-                    logger.log(forLevel: .Error, withMessage:String(format: "Failed to create file in local storage from data.", upload.id!))
+                    logger.log(forLevel: .Error, withMessage:String(format: "Failed to create file in local storage from data.", upload.id))
 
                     return
                 }
@@ -110,11 +110,11 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
             
             switch upload.status {
             case .paused, .created:
-                logger.log(forLevel: .Info, withMessage:String(format: "File %@ has been previously been created", upload.id!))
+                logger.log(forLevel: .Info, withMessage:String(format: "File %@ has been previously been created", upload.id))
                 executor.upload(forUpload: upload)
                 break
             case .new:
-                logger.log(forLevel: .Info, withMessage:String(format: "Creating file %@ on server", upload.id!))
+                logger.log(forLevel: .Info, withMessage:String(format: "Creating file %@ on server", upload.id))
                 upload.contentLength = "0"
                 upload.uploadOffset = "0"
                 upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
@@ -197,10 +197,10 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     /// - Parameter upload: the upload object
     public func cleanUp(forUpload upload: TUSUpload) {
         //Delete stuff here
-        let fileName = String(format: "%@%@", upload.id!, upload.fileType!)
+        let fileName = String(format: "%@%@", upload.id, upload.fileType!)
         currentUploads?.remove(at: 0)
         fileManager.deleteFile(withName: fileName)
-        logger.log(forLevel: .Info, withMessage: "file \(upload.id!) cleaned up")
+        logger.log(forLevel: .Info, withMessage: "file \(upload.id) cleaned up")
     }
     
     public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {

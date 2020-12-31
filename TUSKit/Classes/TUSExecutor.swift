@@ -13,18 +13,19 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     
     // MARK: Private Networking / Upload methods
     
-    private func urlRequest(withEndpoint endpoint: String, andMethod method: String, andContentLength contentLength: String, andUploadLength uploadLength: String, andFilename fileName: String, andHeaders headers: [String: String]) -> URLRequest {
-        
-        return urlRequest(withFullURL: ((TUSClient.shared.uploadURL?.appendingPathComponent(endpoint))!), andMethod: method, andContentLength: contentLength, andUploadLength: uploadLength, andFilename: fileName, andHeaders: headers)
-    }
-    
-    private func urlRequest(withFullURL url: URL, andMethod method: String, andContentLength contentLength: String, andUploadLength uploadLength: String, andFilename fileName: String, andHeaders headers: [String: String]) -> URLRequest {
+    private func urlRequest(withFullURL url: URL, andMethod method: String, andContentLength contentLength: String?, andUploadLength uploadLength: String?, andFilename fileName: String, andHeaders headers: [String: String]) -> URLRequest {
         
         var request: URLRequest = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
         request.httpMethod = method
-//        request.addValue(contentLength, forHTTPHeaderField: "Content-Length")
-//        request.addValue(uploadLength, forHTTPHeaderField: "Upload-Length")
         request.addValue(TUSConstants.TUSProtocolVersion, forHTTPHeaderField: "TUS-Resumable")
+        
+        if let contentLength = contentLength {
+            request.addValue(contentLength, forHTTPHeaderField: "Content-Length")
+        }
+        
+        if let uploadLength = uploadLength {
+            request.addValue(uploadLength, forHTTPHeaderField: "Upload-Length")
+        }
 
         for header in headers.merging(customHeaders, uniquingKeysWith: { (current, _) in current }) {
             request.addValue(header.value, forHTTPHeaderField: header.key)
@@ -34,9 +35,13 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     }
     
     internal func create(forUpload upload: TUSUpload) {
-        var request: URLRequest = urlRequest(withEndpoint: "", andMethod: "POST", andContentLength: upload.contentLength!, andUploadLength: upload.uploadLength!, andFilename: upload.id, andHeaders: ["Upload-Extension": "creation", "Upload-Metadata": upload.encodedMetadata])
-        request.addValue(upload.contentLength!, forHTTPHeaderField: "Content-Length")
-        request.addValue(upload.uploadLength!, forHTTPHeaderField: "Upload-Length")
+        let request = urlRequest(withFullURL: TUSClient.shared.uploadURL,
+                                 andMethod: "POST",
+                                 andContentLength: upload.contentLength,
+                                 andUploadLength: upload.uploadLength,
+                                 andFilename: upload.id,
+                                 andHeaders: ["Upload-Extension": "creation", "Upload-Metadata": upload.encodedMetadata])
+        
         let task =  TUSClient.shared.tusSession.session.dataTask(with: request) { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 {
@@ -63,14 +68,15 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         //MARK: FIX THIS
         TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "Preparing upload data for file %@", upload.id))
         let uploadData = try! Data(contentsOf: URL(fileURLWithPath: String(format: "%@%@%@", TUSClient.shared.fileManager.fileStorePath(), upload.id, upload.fileType!)))
-        let fileName = String(format: "%@%@", upload.id, upload.fileType!)
-        let tusName = String(format: "TUS-%@", fileName)
+//        let fileName = String(format: "%@%@", upload.id, upload.fileType!)
+//        let tusName = String(format: "TUS-%@", fileName)
         //let uploadData = try! UserDefaults.standard.data(forKey: tusName)
         //upload.data = uploadData
 //        let chunks: [Data] = createChunks(forData: uploadData)
 //        print(chunks.count)
         
-        let chunks = dataIntoChunks(data: uploadData as! NSData, chunkSize: 200000) as [Data]
+        let chunks = dataIntoChunks(data: uploadData,
+                                    chunkSize: TUSClient.shared.chunkSize * 1024 * 1024)
         //Then we start the upload from the first chunk
         self.upload(forChunks: chunks, withUpload: upload, atPosition: 0)
     }
@@ -122,15 +128,17 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         
     }
     
-    private func dataIntoChunks(data: NSData, chunkSize: Int) -> [NSData] {
-        var chunks = [NSData]()
-        let length = data.length
-        var offset = 0
-        while(offset < length) {
-            let size = length - offset > chunkSize ? chunkSize : length - offset
-            let chunk = data.subdata(with: NSMakeRange(offset, size))
-            chunks.append(chunk as NSData)
-            offset += size
+    private func dataIntoChunks(data: Data, chunkSize: Int) -> [Data] {
+        var chunks = [Data]()
+        var chunkStart = 0
+        while(chunkStart < data.count) {
+            let remaining = data.count - chunkStart
+            let nextChunkSize = min(chunkSize, remaining)
+            let chunkEnd = chunkStart + nextChunkSize
+            
+            chunks.append(data.subdata(in: chunkStart..<chunkEnd))
+            
+            chunkStart = chunkEnd
         }
         return chunks
     }

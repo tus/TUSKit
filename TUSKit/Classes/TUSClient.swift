@@ -164,6 +164,13 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         }
     }
     
+    /// Same as cancelAll
+    public func pauseAll() {
+        for upload in currentUploads! {
+            cancel(forUpload: upload)
+        }
+    }
+    
     /// Cancel all uploads
     public func cancelAll() {
         for upload in currentUploads! {
@@ -185,6 +192,11 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     /// - Parameter upload: the upload object
     public func retry(forUpload upload: TUSUpload) {
         executor.upload(forUpload: upload)
+    }
+    
+    //Same as cancel
+    public func pause(forUpload upload: TUSUpload) {
+        cancel(forUpload: upload)
     }
     
     /// Cancel an upload

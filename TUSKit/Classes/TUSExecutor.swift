@@ -10,6 +10,7 @@ import Foundation
 class TUSExecutor: NSObject, URLSessionDelegate {
     
     var customHeaders: [String: String] = [:]
+    private var sharedTask: URLSessionDataTask?
     
     // MARK: Private Networking / Upload methods
     
@@ -42,7 +43,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                                  andFilename: upload.id,
                                  andHeaders: ["Upload-Extension": "creation", "Upload-Metadata": upload.encodedMetadata])
         
-        let task =  TUSClient.shared.tusSession.session.dataTask(with: request) { (data, response, error) in
+        sharedTask =  TUSClient.shared.tusSession.session.dataTask(with: request) { (data, response, error) in
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 {
                     TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "File %@ created", upload.id))
@@ -56,7 +57,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                 }
             }
         }
-        task.resume()
+        sharedTask!.resume()
     }
     
     internal func upload(forUpload upload: TUSUpload) {
@@ -78,6 +79,8 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         let chunks = dataIntoChunks(data: uploadData,
                                     chunkSize: TUSClient.shared.chunkSize * 1024 * 1024)
         //Then we start the upload from the first chunk
+        upload.status = .uploading
+        TUSClient.shared.updateUpload(upload)
         self.upload(forChunks: chunks, withUpload: upload, atPosition: 0)
     }
     
@@ -93,7 +96,9 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                         
                         upload.uploadOffset = httpResponse.allHeaderFieldsUpper()["UPLOAD-OFFSET"]
                         TUSClient.shared.updateUpload(upload)
-                        self.upload(forChunks: chunks, withUpload: upload, atPosition: position+1)
+                        if (upload.status == TUSUploadStatus.uploading) {
+                            self.upload(forChunks: chunks, withUpload: upload, atPosition: position+1)
+                        }
                     } else
                     if (httpResponse.statusCode == 204) {
                         TUSClient.shared.logger.log(forLevel: .Info, withMessage:String(format: "Chunk %u / %u complete", position + 1, chunks.count))
@@ -125,7 +130,12 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     
     
     internal func cancel(forUpload upload: TUSUpload) {
-        
+        if (TUSClient.shared.currentUploads?.first?.id == upload.id) {
+            sharedTask?.cancel()
+        }
+        upload.status = .canceled
+        TUSClient.shared.updateUpload(upload)
+        TUSClient.shared.status = .ready
     }
     
     private func dataIntoChunks(data: Data, chunkSize: Int) -> [Data] {

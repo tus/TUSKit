@@ -13,7 +13,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     // MARK: Properties
     
     internal var tusSession: TUSSession = TUSSession()
-    public var uploadURL: URL?
+    public var uploadURL: URL 
     public var delegate: TUSDelegate?
     private let executor: TUSExecutor
     internal let fileManager: TUSFileManager = TUSFileManager()

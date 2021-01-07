@@ -32,28 +32,15 @@ class TUSFileManager: NSObject {
         return FileManager.default.fileExists(atPath: fileStorePath().appending(name))
     }
     
-    internal func moveFile(atLocation location: URL, withFileName name: String) -> Bool {
-        do {
-            try FileManager.default.moveItem(at: location, to: URL(fileURLWithPath: fileStorePath().appending(name)))
-            return true
-        } catch let error as NSError {
-            let response: TUSResponse = TUSResponse(message: "Failed moving file \(location.absoluteString) to \(fileStorePath().appending(name)) for TUS folder storage")
-            TUSClient.shared.delegate?.TUSFailure(forUpload: nil, withResponse: response, andError: error)
-            return false
-        }
+    internal func moveFile(atLocation location: URL, withFileName name: String) throws {
+        try FileManager.default.moveItem(at: location, to: URL(fileURLWithPath: fileStorePath().appending(name)))
     }
     
-    internal func writeData(withData data: Data, andFileName name: String) -> Bool {
-        do {
-            try data.write(to: URL(fileURLWithPath: fileStorePath().appending(name)))
-            return true
-        } catch let error as NSError {
-            let response: TUSResponse = TUSResponse(message: "Failed writing data to file \(fileStorePath().appending(name))")
-            TUSClient.shared.delegate?.TUSFailure(forUpload: nil, withResponse: response, andError: error)
-            return false
-        }
+    internal func writeData(withData data: Data, andFileName name: String) throws {
+        try data.write(to: URL(fileURLWithPath: fileStorePath().appending(name)))
     }
     
+    @discardableResult
     internal func deleteFile(withName name: String) -> Bool {
         do {
             try FileManager.default.removeItem(at: URL(fileURLWithPath: fileStorePath().appending(name)))

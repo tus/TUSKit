@@ -36,7 +36,7 @@ class TLPhotoViewController: UIViewController,TLPhotosPickerViewControllerDelega
         
         var file = selectedAssets[0].tempCopyMediaFile { (url, string) in
             //
-            var upload = TUSUpload(withId: "File", andFilePathURL: url, andFileType: ".jpeg")
+            var upload = TUSUpload(withId: "File", andFilePathURL: url, andFileExtension: ".jpeg")
             
             TUSClient.shared.createOrResume(forUpload: upload)
         }

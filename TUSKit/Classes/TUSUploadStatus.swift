@@ -7,11 +7,11 @@
 
 import Foundation
 
-public enum TUSUploadStatus: String {
-    case new = "new"
-    case created = "created"
-    case uploading = "uploading"
-    case paused = "paused"
-    case canceled = "canceled"
-    case finished = "finished"
+public enum TUSUploadStatus: String, Codable {
+    case new
+    case created
+    case uploading
+    case paused
+    case canceled
+    case finished
 }

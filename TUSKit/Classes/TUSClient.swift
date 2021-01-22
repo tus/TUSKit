@@ -80,7 +80,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     ///   - retries: number of retires to take if a call fails
     public func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
         let fileName = String(format: "%@%@", upload.id, upload.fileType!)
-        let tusName = String(format: "TUS-%@", fileName)
+        //let tusName = String(format: "TUS-%@", fileName)
         
         
         if (fileManager.fileExists(withName: fileName) == false) {
@@ -211,12 +211,15 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         //Delete stuff here
         let fileName = String(format: "%@%@", upload.id, upload.fileType!)
         currentUploads?.remove(at: 0)
-        fileManager.deleteFile(withName: fileName)
-        logger.log(forLevel: .Info, withMessage: "file \(upload.id) cleaned up")
+        if (fileManager.deleteFile(withName: fileName)) {
+            logger.log(forLevel: .Info, withMessage: "file \(upload.id) cleaned up")
+        } else {
+            logger.log(forLevel: .Error, withMessage: "file \(upload.id) failed cleaned up")
+        }
     }
     
     public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
-        var upload = currentUploads![0]
+        let upload = currentUploads![0]
         self.delegate?.TUSProgress(bytesUploaded: Int(upload.uploadOffset!)!, bytesRemaining: Int(upload.uploadLength!)!)
     }
     
@@ -241,7 +244,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     func updateUpload(_ upload: TUSUpload) {
         let needleUploadIndex = currentUploads?.firstIndex(where: { $0.id == upload.id })
         currentUploads![needleUploadIndex!] = upload
-        var updated = currentUploads
+        let updated = currentUploads
         self.currentUploads = updated
     }
     

@@ -57,7 +57,7 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
             let number = Int.random(in: 0 ..< 1000) //TODO: Remove before release: this is only set so we can run multiple files while developer
             
             //When you have a file, create an upload, and give it a Id.
-            var fileData = try! Data(contentsOf: file)
+            let fileData = try! Data(contentsOf: file)
             let upload: TUSUpload = TUSUpload(withId:  String(number), andData: fileData, andFileType: "jpeg")
             upload.metadata = ["hello": "world"]
             //Create or resume upload

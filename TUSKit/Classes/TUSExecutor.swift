@@ -158,6 +158,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     internal func get(forUpload upload: TUSUpload) {
         var request: URLRequest = URLRequest(url: upload.uploadLocationURL!, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
         request.httpMethod = "GET"
+        //TODO: Fix
         let task = TUSClient.shared.tusSession.session.downloadTask(with: request) { (url, response, error) in
             TUSClient.shared.logger.log(forLevel: .Info, withMessage:response!.description)
         }

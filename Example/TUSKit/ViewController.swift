@@ -89,24 +89,25 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     //MARK: TUSClient Deleagte
     
     func TUSProgress(bytesUploaded uploaded: Int, bytesRemaining remaining: Int) {
-        //
-        print(uploaded)
-               print(remaining)
+        print("Global upload: \(uploaded)/\(remaining)");
         self.progressLabel.text = "\(uploaded)/\(remaining)"
         self.progressBar.progress = Float(uploaded) / Float(remaining)
     }
     
     func TUSProgress(forUpload upload: TUSUpload, bytesUploaded uploaded: Int, bytesRemaining remaining: Int) {
-        //
-        print(uploaded)
-        print(remaining)
+        print("Upload for: \(upload.id) \(uploaded)/\(remaining)");
     }
     
     func TUSSuccess(forUpload upload: TUSUpload) {
         print(upload.uploadLocationURL)
         TUSClient.shared.getFile(forUpload: upload)
         numOfUploaded = numOfUploaded + 1
-        updateLabel()
+        // Delay the update a second, because we will get the pending uploads
+        // from TUS. After a upload has finished it may take some short amount of time after the
+        // persistence layer has been updated.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.updateLabel()
+        }
         //
     }
     

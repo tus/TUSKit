@@ -53,12 +53,15 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     }
     
     @IBAction func uploadAction(_ sender: Any) {
+        if (files.count <= 0 && TUSClient.shared.currentUploads!.count > 0) {
+            TUSClient.shared.resumeAll()
+        }
+        
         for file in files {
             let number = Int.random(in: 0 ..< 1000) //TODO: Remove before release: this is only set so we can run multiple files while developer
             
             //When you have a file, create an upload, and give it a Id.
-            var fileData = try! Data(contentsOf: file)
-            let upload: TUSUpload = TUSUpload(withId:  String(number), andData: fileData, andFileType: "jpeg")
+            let upload: TUSUpload = TUSUpload(withId:  String(number), andFilePathURL: file, andFileType: ".jpeg")
             upload.metadata = ["hello": "world"]
             //Create or resume upload
             TUSClient.shared.createOrResume(forUpload: upload, withCustomHeaders: ["Header": "Value"])

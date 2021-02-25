@@ -57,7 +57,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                 }
             }
         }
-        task.resume()
+        sharedTask!.resume()
     }
 
     internal func upload(forUpload upload: TUSUpload) {
@@ -80,7 +80,9 @@ class TUSExecutor: NSObject, URLSessionDelegate {
 
         let chunks = dataIntoChunks(data: uploadData,
                                     chunkSize: TUSClient.shared.chunkSize * 1024 * 1024)
-        // Then we start the upload from the first chunk
+        //Then we start the upload from the first chunk
+        upload.status = .uploading
+        TUSClient.shared.updateUpload(upload)
         uploadInBackground(forChunks: chunks, withUpload: upload, atPosition: 0)
     }
 
@@ -134,8 +136,10 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                     if chunks.count > position + 1 {
                         upload.uploadOffset = httpResponse.allHeaderFieldsUpper()["UPLOAD-OFFSET"]
                         TUSClient.shared.updateUpload(upload)
-                        let taskForNextChunk = self.upload(forChunks: chunks, withUpload: upload, atPosition: position + 1, completion: completion)
-                        self.pendingUploadTasks[upload.id] = taskForNextChunk
+                        if (upload.status == TUSUploadStatus.uploading) {
+                            let taskForNextChunk = self.upload(forChunks: chunks, withUpload: upload, atPosition: position + 1, completion: completion)
+                            self.pendingUploadTasks[upload.id] = taskForNextChunk
+                        }
                     } else
                     if httpResponse.statusCode == 204 {
                         TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "Chunk %u / %u complete", position + 1, chunks.count))
@@ -176,14 +180,15 @@ class TUSExecutor: NSObject, URLSessionDelegate {
 
     internal func cancel(forUpload upload: TUSUpload, error _: Error?) {
         let task = pendingUploadTasks[upload.id]
-        if task == nil {
+        if task != nil {
             TUSClient.shared.logger.log(forLevel: .Error, withMessage: String(format: "No pending task detected for the upload you are trying to cancel.", upload.id))
-            return
+        } else {
+            task?.cancel()
         }
         upload.status = .canceled
         TUSClient.shared.updateUpload(upload)
         TUSClient.shared.delegate?.TUSFailure(forUpload: upload, withResponse: TUSResponse(message: "Upload was canceled."), andError: nil)
-        task?.cancel()
+        TUSClient.shared.status = .ready
     }
 
     private func dataIntoChunks(data: Data, chunkSize: Int) -> [Data] {
@@ -206,8 +211,9 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     internal func get(forUpload upload: TUSUpload) {
         var request = URLRequest(url: upload.uploadLocationURL!, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
         request.httpMethod = "GET"
-        let task = TUSClient.shared.tusSession.session.downloadTask(with: request) { _, response, _ in
-            TUSClient.shared.logger.log(forLevel: .Info, withMessage: response!.description)
+        // TODO: Fix
+        let task = TUSClient.shared.tusSession.session.downloadTask(with: request) { (url, response, error) in
+            TUSClient.shared.logger.log(forLevel: .Info, withMessage:response!.description)
         }
     }
 }

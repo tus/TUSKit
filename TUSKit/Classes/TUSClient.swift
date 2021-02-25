@@ -173,6 +173,13 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         }
     }
 
+    /// Same as cancelAll
+    public func pauseAll() {
+        for upload in currentUploads! {
+            cancel(forUpload: upload)
+        }
+    }
+
     /// Cancel all uploads
     public func cancelAll() {
         for upload in currentUploads! {
@@ -195,6 +202,11 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         executor.upload(forUpload: upload)
     }
 
+    //Same as cancel
+    public func pause(forUpload upload: TUSUpload) {
+        cancel(forUpload: upload)
+    }
+
     /// Cancel an upload
     /// - Parameter upload: the upload object
     public func cancel(forUpload upload: TUSUpload) {
@@ -215,8 +227,11 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
 
         // Try to delete any tmp files
         let fileName = String(format: "%@%@", upload.id, upload.fileType!)
-        fileManager.deleteFile(withName: fileName)
-        logger.log(forLevel: .Info, withMessage: "file \(upload.id) cleaned up")
+        if (fileManager.deleteFile(withName: fileName)) {
+            logger.log(forLevel: .Info, withMessage: "file \(upload.id) cleaned up")
+        } else {
+            logger.log(forLevel: .Error, withMessage: "file \(upload.id) failed cleaned up")
+        }
     }
 
     public func urlSession(_: URLSession, task _: URLSessionTask, didSendBodyData _: Int64, totalBytesSent: Int64, totalBytesExpectedToSend _: Int64) {

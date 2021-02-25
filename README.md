@@ -14,6 +14,10 @@ An iOS client written in `Swift` for [tus resumable upload protocol](http://tus.
 //TODO: Fill example here
 
 ```
+# Contributing
+
+Please take a peak at our [contributing guidelines](https://github.com/tus/TUSKit/blob/master/.github/CONTRIBUTING.md) for issues and PRs!
+
 
 # Usage
 

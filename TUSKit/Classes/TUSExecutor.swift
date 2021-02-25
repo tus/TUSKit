@@ -96,6 +96,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                 // End the task if time expires.
                 UIApplication.shared.endBackgroundTask(self.pendingBackgrounTaskIDs[upload.id]!)
                 self.cancel(forUpload: upload, error: nil)
+                TUSClient.shared.status = .ready
                 self.pendingBackgrounTaskIDs[upload.id] = .invalid
             }
 

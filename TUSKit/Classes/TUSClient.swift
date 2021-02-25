@@ -91,7 +91,6 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     ///   - retries: number of retires to take if a call fails
     public func createOrResume(forUpload upload: TUSUpload, withRetries _: Int) {
         let fileName = String(format: "%@%@", upload.id, upload.fileType!)
-        let tusName = String(format: "TUS-%@", fileName)
 
         if fileManager.fileExists(withName: fileName) == false {
             logger.log(forLevel: .Info, withMessage: String(format: "File not found in local storage.", upload.id))
@@ -101,7 +100,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                 currentUploads?.append(upload)
             }
             if upload.filePath != nil {
-                if fileManager.moveFile(atLocation: upload.filePath!, withFileName: fileName) == false {
+                if fileManager.copyFile(atLocation: upload.filePath!, withFileName: fileName) == false {
                     // fail out
                     logger.log(forLevel: .Error, withMessage: String(format: "Failed to move file.", upload.id))
                     cleanUp(forUpload: upload)

@@ -31,10 +31,10 @@ class TUSFileManager: NSObject {
     internal func fileExists(withName name: String) -> Bool {
         return FileManager.default.fileExists(atPath: fileStorePath().appending(name))
     }
-    
-    internal func moveFile(atLocation location: URL, withFileName name: String) -> Bool {
+
+    internal func copyFile(atLocation location: URL, withFileName name: String) -> Bool {
         do {
-            try FileManager.default.moveItem(at: location, to: URL(fileURLWithPath: fileStorePath().appending(name)))
+            try FileManager.default.copyItem(at: location, to: URL(fileURLWithPath: fileStorePath().appending(name)))
             return true
         } catch let error as NSError {
             let response: TUSResponse = TUSResponse(message: "Failed moving file \(location.absoluteString) to \(fileStorePath().appending(name)) for TUS folder storage")

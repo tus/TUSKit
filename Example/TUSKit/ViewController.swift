@@ -53,8 +53,9 @@ class ViewController: UIViewController, TUSDelegate, UIImagePickerControllerDele
     }
     
     @IBAction func uploadAction(_ sender: Any) {
-        if (files.count <= 0 && TUSClient.shared.currentUploads!.count > 0) {
+        if (TUSClient.shared.status == TUSClientStaus.ready && TUSClient.shared.currentUploads!.count > 0) {
             TUSClient.shared.resumeAll()
+            return;
         }
         
         for file in files {

@@ -57,7 +57,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                 }
             }
         }
-        sharedTask!.resume()
+        task.resume()
     }
 
     internal func upload(forUpload upload: TUSUpload) {

@@ -92,15 +92,12 @@ class TUSExecutor: NSObject, URLSessionDelegate {
             
             // Do the work:
             if (skipResumeCheck) {
-                print("IMMEDIATLY START WITH UPLOAD :stonks:")
                 let data = upload.getData()
                 let chunks = self.dataIntoChunks(data: data, chunkSize: TUSClient.shared.chunkSize)
                 startUpload(chunks: chunks)
             } else {
-                print("RESUME UPLOAD :grin: :stonks:")
                 self.prepareUpload(forUpload: upload) { (chunks, skipUploadMarkSuccess) in
                     if (skipUploadMarkSuccess) {
-                        print("WTF HANDLED EDGE CASE; INSANE!!")
                         self.handleUploadSuccess(upload: upload, completion: uploadFinishedCallback)
                     } else {
                         startUpload(chunks: chunks)

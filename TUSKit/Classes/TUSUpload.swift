@@ -19,6 +19,7 @@ public class TUSUpload: NSObject, NSCoding {
         coder.encode(uploadLength, forKey: "uploadLength")
         coder.encode(uploadOffset, forKey: "uploadOffset")
         coder.encode(status?.rawValue, forKey: "status")
+        coder.encode(prevStatus?.rawValue, forKey: "prevStatus")
         coder.encode(metadata, forKey: "metadata")
 
     }
@@ -35,9 +36,13 @@ public class TUSUpload: NSObject, NSCoding {
         data = coder.decodeObject(forKey: "data") as? Data
         status = TUSUploadStatus(rawValue: coder.decodeObject(forKey: "status") as! String)
         metadata = coder.decodeObject(forKey: "metadata") as! [String : String]
+        
+        // Migration safe: in previous versions this field did not exists so we set it in a safe manner
+        let prevStatusString = coder.decodeObject(forKey: "prevStatus") as? String
+        prevStatus = prevStatusString != nil ? TUSUploadStatus(rawValue: prevStatusString!) : nil
     }
     
-    
+
     // MARK: Properties
     public let id: String
     var fileType: String? // TODO: Make sure only ".fileExtension" gets set. Current setup sets fileType as something like "1A1F31FE6-BB39-4A78-AECD-3C9BDE6D129E.jpeg"
@@ -47,7 +52,18 @@ public class TUSUpload: NSObject, NSCoding {
     var contentLength: String?
     var uploadLength: String?
     var uploadOffset: String?
-    var status: TUSUploadStatus?
+    var status: TUSUploadStatus?{
+        // When the status updates we want to update the previous status
+        didSet {
+            // Don't update the previous state in the following cases (because we need to know whether a
+            // upload state was created/new/uploading (when calling `cancel` mutliple times we would
+            // loose this information).
+            if (oldValue != TUSUploadStatus.canceled && oldValue != TUSUploadStatus.paused) {
+                prevStatus = oldValue
+            }
+        }
+    }
+    var prevStatus: TUSUploadStatus?
     public var metadata: [String : String] = [:]
     var encodedMetadata: String {
         metadata["filename"] = id

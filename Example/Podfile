@@ -2,6 +2,7 @@ use_frameworks!
 
 target 'TUSKit_Example' do
   pod 'TUSKit', :path => '../'
+  pod 'TLPhotoPicker'
 
   target 'TUSKit_Tests' do
     inherit! :search_paths

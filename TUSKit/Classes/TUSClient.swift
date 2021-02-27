@@ -25,7 +25,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     public static let shared = TUSClient()
     public static var config: TUSConfig?
     internal var logger: TUSLogger
-    public var chunkSize: Int = TUSConstants.chunkSize // Default chunksize can be overwritten
+    public var chunkSize: Int = TUSConstants.chunkSize * 1024 * 1024 // Default chunksize can be overwritten
     // TODO: Fix this
     public var currentUploads: [TUSUpload]? {
         get {
@@ -81,6 +81,22 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         if currentUploads == nil {
             currentUploads = []
         }
+
+        // Listen to applicationWillTerminate events to reset queue in this case
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(applicationWillTerminate(notification:)),
+                                               name: UIApplication.willTerminateNotification,
+                                               object: nil)
+    }
+    
+    @objc
+    func applicationWillTerminate(notification: Notification) {
+        cancelAll()
+        resetState(to: TUSClientStaus.ready)
+    }
+
+    deinit {
+      NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: Create methods
@@ -118,20 +134,30 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
 
         if status == .ready {
             status = .uploading
-
+            
+            // if upload.status is canceled or paused, reset it to its previous state
+            if (upload.status == TUSUploadStatus.canceled || upload.status == TUSUploadStatus.paused) {
+                // the file was uploading when it got canceled -> we reset it to .creating
+                if (upload.prevStatus == TUSUploadStatus.uploading) {
+                    upload.status = .created
+                } else {
+                    upload.status = upload.prevStatus
+                }
+                TUSClient.shared.updateUpload(upload)
+            }
+            
             switch upload.status {
-            case .paused, .created:
+            case .created:
                 logger.log(forLevel: .Info, withMessage: String(format: "File %@ has been previously been created", upload.id))
-                executor.upload(forUpload: upload)
+                executor.uploadInBackground(upload: upload)
             case .new:
                 logger.log(forLevel: .Info, withMessage: String(format: "Creating file %@ on server", upload.id))
                 upload.contentLength = "0"
                 upload.uploadOffset = "0"
                 upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
-                // currentUploads?.append(upload) //Save before creating on server
                 executor.create(forUpload: upload)
             default:
-                logger.log(forLevel: .Error, withMessage: String(format: "Unhandeled status %@ of upload in #createOrResume.", upload.status?.rawValue ?? "NO STATUS SET"))
+                logger.log(forLevel: .Error, withMessage: String(format: "Unhandled status %@ of upload in #createOrResume.", upload.status?.rawValue ?? "NO STATUS SET"))
             }
         }
     }
@@ -199,7 +225,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     /// Retry an upload
     /// - Parameter upload: the upload object
     public func retry(forUpload upload: TUSUpload) {
-        executor.upload(forUpload: upload)
+        executor.uploadInBackground(upload: upload)
     }
 
     //Same as cancel

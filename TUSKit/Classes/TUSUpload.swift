@@ -101,4 +101,8 @@ public class TUSUpload: NSObject, NSCoding {
         
         super.init()
     }
+    
+    public func getStatus() -> TUSUploadStatus? {
+        return status
+    }
 }

@@ -39,6 +39,16 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
             UserDefaults.standard.set(data, forKey: TUSConstants.kSavedTUSUploadsDefaultsKey)
         }
     }
+    
+    /// Returns all uploads that are not marked as failed
+    public func pendingUploads() -> [TUSUpload] {
+        if currentUploads == nil {
+            return []
+        }
+        return currentUploads!.filter({ (_upload) -> Bool in
+            return _upload.status != .failed
+        })
+    }
 
     internal func currentUploadsHas(element: TUSUpload) -> Bool {
         let index = currentUploads?.firstIndex(where: { (_element) -> Bool in
@@ -157,6 +167,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                 upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))
                 executor.create(forUpload: upload)
             default:
+                status = .ready
                 logger.log(forLevel: .Error, withMessage: String(format: "Unhandled status %@ of upload in #createOrResume.", upload.status?.rawValue ?? "NO STATUS SET"))
             }
         }
@@ -270,11 +281,12 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         delegate?.TUSProgress(forUpload: upload, bytesUploaded: Int(upload.uploadOffset ?? "0")! + Int(totalBytesSent), bytesRemaining: Int(upload.uploadLength ?? "0")!)
 
         // Notify  progress for global uploads
-        let totalUploadedBytes = currentUploads?.reduce(0) { prev, _upload in prev + (Int(_upload.uploadOffset ?? "0")!) }
-        let totalBytes = currentUploads?.reduce(0) { prev, _upload in prev + (Int(_upload.uploadLength ?? "0")!) }
+        let pendingUploads = self.pendingUploads()
+        let totalUploadedBytes = pendingUploads.reduce(0) { prev, _upload in prev + (Int(_upload.uploadOffset ?? "0")!) }
+        let totalBytes = pendingUploads.reduce(0) { prev, _upload in prev + (Int(_upload.uploadLength ?? "0")!) }
 
-        if totalBytes != nil, totalUploadedBytes != nil {
-            delegate?.TUSProgress(bytesUploaded: totalUploadedBytes! + Int(totalBytesSent), bytesRemaining: totalBytes!)
+        if (totalBytes > 0) {
+            delegate?.TUSProgress(bytesUploaded: totalUploadedBytes + Int(totalBytesSent), bytesRemaining: totalBytes)
         }
     }
 

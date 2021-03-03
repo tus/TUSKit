@@ -58,7 +58,7 @@ public class TUSUpload: NSObject, NSCoding {
             // Don't update the previous state in the following cases (because we need to know whether a
             // upload state was created/new/uploading (when calling `cancel` mutliple times we would
             // loose this information).
-            if (oldValue != TUSUploadStatus.canceled && oldValue != TUSUploadStatus.paused) {
+            if (oldValue != TUSUploadStatus.canceled && oldValue != TUSUploadStatus.paused && oldValue != TUSUploadStatus.failed) {
                 prevStatus = oldValue
             }
         }

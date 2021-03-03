@@ -53,7 +53,11 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                     // Begin the upload
                     TUSClient.shared.updateUpload(upload)
                     self.uploadInBackground(upload: upload, skipResumeCheck: true)
+                } else {
+                    self.cancel(forUpload: upload, error: NSError(domain: "", code: httpResponse.statusCode, userInfo: nil), failed: true)
                 }
+            } else {
+                self.cancel(forUpload: upload, error: nil, failed: true)
             }
         }
         task.resume()
@@ -157,11 +161,9 @@ class TUSExecutor: NSObject, URLSessionDelegate {
             cancel(forUpload: upload, error: error)
             TUSClient.shared.status = .ready
             completion(false)
-            // FIXME: this will always retry the same upload that has failed.
-            //        a failed upload is likely to fail again (why is that?)
-            //        Should probably be handled with retry count, and mark as failed or something.
-            if TUSClient.shared.currentUploads!.count > 0 {
-                TUSClient.shared.createOrResume(forUpload: TUSClient.shared.currentUploads![0])
+            let pendingUploads = TUSClient.shared.pendingUploads()
+            if pendingUploads.count > 0 {
+                TUSClient.shared.createOrResume(forUpload: pendingUploads[0])
             }
         }
 
@@ -217,23 +219,24 @@ class TUSExecutor: NSObject, URLSessionDelegate {
 
         // Run next task for uploading, when there are any.
         // Don't run next tasks when app is in background and upload mode is not `TUSBackgroundMode.PreferUploadQueue`
-        if TUSClient.shared.currentUploads!.count > 0 && (uploadWholeQueueInBackground || !isAppBackground) {
-            TUSClient.shared.createOrResume(forUpload: TUSClient.shared.currentUploads![0])
+        let pendingUploads = TUSClient.shared.pendingUploads()
+        if pendingUploads.count > 0 && (uploadWholeQueueInBackground || !isAppBackground) {
+            TUSClient.shared.createOrResume(forUpload: pendingUploads[0])
         } else {
             completion(true)
         }
     }
 
-    internal func cancel(forUpload upload: TUSUpload, error _: Error?) {
+    internal func cancel(forUpload upload: TUSUpload, error: Error?, failed: Bool = false) {
         let task = pendingUploadTasks[upload.id]
         if task != nil {
             TUSClient.shared.logger.log(forLevel: .Error, withMessage: String(format: "No pending task detected for the upload you are trying to cancel.", upload.id))
         } else {
             task?.cancel()
         }
-        upload.status = .canceled
+        upload.status = failed ? .failed : .canceled
         TUSClient.shared.updateUpload(upload)
-        TUSClient.shared.delegate?.TUSFailure(forUpload: upload, withResponse: TUSResponse(message: "Upload was canceled."), andError: nil)
+        TUSClient.shared.delegate?.TUSFailure(forUpload: upload, withResponse: TUSResponse(message: "Upload was canceled."), andError: error)
         TUSClient.shared.status = .ready
     }
 }

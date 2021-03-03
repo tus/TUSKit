@@ -106,7 +106,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     ///   - upload: the upload object
     ///   - retries: number of retires to take if a call fails
     public func createOrResume(forUpload upload: TUSUpload, withRetries _: Int) {
-        let fileName = String(format: "%@%@", upload.id, upload.fileType!)
+        let fileName = upload.getUploadFilename()
 
         if fileManager.fileExists(withName: fileName) == false {
             logger.log(forLevel: .Info, withMessage: String(format: "File not found in local storage.", upload.id))
@@ -151,7 +151,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                 logger.log(forLevel: .Info, withMessage: String(format: "File %@ has been previously been created", upload.id))
                 executor.uploadInBackground(upload: upload)
             case .new:
-                logger.log(forLevel: .Info, withMessage: String(format: "Creating file %@ on server", upload.id))
+                logger.log(forLevel: .Info, withMessage: String(format: "Creating file %@ on server", upload.getUploadFilename()))
                 upload.contentLength = "0"
                 upload.uploadOffset = "0"
                 upload.uploadLength = String(fileManager.sizeForLocalFilePath(filePath: String(format: "%@%@", fileManager.fileStorePath(), fileName)))

@@ -115,7 +115,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     /// - Parameters:
     ///   - upload: the upload object
     ///   - retries: number of retires to take if a call fails
-    public func createOrResume(forUpload upload: TUSUpload, withRetries _: Int) {
+    public func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
         let fileName = String(format: "%@%@", upload.id, upload.fileType!)
 
         if fileManager.fileExists(withName: fileName) == false {
@@ -137,6 +137,26 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                     // fail out
                     logger.log(forLevel: .Error, withMessage: String(format: "Failed to create file in local storage from data.", upload.id))
                     cleanUp(forUpload: upload)
+                    return
+                }
+            }
+        } else {
+            // The file exists, that means that an upload with the same ID & file type
+            // has been executed earlier.
+            // We get the earlier upload from the currentUploads:
+            // - if the information has been changed we will remove
+            //   the earlier upload, remove the upload file, and re-run createOrResume.
+            let earlierUpload = currentUploads?.first(where: { (_upload) -> Bool in
+                return _upload.id == upload.id
+            })
+            if (earlierUpload != nil) {
+                // check whether they deep equal (see TUSUpload+isEqual)
+                if (earlierUpload != upload) {
+                    // objects do not equal, upload information have changed.
+                    // clean earlier upload and reschedule this upload
+                    logger.log(forLevel: .Info, withMessage: String(format: "Upload with id %@ already exists, but payload data are different. Cleanup old upload and reschedule the upload with new payload.", upload.id))
+                    cleanUp(forUpload: earlierUpload!)
+                    createOrResume(forUpload: upload, withRetries: retries)
                     return
                 }
             }

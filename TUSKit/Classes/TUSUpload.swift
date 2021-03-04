@@ -66,7 +66,7 @@ public class TUSUpload: NSObject, NSCoding {
     var prevStatus: TUSUploadStatus?
     public var metadata: [String : String] = [:]
     var encodedMetadata: String {
-        metadata["filename"] = id
+        metadata["filename"] = getUploadFilename()
         return metadata.map { (key, value) in
             "\(key) \(value.toBase64())"
         }.joined(separator: ",")
@@ -104,5 +104,9 @@ public class TUSUpload: NSObject, NSCoding {
     
     public func getStatus() -> TUSUploadStatus? {
         return status
+    }
+    
+    public func getUploadFilename() -> String {
+        return String(format: "%@%@", self.id, self.fileType!)
     }
 }

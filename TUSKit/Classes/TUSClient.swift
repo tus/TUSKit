@@ -272,7 +272,8 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     }
 
     public func urlSession(_: URLSession, task _: URLSessionTask, didSendBodyData _: Int64, totalBytesSent: Int64, totalBytesExpectedToSend _: Int64) {
-        guard let upload = currentUploads?[safe: 0] else {
+        let pendingUploads = self.pendingUploads()
+        guard let upload = pendingUploads[safe: 0] else {
             // ignore?
             return
         }
@@ -281,7 +282,6 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         delegate?.TUSProgress(forUpload: upload, bytesUploaded: Int(upload.uploadOffset ?? "0")! + Int(totalBytesSent), bytesRemaining: Int(upload.uploadLength ?? "0")!)
 
         // Notify  progress for global uploads
-        let pendingUploads = self.pendingUploads()
         let totalUploadedBytes = pendingUploads.reduce(0) { prev, _upload in prev + (Int(_upload.uploadOffset ?? "0")!) }
         let totalBytes = pendingUploads.reduce(0) { prev, _upload in prev + (Int(_upload.uploadLength ?? "0")!) }
 

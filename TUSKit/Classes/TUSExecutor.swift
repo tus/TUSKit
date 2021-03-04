@@ -79,9 +79,6 @@ class TUSExecutor: NSObject, URLSessionDelegate {
             }
             
             func uploadFinishedCallback(success: Bool) {
-                if !success {
-                    self.cancel(forUpload: upload, error: nil)
-                }
                 // End the task assertion.
                 UIApplication.shared.endBackgroundTask(self.pendingBackgrounTaskIDs[upload.id]!)
                 self.pendingBackgrounTaskIDs[upload.id] = .invalid
@@ -157,9 +154,10 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int, completion: @escaping (Bool) -> Void) -> URLSessionUploadTask {
         TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id, position + 1, chunks.count))
 
+        // TODO: Retry-Mechanism: The places where we called `markAsFailed` are the places where we could retry uploading the failed chunk.
         func markAsFailed(upload: TUSUpload, error: Error?) {
-            cancel(forUpload: upload, error: error)
-            TUSClient.shared.status = .ready
+            cancel(forUpload: upload, error: error, failed: true)
+            // TODO: handle whether completion should be called based on background mode configuration
             completion(false)
             let pendingUploads = TUSClient.shared.pendingUploads()
             if pendingUploads.count > 0 {
@@ -199,6 +197,9 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                     markAsFailed(upload: upload, error: nil)
                 default: break
                 }
+            } else {
+                TUSClient.shared.logger.log(forLevel: .Error, withMessage: "Server response couldn't be parsed!")
+                markAsFailed(upload: upload, error: nil)
             }
         })
         pendingUploadTasks[upload.id] = task
@@ -233,6 +234,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
             TUSClient.shared.logger.log(forLevel: .Error, withMessage: String(format: "No pending task detected for the upload you are trying to cancel.", upload.id))
         } else {
             task?.cancel()
+            pendingUploadTasks.removeValue(forKey: upload.id)
         }
         upload.status = failed ? .failed : .canceled
         TUSClient.shared.updateUpload(upload)

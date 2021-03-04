@@ -157,11 +157,12 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         // TODO: Retry-Mechanism: The places where we called `markAsFailed` are the places where we could retry uploading the failed chunk.
         func markAsFailed(upload: TUSUpload, error: Error?) {
             cancel(forUpload: upload, error: error, failed: true)
-            // TODO: handle whether completion should be called based on background mode configuration
-            completion(false)
-            let pendingUploads = TUSClient.shared.pendingUploads()
-            if pendingUploads.count > 0 {
+
+            if continueUploading() {
+                let pendingUploads = TUSClient.shared.pendingUploads()
                 TUSClient.shared.createOrResume(forUpload: pendingUploads[0])
+            } else {
+                completion(false)
             }
         }
 
@@ -215,13 +216,9 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         TUSClient.shared.cleanUp(forUpload: upload)
         TUSClient.shared.status = .ready
 
-        let uploadWholeQueueInBackground = TUSClient.config?.backgroundMode == TUSBackgroundMode.PreferUploadQueue
-        let isAppBackground = UIApplication.shared.applicationState == .background
-
         // Run next task for uploading, when there are any.
-        // Don't run next tasks when app is in background and upload mode is not `TUSBackgroundMode.PreferUploadQueue`
-        let pendingUploads = TUSClient.shared.pendingUploads()
-        if pendingUploads.count > 0 && (uploadWholeQueueInBackground || !isAppBackground) {
+        if continueUploading() {
+            let pendingUploads = TUSClient.shared.pendingUploads()
             TUSClient.shared.createOrResume(forUpload: pendingUploads[0])
         } else {
             completion(true)
@@ -240,5 +237,15 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         TUSClient.shared.updateUpload(upload)
         TUSClient.shared.delegate?.TUSFailure(forUpload: upload, withResponse: TUSResponse(message: "Upload was canceled."), andError: error)
         TUSClient.shared.status = .ready
+    }
+    
+    /// Checks whether there are pending uploads left and whether all constraint are okay to continue uploading
+    /// Don't run next tasks when app is in background and upload mode is not `TUSBackgroundMode.PreferUploadQueue`.
+    internal func continueUploading() -> Bool {
+        let uploadWholeQueueInBackground = TUSClient.config?.backgroundMode == TUSBackgroundMode.PreferUploadQueue
+        let isAppBackground = UIApplication.shared.applicationState == .background
+        
+        let pendingUploads = TUSClient.shared.pendingUploads()
+        return pendingUploads.count > 0 && (uploadWholeQueueInBackground || !isAppBackground)
     }
 }

@@ -92,18 +92,22 @@ class TUSExecutor: NSObject, URLSessionDelegate {
             }
             
             // Do the work:
-            if (skipResumeCheck) {
-                let data = upload.getData()
-                let chunks = self.dataIntoChunks(data: data, chunkSize: TUSClient.shared.chunkSize)
-                startUpload(chunks: chunks)
-            } else {
-                self.prepareUpload(forUpload: upload) { (chunks, skipUploadMarkSuccess) in
-                    if (skipUploadMarkSuccess) {
-                        self.handleUploadSuccess(upload: upload, completion: uploadFinishedCallback)
-                    } else {
-                        startUpload(chunks: chunks)
+            do {
+                let data = try upload.getData()
+                if (skipResumeCheck) {
+                    let chunks = self.dataIntoChunks(data: data, chunkSize: TUSClient.shared.chunkSize)
+                    startUpload(chunks: chunks)
+                } else {
+                    self.prepareUpload(forUpload: upload, uploadData: data) { (chunks, skipUploadMarkSuccess) in
+                        if (skipUploadMarkSuccess) {
+                            self.handleUploadSuccess(upload: upload, completion: uploadFinishedCallback)
+                        } else {
+                            startUpload(chunks: chunks)
+                        }
                     }
                 }
+            } catch {
+                self.markAsFailed(upload: upload, completion: uploadFinishedCallback, error: error)
             }
         }
     }
@@ -118,6 +122,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     ///
     private func prepareUpload(
         forUpload upload: TUSUpload,
+        uploadData: Data,
         callback: @escaping ([Data], Bool) -> Void
     ) {
         /*
@@ -131,8 +136,6 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         // Get from which point we should start the uploading (important if the file
         // has already been partially uploaded)
         checkForResumableOffset(uploadUrl: upload.uploadLocationURL!) { (uploadOffset) in
-            let uploadData = upload.getData()
-
             // Create chunks to upload, eventually starting from the uploadOffset we retrieved
             let chunks = self.dataIntoChunks(data: uploadData,
                                              chunkSize: TUSClient.shared.chunkSize,
@@ -153,18 +156,6 @@ class TUSExecutor: NSObject, URLSessionDelegate {
 
     private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int, completion: @escaping (Bool) -> Void) -> URLSessionUploadTask {
         TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id, position + 1, chunks.count))
-
-        // TODO: Retry-Mechanism: The places where we called `markAsFailed` are the places where we could retry uploading the failed chunk.
-        func markAsFailed(upload: TUSUpload, error: Error?) {
-            cancel(forUpload: upload, error: error, failed: true)
-
-            if continueUploading() {
-                let pendingUploads = TUSClient.shared.pendingUploads()
-                TUSClient.shared.createOrResume(forUpload: pendingUploads[0])
-            } else {
-                completion(false)
-            }
-        }
 
         
         let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: nil, andFilename: upload.getUploadFilename(), andHeaders: ["Content-Type": "application/offset+octet-stream", "Upload-Offset": upload.uploadOffset!, "Content-Length": String(chunks[position].count), "Upload-Metadata": upload.encodedMetadata])
@@ -191,16 +182,16 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                 case 400 ..< 500:
                     // reuqest error
                     TUSClient.shared.logger.log(forLevel: .Error, withMessage: String(format: "Received request failure status code %u", httpResponse.statusCode))
-                    markAsFailed(upload: upload, error: nil)
+                    self.markAsFailed(upload: upload, completion: completion, error: nil)
                 case 500 ..< 600:
                     // server
                     TUSClient.shared.logger.log(forLevel: .Error, withMessage: String(format: "Received server failure status code %u", httpResponse.statusCode))
-                    markAsFailed(upload: upload, error: nil)
+                    self.markAsFailed(upload: upload, completion: completion, error: nil)
                 default: break
                 }
             } else {
                 TUSClient.shared.logger.log(forLevel: .Error, withMessage: "Server response couldn't be parsed!")
-                markAsFailed(upload: upload, error: nil)
+                self.markAsFailed(upload: upload, completion: completion, error: nil)
             }
         })
         pendingUploadTasks[upload.id] = task
@@ -247,5 +238,17 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         
         let pendingUploads = TUSClient.shared.pendingUploads()
         return pendingUploads.count > 0 && (uploadWholeQueueInBackground || !isAppBackground)
+    }
+
+    // TODO: Retry-Mechanism: The places where we called `markAsFailed` are the places where we could retry uploading the failed chunk.
+    internal func markAsFailed(upload: TUSUpload, completion: @escaping (Bool) -> Void, error: Error?) {
+        cancel(forUpload: upload, error: error, failed: true)
+
+        if continueUploading() {
+            let pendingUploads = TUSClient.shared.pendingUploads()
+            TUSClient.shared.createOrResume(forUpload: pendingUploads[0])
+        } else {
+            completion(false)
+        }
     }
 }

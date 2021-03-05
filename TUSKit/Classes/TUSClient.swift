@@ -20,6 +20,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     internal var tusSession = TUSSession()
     public var uploadURL: URL
     public var delegate: TUSDelegate?
+    public var applicationState: UIApplication.State
     private let executor: TUSExecutor
     internal let fileManager = TUSFileManager()
     public static let shared = TUSClient()
@@ -46,7 +47,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
             return []
         }
         return currentUploads!.filter({ (_upload) -> Bool in
-            return _upload.status != .failed
+            return _upload.status != .failed && _upload.status != .finished
         })
     }
 
@@ -82,6 +83,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         uploadURL = config.uploadURL
         executor = TUSExecutor()
         logger = TUSLogger(withLevel: config.logLevel, true)
+        applicationState = .active
         fileManager.createFileDirectory()
         super.init()
         tusSession = TUSSession(customConfiguration: config.URLSessionConfig, andDelegate: self)
@@ -97,12 +99,32 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                                                selector: #selector(applicationWillTerminate(notification:)),
                                                name: UIApplication.willTerminateNotification,
                                                object: nil)
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(applicationDidEnterBackground(application:)),
+                                               name: UIApplication.didEnterBackgroundNotification,
+                                               object: nil)
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(applicationWillEnterForeground(application:)),
+                                               name: UIApplication.willEnterForegroundNotification,
+                                               object: nil)
     }
     
     @objc
     func applicationWillTerminate(notification: Notification) {
         cancelAll()
         resetState(to: TUSClientStaus.ready)
+    }
+    
+    @objc
+    func applicationDidEnterBackground(application: UIApplication) {
+        applicationState = .background
+    }
+    
+    @objc
+    func applicationWillEnterForeground(application: UIApplication) {
+        applicationState = .active
     }
 
     deinit {

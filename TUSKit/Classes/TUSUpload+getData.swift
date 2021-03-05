@@ -9,7 +9,7 @@ import Foundation
 
 extension TUSUpload {
     func getData() -> Data {
-        let data = try! Data(contentsOf: URL(fileURLWithPath: String(format: "%@%@%@", TUSClient.shared.fileManager.fileStorePath(), self.id, self.fileType!)))
+        let data = try! Data(contentsOf: URL(fileURLWithPath: String(format: "%@%@", TUSClient.shared.fileManager.fileStorePath(), self.getUploadFilename())))
         return data
     }
 }

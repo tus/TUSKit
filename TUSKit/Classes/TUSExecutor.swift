@@ -40,13 +40,13 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                                  andMethod: "POST",
                                  andContentLength: upload.contentLength,
                                  andUploadLength: upload.uploadLength,
-                                 andFilename: upload.id,
+                                 andFilename: upload.getUploadFilename(),
                                  andHeaders: ["Upload-Extension": "creation", "Upload-Metadata": upload.encodedMetadata])
 
         let task = TUSClient.shared.tusSession.session.dataTask(with: request) { _, response, _ in
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 {
-                    TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "File %@ created", upload.id))
+                    TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "File %@ created", upload.getUploadFilename()))
                     // Set the new status and other props for the upload
                     upload.status = .created
                     upload.uploadLocationURL = URL(string: httpResponse.allHeaderFieldsUpper()["LOCATION"]!, relativeTo: TUSClient.shared.uploadURL)
@@ -79,9 +79,6 @@ class TUSExecutor: NSObject, URLSessionDelegate {
             }
             
             func uploadFinishedCallback(success: Bool) {
-                if !success {
-                    self.cancel(forUpload: upload, error: nil)
-                }
                 // End the task assertion.
                 UIApplication.shared.endBackgroundTask(self.pendingBackgrounTaskIDs[upload.id]!)
                 self.pendingBackgrounTaskIDs[upload.id] = .invalid
@@ -157,18 +154,20 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     private func upload(forChunks chunks: [Data], withUpload upload: TUSUpload, atPosition position: Int, completion: @escaping (Bool) -> Void) -> URLSessionUploadTask {
         TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id, position + 1, chunks.count))
 
+        // TODO: Retry-Mechanism: The places where we called `markAsFailed` are the places where we could retry uploading the failed chunk.
         func markAsFailed(upload: TUSUpload, error: Error?) {
-            cancel(forUpload: upload, error: error)
-            TUSClient.shared.status = .ready
-            completion(false)
-            let pendingUploads = TUSClient.shared.pendingUploads()
-            if pendingUploads.count > 0 {
+            cancel(forUpload: upload, error: error, failed: true)
+
+            if continueUploading() {
+                let pendingUploads = TUSClient.shared.pendingUploads()
                 TUSClient.shared.createOrResume(forUpload: pendingUploads[0])
+            } else {
+                completion(false)
             }
         }
 
         
-        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: nil, andFilename: upload.id, andHeaders: ["Content-Type": "application/offset+octet-stream", "Upload-Offset": upload.uploadOffset!, "Content-Length": String(chunks[position].count), "Upload-Metadata": upload.encodedMetadata])
+        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: nil, andFilename: upload.getUploadFilename(), andHeaders: ["Content-Type": "application/offset+octet-stream", "Upload-Offset": upload.uploadOffset!, "Content-Length": String(chunks[position].count), "Upload-Metadata": upload.encodedMetadata])
 
         let task = TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[position], completionHandler: { _, response, _ in
             if let httpResponse = response as? HTTPURLResponse {
@@ -199,6 +198,9 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                     markAsFailed(upload: upload, error: nil)
                 default: break
                 }
+            } else {
+                TUSClient.shared.logger.log(forLevel: .Error, withMessage: "Server response couldn't be parsed!")
+                markAsFailed(upload: upload, error: nil)
             }
         })
         pendingUploadTasks[upload.id] = task
@@ -214,13 +216,9 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         TUSClient.shared.cleanUp(forUpload: upload)
         TUSClient.shared.status = .ready
 
-        let uploadWholeQueueInBackground = TUSClient.config?.backgroundMode == TUSBackgroundMode.PreferUploadQueue
-        let isAppBackground = UIApplication.shared.applicationState == .background
-
         // Run next task for uploading, when there are any.
-        // Don't run next tasks when app is in background and upload mode is not `TUSBackgroundMode.PreferUploadQueue`
-        let pendingUploads = TUSClient.shared.pendingUploads()
-        if pendingUploads.count > 0 && (uploadWholeQueueInBackground || !isAppBackground) {
+        if continueUploading() {
+            let pendingUploads = TUSClient.shared.pendingUploads()
             TUSClient.shared.createOrResume(forUpload: pendingUploads[0])
         } else {
             completion(true)
@@ -233,10 +231,21 @@ class TUSExecutor: NSObject, URLSessionDelegate {
             TUSClient.shared.logger.log(forLevel: .Error, withMessage: String(format: "No pending task detected for the upload you are trying to cancel.", upload.id))
         } else {
             task?.cancel()
+            pendingUploadTasks.removeValue(forKey: upload.id)
         }
         upload.status = failed ? .failed : .canceled
         TUSClient.shared.updateUpload(upload)
         TUSClient.shared.delegate?.TUSFailure(forUpload: upload, withResponse: TUSResponse(message: "Upload was canceled."), andError: error)
         TUSClient.shared.status = .ready
+    }
+    
+    /// Checks whether there are pending uploads left and whether all constraint are okay to continue uploading
+    /// Don't run next tasks when app is in background and upload mode is not `TUSBackgroundMode.PreferUploadQueue`.
+    internal func continueUploading() -> Bool {
+        let uploadWholeQueueInBackground = TUSClient.config?.backgroundMode == TUSBackgroundMode.PreferUploadQueue
+        let isAppBackground = UIApplication.shared.applicationState == .background
+        
+        let pendingUploads = TUSClient.shared.pendingUploads()
+        return pendingUploads.count > 0 && (uploadWholeQueueInBackground || !isAppBackground)
     }
 }

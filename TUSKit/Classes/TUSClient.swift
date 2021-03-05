@@ -129,6 +129,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                 if fileManager.copyFile(atLocation: upload.filePath!, withFileName: fileName) == false {
                     // fail out
                     logger.log(forLevel: .Error, withMessage: String(format: "Failed to move file.", upload.id))
+                    TUSClient.shared.delegate?.TUSFailure(forUpload: upload, withResponse: TUSResponse(message: "Failed to move file."), andError: nil)
                     cleanUp(forUpload: upload)
                     return
                 }
@@ -136,6 +137,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                 if fileManager.writeData(withData: upload.data!, andFileName: fileName) == false {
                     // fail out
                     logger.log(forLevel: .Error, withMessage: String(format: "Failed to create file in local storage from data.", upload.id))
+                    TUSClient.shared.delegate?.TUSFailure(forUpload: upload, withResponse: TUSResponse(message: "Failed to create file in local storage from data."), andError: nil)
                     cleanUp(forUpload: upload)
                     return
                 }

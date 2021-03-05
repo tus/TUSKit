@@ -74,7 +74,7 @@ public class TUSUpload: NSObject, NSCoding {
     
     public init(withId id: String, andFilePathString filePathString: String, andFileType fileType: String) {
         self.id = id
-        filePath = URL(string: filePathString)
+        self.filePath = URL(fileURLWithPath: filePathString)
         self.fileType = fileType
 
         super.init()
@@ -82,7 +82,7 @@ public class TUSUpload: NSObject, NSCoding {
     
     public init(withId id: String, andFilePathURL filePathURL: URL, andFileType fileType: String) {
         self.id = id
-        filePath = filePathURL
+        self.filePath = filePathURL
         self.fileType = fileType
 
         super.init()

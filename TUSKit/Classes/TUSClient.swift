@@ -242,7 +242,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
 
     /// Resume all uploads
     public func resumeAll() {
-        for upload in currentUploads! {
+        for upload in pendingUploads() {
             createOrResume(forUpload: upload)
         }
     }

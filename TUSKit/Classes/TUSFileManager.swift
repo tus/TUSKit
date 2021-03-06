@@ -34,7 +34,7 @@ class TUSFileManager: NSObject {
 
     internal func copyFile(atLocation location: URL, withFileName name: String) -> Bool {
         do {
-            try FileManager.default.copyItem(at: location, to: URL(fileURLWithPath: fileStorePath().appending(name)))
+            try FileManager.default.copyItem(atPath: location.path, toPath: fileStorePath().appending(name))
             return true
         } catch let error as NSError {
             let response: TUSResponse = TUSResponse(message: "Failed moving file \(location.absoluteString) to \(fileStorePath().appending(name)) for TUS folder storage")

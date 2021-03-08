@@ -20,6 +20,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     internal var tusSession = TUSSession()
     public var uploadURL: URL
     public var delegate: TUSDelegate?
+    public var applicationState: UIApplication.State
     private let executor: TUSExecutor
     internal let fileManager = TUSFileManager()
     public static let shared = TUSClient()
@@ -46,7 +47,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
             return []
         }
         return currentUploads!.filter({ (_upload) -> Bool in
-            return _upload.status != .failed
+            return _upload.status != .failed && _upload.status != .finished
         })
     }
 
@@ -82,6 +83,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
         uploadURL = config.uploadURL
         executor = TUSExecutor()
         logger = TUSLogger(withLevel: config.logLevel, true)
+        applicationState = .active
         fileManager.createFileDirectory()
         super.init()
         tusSession = TUSSession(customConfiguration: config.URLSessionConfig, andDelegate: self)
@@ -97,12 +99,32 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                                                selector: #selector(applicationWillTerminate(notification:)),
                                                name: UIApplication.willTerminateNotification,
                                                object: nil)
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(applicationDidEnterBackground(application:)),
+                                               name: UIApplication.didEnterBackgroundNotification,
+                                               object: nil)
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(applicationWillEnterForeground(application:)),
+                                               name: UIApplication.willEnterForegroundNotification,
+                                               object: nil)
     }
     
     @objc
     func applicationWillTerminate(notification: Notification) {
         cancelAll()
         resetState(to: TUSClientStaus.ready)
+    }
+    
+    @objc
+    func applicationDidEnterBackground(application: UIApplication) {
+        applicationState = .background
+    }
+    
+    @objc
+    func applicationWillEnterForeground(application: UIApplication) {
+        applicationState = .active
     }
 
     deinit {
@@ -115,7 +137,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
     /// - Parameters:
     ///   - upload: the upload object
     ///   - retries: number of retires to take if a call fails
-    public func createOrResume(forUpload upload: TUSUpload, withRetries _: Int) {
+    public func createOrResume(forUpload upload: TUSUpload, withRetries retries: Int) {
         let fileName = upload.getUploadFilename()
 
         if fileManager.fileExists(withName: fileName) == false {
@@ -139,6 +161,26 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
                     logger.log(forLevel: .Error, withMessage: String(format: "Failed to create file in local storage from data.", upload.id))
                     TUSClient.shared.delegate?.TUSFailure(forUpload: upload, withResponse: TUSResponse(message: "Failed to create file in local storage from data."), andError: nil)
                     cleanUp(forUpload: upload)
+                    return
+                }
+            }
+        } else {
+            // The file exists, that means that an upload with the same ID & file type
+            // has been executed earlier.
+            // We get the earlier upload from the currentUploads:
+            // - if the information has been changed we will remove
+            //   the earlier upload, remove the upload file, and re-run createOrResume.
+            let earlierUpload = currentUploads?.first(where: { (_upload) -> Bool in
+                return _upload.id == upload.id
+            })
+            if (earlierUpload != nil) {
+                // check whether they deep equal (see TUSUpload+isEqual)
+                if (earlierUpload != upload) {
+                    // objects do not equal, upload information have changed.
+                    // clean earlier upload and reschedule this upload
+                    logger.log(forLevel: .Info, withMessage: String(format: "Upload with id %@ already exists, but payload data are different. Cleanup old upload and reschedule the upload with new payload.", upload.id))
+                    cleanUp(forUpload: earlierUpload!)
+                    createOrResume(forUpload: upload, withRetries: retries)
                     return
                 }
             }
@@ -200,7 +242,7 @@ public class TUSClient: NSObject, URLSessionTaskDelegate {
 
     /// Resume all uploads
     public func resumeAll() {
-        for upload in currentUploads! {
+        for upload in pendingUploads() {
             createOrResume(forUpload: upload)
         }
     }

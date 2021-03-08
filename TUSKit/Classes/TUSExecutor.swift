@@ -234,7 +234,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     /// Don't run next tasks when app is in background and upload mode is not `TUSBackgroundMode.PreferUploadQueue`.
     internal func continueUploading() -> Bool {
         let uploadWholeQueueInBackground = TUSClient.config?.backgroundMode == TUSBackgroundMode.PreferUploadQueue
-        let isAppBackground = UIApplication.shared.applicationState == .background
+        let isAppBackground = TUSClient.shared.applicationState == .background
         
         let pendingUploads = TUSClient.shared.pendingUploads()
         return pendingUploads.count > 0 && (uploadWholeQueueInBackground || !isAppBackground)

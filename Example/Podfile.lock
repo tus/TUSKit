@@ -12,9 +12,8 @@ PODS:
     - FBSnapshotTestCase (~> 2.0)
     - Nimble (~> 7.0)
   - Quick (1.2.0)
-  - TLPhotoPicker (2.0.11)
-  - TUSKit (2.0.3.alpha):
-    - TLPhotoPicker
+  - TLPhotoPicker (2.1.3)
+  - TUSKit (2.0.0)
 
 DEPENDENCIES:
   - AppSpectorSDK
@@ -22,6 +21,7 @@ DEPENDENCIES:
   - Nimble (~> 7.0)
   - Nimble-Snapshots (~> 6.3.0)
   - Quick (~> 1.2.0)
+  - TLPhotoPicker
   - TUSKit (from `../`)
 
 SPEC REPOS:
@@ -43,9 +43,9 @@ SPEC CHECKSUMS:
   Nimble: 051e3d8912d40138fa5591c78594f95fb172af37
   Nimble-Snapshots: f5459b5b091678dc942d03ec4741cacb58ba4a52
   Quick: 58d203b1c5e27fff7229c4c1ae445ad7069a7a08
-  TLPhotoPicker: a5c339732b8326bb16cbb4e00ed01a86f2bfbbb3
-  TUSKit: 23162a720b2e89c2cad7bc2397592bf8893cf64a
+  TLPhotoPicker: 2c4a20d62952bd368edbf44d18476f663a718ada
+  TUSKit: befb40e402aae1ee35a6b2b1edda26416bd0e473
 
-PODFILE CHECKSUM: 572a5d87651b95d2aa1ecdf921075dfd78b37d95
+PODFILE CHECKSUM: 56e9b6c1fa8da25eda882f2eaba8707f765eb8e1
 
-COCOAPODS: 1.9.1
+COCOAPODS: 1.10.1

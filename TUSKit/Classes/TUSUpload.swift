@@ -19,6 +19,7 @@ public class TUSUpload: NSObject, NSCoding {
         coder.encode(uploadLength, forKey: "uploadLength")
         coder.encode(uploadOffset, forKey: "uploadOffset")
         coder.encode(status?.rawValue, forKey: "status")
+        coder.encode(prevStatus?.rawValue, forKey: "prevStatus")
         coder.encode(metadata, forKey: "metadata")
 
     }
@@ -35,9 +36,13 @@ public class TUSUpload: NSObject, NSCoding {
         data = coder.decodeObject(forKey: "data") as? Data
         status = TUSUploadStatus(rawValue: coder.decodeObject(forKey: "status") as! String)
         metadata = coder.decodeObject(forKey: "metadata") as! [String : String]
+        
+        // Migration safe: in previous versions this field did not exists so we set it in a safe manner
+        let prevStatusString = coder.decodeObject(forKey: "prevStatus") as? String
+        prevStatus = prevStatusString != nil ? TUSUploadStatus(rawValue: prevStatusString!) : nil
     }
     
-    
+
     // MARK: Properties
     public let id: String
     var fileType: String? // TODO: Make sure only ".fileExtension" gets set. Current setup sets fileType as something like "1A1F31FE6-BB39-4A78-AECD-3C9BDE6D129E.jpeg"
@@ -47,10 +52,21 @@ public class TUSUpload: NSObject, NSCoding {
     var contentLength: String?
     var uploadLength: String?
     var uploadOffset: String?
-    var status: TUSUploadStatus?
+    var status: TUSUploadStatus?{
+        // When the status updates we want to update the previous status
+        didSet {
+            // Don't update the previous state in the following cases (because we need to know whether a
+            // upload state was created/new/uploading (when calling `cancel` mutliple times we would
+            // loose this information).
+            if (oldValue != TUSUploadStatus.canceled && oldValue != TUSUploadStatus.paused && oldValue != TUSUploadStatus.failed) {
+                prevStatus = oldValue
+            }
+        }
+    }
+    var prevStatus: TUSUploadStatus?
     public var metadata: [String : String] = [:]
     var encodedMetadata: String {
-        metadata["filename"] = id
+        metadata["filename"] = getUploadFilename()
         return metadata.map { (key, value) in
             "\(key) \(value.toBase64())"
         }.joined(separator: ",")
@@ -58,7 +74,7 @@ public class TUSUpload: NSObject, NSCoding {
     
     public init(withId id: String, andFilePathString filePathString: String, andFileType fileType: String) {
         self.id = id
-        filePath = URL(string: filePathString)
+        self.filePath = URL(fileURLWithPath: filePathString)
         self.fileType = fileType
 
         super.init()
@@ -66,7 +82,7 @@ public class TUSUpload: NSObject, NSCoding {
     
     public init(withId id: String, andFilePathURL filePathURL: URL, andFileType fileType: String) {
         self.id = id
-        filePath = filePathURL
+        self.filePath = filePathURL
         self.fileType = fileType
 
         super.init()
@@ -84,5 +100,13 @@ public class TUSUpload: NSObject, NSCoding {
         self.id = id
         
         super.init()
+    }
+    
+    public func getStatus() -> TUSUploadStatus? {
+        return status
+    }
+    
+    public func getUploadFilename() -> String {
+        return String(format: "%@%@", self.id, self.fileType!)
     }
 }

@@ -156,3 +156,11 @@ The delegate method fire when a file stops (canceled, failure, or paused)
 ```Swift
 func TUSFailure(TUSUpload, TUSResponse)
 ```
+
+# Contributors 
+
+<a href="https://github.com/tus/tuskit/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=tus/tuskit" />
+</a>
+
+Made with [contributors-img](https://contrib.rocks).

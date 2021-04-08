@@ -5,6 +5,7 @@
 //  Created by Mark Robert Masterson on 4/5/20.
 //
 import Foundation
+import UIKit
 
 // Return nil in case accessing an index of an array that
 // is out of range. See https://stackoverflow.com/a/37225027/3668241

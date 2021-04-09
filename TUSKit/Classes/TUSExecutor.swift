@@ -214,9 +214,8 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         if continueUploading() {
             let pendingUploads = TUSClient.shared.pendingUploads()
             TUSClient.shared.createOrResume(forUpload: pendingUploads[0])
-        } else {
-            completion(true)
         }
+        completion(true)
     }
 
     internal func cancel(forUpload upload: TUSUpload, error: Error?, failed: Bool = false) {

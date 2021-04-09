@@ -15,7 +15,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
 
     // MARK: Private Networking / Upload methods
 
-    private func urlRequest(withFullURL url: URL, andMethod method: String, andContentLength contentLength: String?, andUploadLength uploadLength: String?, andFilename _: String, andHeaders headers: [String: String]) -> URLRequest {
+    private func urlRequest(withFullURL url: URL, andMethod method: String, andContentLength contentLength: String?, andUploadLength uploadLength: String?, andFilename _: String, andHeaders headers: [String: String], andCustomDynamicHeaders customDynamicHeaders: [String: String]?) -> URLRequest {
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
         request.httpMethod = method
         request.addValue(TUSConstants.TUSProtocolVersion, forHTTPHeaderField: "TUS-Resumable")
@@ -28,6 +28,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
             request.addValue(uploadLength, forHTTPHeaderField: "Upload-Length")
         }
 
+        let customHeaders = self.customHeaders.merging(customDynamicHeaders ?? [:], uniquingKeysWith: { current, _ in current })
         for header in headers.merging(customHeaders, uniquingKeysWith: { current, _ in current }) {
             request.addValue(header.value, forHTTPHeaderField: header.key)
         }
@@ -42,7 +43,8 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                                  andContentLength: upload.contentLength,
                                  andUploadLength: upload.uploadLength,
                                  andFilename: upload.getUploadFilename(),
-                                 andHeaders: ["Upload-Extension": "creation", "Upload-Metadata": upload.encodedMetadata])
+                                 andHeaders: ["Upload-Extension": "creation", "Upload-Metadata": upload.encodedMetadata],
+                                 andCustomDynamicHeaders: upload.customDynamicHeaders)
 
         let task = TUSClient.shared.tusSession.session.dataTask(with: request) { _, response, _ in
             if let httpResponse = response as? HTTPURLResponse {
@@ -159,7 +161,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         TUSClient.shared.logger.log(forLevel: .Info, withMessage: String(format: "Upload starting for file %@ - Chunk %u / %u", upload.id, position + 1, chunks.count))
 
         
-        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: nil, andFilename: upload.getUploadFilename(), andHeaders: ["Content-Type": "application/offset+octet-stream", "Upload-Offset": upload.uploadOffset!, "Content-Length": String(chunks[position].count), "Upload-Metadata": upload.encodedMetadata])
+        let request: URLRequest = urlRequest(withFullURL: upload.uploadLocationURL!, andMethod: "PATCH", andContentLength: upload.contentLength!, andUploadLength: nil, andFilename: upload.getUploadFilename(), andHeaders: ["Content-Type": "application/offset+octet-stream", "Upload-Offset": upload.uploadOffset!, "Content-Length": String(chunks[position].count), "Upload-Metadata": upload.encodedMetadata], andCustomDynamicHeaders: upload.customDynamicHeaders)
 
         let task = TUSClient.shared.tusSession.session.uploadTask(with: request, from: chunks[position], completionHandler: { _, response, _ in
             if let httpResponse = response as? HTTPURLResponse {

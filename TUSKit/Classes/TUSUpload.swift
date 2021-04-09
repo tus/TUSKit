@@ -21,7 +21,7 @@ public class TUSUpload: NSObject, NSCoding {
         coder.encode(status?.rawValue, forKey: "status")
         coder.encode(prevStatus?.rawValue, forKey: "prevStatus")
         coder.encode(metadata, forKey: "metadata")
-
+        coder.encode(customDynamicHeaders, forKey: "customDynamicHeaders")
     }
     
     public required init?(coder: NSCoder) {
@@ -36,7 +36,7 @@ public class TUSUpload: NSObject, NSCoding {
         data = coder.decodeObject(forKey: "data") as? Data
         status = TUSUploadStatus(rawValue: coder.decodeObject(forKey: "status") as! String)
         metadata = coder.decodeObject(forKey: "metadata") as! [String : String]
-        
+        customDynamicHeaders = coder.decodeObject(forKey: "customDynamicHeaders") as! [String : String]
         // Migration safe: in previous versions this field did not exists so we set it in a safe manner
         let prevStatusString = coder.decodeObject(forKey: "prevStatus") as? String
         prevStatus = prevStatusString != nil ? TUSUploadStatus(rawValue: prevStatusString!) : nil
@@ -52,6 +52,7 @@ public class TUSUpload: NSObject, NSCoding {
     var contentLength: String?
     var uploadLength: String?
     var uploadOffset: String?
+    var customDynamicHeaders: [String : String] = [:]
     var status: TUSUploadStatus?{
         // When the status updates we want to update the previous status
         didSet {
@@ -72,32 +73,36 @@ public class TUSUpload: NSObject, NSCoding {
         }.joined(separator: ",")
     }
     
-    public init(withId id: String, andFilePathString filePathString: String, andFileType fileType: String) {
+    public init(withId id: String, andFilePathString filePathString: String, andFileType fileType: String, andCustomDynamicHeaders customHeaders: [String : String] = [:]) {
         self.id = id
         self.filePath = URL(fileURLWithPath: filePathString)
         self.fileType = fileType
+        self.customDynamicHeaders = customHeaders
 
         super.init()
     }
     
-    public init(withId id: String, andFilePathURL filePathURL: URL, andFileType fileType: String) {
+    public init(withId id: String, andFilePathURL filePathURL: URL, andFileType fileType: String, andCustomDynamicHeaders customHeaders: [String : String] = [:]) {
         self.id = id
         self.filePath = filePathURL
         self.fileType = fileType
+        self.customDynamicHeaders = customHeaders
 
         super.init()
     }
     
-    public init(withId id: String, andData data: Data, andFileType fileType: String) {
+    public init(withId id: String, andData data: Data, andFileType fileType: String, andCustomDynamicHeaders customHeaders: [String : String] = [:]) {
         self.id = id
         self.data = data
         self.fileType = fileType
+        self.customDynamicHeaders = customHeaders
         
         super.init()
     }
     
-    public init(withId id: String) {
+    public init(withId id: String, andCustomDynamicHeaders customHeaders: [String : String] = [:]) {
         self.id = id
+        self.customDynamicHeaders = customHeaders
         
         super.init()
     }

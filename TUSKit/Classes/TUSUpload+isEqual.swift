@@ -16,7 +16,7 @@ extension TUSUpload {
                 && self.metadata == object.metadata
                 && self.status == object.getStatus()
                 && self.data == object.data
-            
+                && self.customDynamicHeaders == object.customDynamicHeaders
         }
         return false;
     }

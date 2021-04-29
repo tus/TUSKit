@@ -10,5 +10,6 @@ import Foundation
 public struct TUSResponse: Codable {
     
     public var message: String?
-    
+    // http status code that was eventually received
+    public var errorCode: Int?
 }

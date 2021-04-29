@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 class TUSExecutor: NSObject, URLSessionDelegate {
     var customHeaders: [String: String] = [:]

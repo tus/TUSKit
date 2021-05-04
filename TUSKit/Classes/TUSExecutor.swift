@@ -215,7 +215,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
 
     internal func cancel(forUpload upload: TUSUpload, error: Error?, failed: Bool = false, statusCode: Int? = nil) {
         let task = pendingUploadTasks[upload.id]
-        if task != nil {
+        if task == nil {
             TUSClient.shared.logger.log(forLevel: .Error, withMessage: String(format: "No pending task detected for the upload you are trying to cancel.", upload.id))
         } else {
             task?.cancel()

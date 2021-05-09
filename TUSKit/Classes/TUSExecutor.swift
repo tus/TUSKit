@@ -55,7 +55,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                     TUSClient.shared.updateUpload(upload)
                     self.uploadInBackground(upload: upload, skipResumeCheck: true)
                 } else {
-                    self.cancel(forUpload: upload, error: NSError(domain: "", code: httpResponse.statusCode, userInfo: nil), failed: true)
+                    self.cancel(forUpload: upload, error: NSError(domain: "", code: httpResponse.statusCode, userInfo: nil), failed: true, statusCode: httpResponse.statusCode)
                 }
             } else {
                 self.cancel(forUpload: upload, error: nil, failed: true)
@@ -180,14 +180,10 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                             self.handleUploadSuccess(upload: upload, completion: completion)
                         }
                     }
-                case 400 ..< 500:
+                case 300 ..< 600:
                     // reuqest error
                     TUSClient.shared.logger.log(forLevel: .Error, withMessage: String(format: "Received request failure status code %u", httpResponse.statusCode))
-                    self.markAsFailed(upload: upload, completion: completion, error: nil)
-                case 500 ..< 600:
-                    // server
-                    TUSClient.shared.logger.log(forLevel: .Error, withMessage: String(format: "Received server failure status code %u", httpResponse.statusCode))
-                    self.markAsFailed(upload: upload, completion: completion, error: nil)
+                    self.markAsFailed(upload: upload, completion: completion, error: nil, statusCode: httpResponse.statusCode)
                 default: break
                 }
             } else {
@@ -217,7 +213,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         }
     }
 
-    internal func cancel(forUpload upload: TUSUpload, error: Error?, failed: Bool = false) {
+    internal func cancel(forUpload upload: TUSUpload, error: Error?, failed: Bool = false, statusCode: Int? = nil) {
         let task = pendingUploadTasks[upload.id]
         if task == nil {
             TUSClient.shared.logger.log(forLevel: .Error, withMessage: String(format: "No pending task detected for the upload you are trying to cancel.", upload.id))
@@ -227,7 +223,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
         }
         upload.status = failed ? .failed : .canceled
         TUSClient.shared.updateUpload(upload)
-        TUSClient.shared.delegate?.TUSFailure(forUpload: upload, withResponse: TUSResponse(message: "Upload was canceled."), andError: error)
+        TUSClient.shared.delegate?.TUSFailure(forUpload: upload, withResponse: TUSResponse(message: failed ? "Upload failed" : "Upload was canceled.", errorCode: statusCode), andError: error)
         TUSClient.shared.status = .ready
     }
     
@@ -242,8 +238,8 @@ class TUSExecutor: NSObject, URLSessionDelegate {
     }
 
     // TODO: Retry-Mechanism: The places where we called `markAsFailed` are the places where we could retry uploading the failed chunk.
-    internal func markAsFailed(upload: TUSUpload, completion: @escaping (Bool) -> Void, error: Error?) {
-        cancel(forUpload: upload, error: error, failed: true)
+    internal func markAsFailed(upload: TUSUpload, completion: @escaping (Bool) -> Void, error: Error?, statusCode: Int? = nil) {
+        cancel(forUpload: upload, error: error, failed: true, statusCode: statusCode)
 
         if continueUploading() {
             let pendingUploads = TUSClient.shared.pendingUploads()

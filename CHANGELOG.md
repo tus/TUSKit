@@ -2,5 +2,5 @@
 
 ## Upcoming version
 
-- [MINOR] Example propject runs again
+- [MINOR] Example project runs again
 - [MINOR] Removed POD dependencies in lockfile

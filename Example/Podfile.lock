@@ -1,5 +1,5 @@
 PODS:
-  - TUSKit (2.1.0)
+  - TUSKit (2.2.0)
 
 DEPENDENCIES:
   - TUSKit (from `../`)

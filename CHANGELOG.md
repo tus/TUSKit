@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.1
+
+- [PATCH] Fixing podfile and remove related warnings and errors.
+
 ## 2.2.0
 
 - [MINOR] The example project now uses native iOS examples with PHPickerViewController and UIImagePickerController.

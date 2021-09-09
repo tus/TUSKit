@@ -10,7 +10,6 @@
 		4D3BD4E125328B0F00084000 /* UploadTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3BD4E025328B0F00084000 /* UploadTest.swift */; };
 		4D3BD4E325328D4400084000 /* memeCat.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4D3BD4E225328D4400084000 /* memeCat.jpg */; };
 		4DA4E6EB2488BA8700F4581F /* test.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 4DA4E6EA2488BA8700F4581F /* test.mp4 */; };
-		4DE4B777247B7258009E5E4C /* TLPhotoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE4B775247B7258009E5E4C /* TLPhotoViewController.swift */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* ViewController.swift */; };
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
@@ -37,7 +36,6 @@
 		4D3BD4E025328B0F00084000 /* UploadTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadTest.swift; sourceTree = "<group>"; };
 		4D3BD4E225328D4400084000 /* memeCat.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = memeCat.jpg; sourceTree = "<group>"; };
 		4DA4E6EA2488BA8700F4581F /* test.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = test.mp4; sourceTree = "<group>"; };
-		4DE4B775247B7258009E5E4C /* TLPhotoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TLPhotoViewController.swift; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* TUSKit_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TUSKit_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACD51AFB9204008FA782 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -115,7 +113,6 @@
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
 				607FACD31AFB9204008FA782 /* Supporting Files */,
-				4DE4B775247B7258009E5E4C /* TLPhotoViewController.swift */,
 			);
 			name = "Example for TUSKit";
 			path = TUSKit;
@@ -198,7 +195,6 @@
 				607FACE11AFB9204008FA782 /* Sources */,
 				607FACE21AFB9204008FA782 /* Frameworks */,
 				607FACE31AFB9204008FA782 /* Resources */,
-				79C99260D816B9FAB1198C6C /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -327,43 +323,15 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-TUSKit_Example/Pods-TUSKit_Example-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/TLPhotoPicker/TLPhotoPicker.framework",
 				"${BUILT_PRODUCTS_DIR}/TUSKit/TUSKit.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/TLPhotoPicker.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/TUSKit.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-TUSKit_Example/Pods-TUSKit_Example-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		79C99260D816B9FAB1198C6C /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-TUSKit_Tests/Pods-TUSKit_Tests-frameworks.sh",
-				"${PODS_ROOT}/AppSpectorSDK/AppSpectorSDK.framework",
-				"${BUILT_PRODUCTS_DIR}/FBSnapshotTestCase/FBSnapshotTestCase.framework",
-				"${BUILT_PRODUCTS_DIR}/Nimble/Nimble.framework",
-				"${BUILT_PRODUCTS_DIR}/Nimble-Snapshots/Nimble_Snapshots.framework",
-				"${BUILT_PRODUCTS_DIR}/Quick/Quick.framework",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AppSpectorSDK.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FBSnapshotTestCase.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Nimble.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Nimble_Snapshots.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Quick.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-TUSKit_Tests/Pods-TUSKit_Tests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -375,7 +343,6 @@
 			files = (
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
-				4DE4B777247B7258009E5E4C /* TLPhotoViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

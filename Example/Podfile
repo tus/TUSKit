@@ -1,5 +1,6 @@
 use_frameworks!
 
+platform :ios, '10.0'
 target 'TUSKit_Example' do
   pod 'TUSKit', :path => '../'
 

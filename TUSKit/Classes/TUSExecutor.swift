@@ -89,7 +89,7 @@ class TUSExecutor: NSObject, URLSessionDelegate {
                 upload.status = .uploading
                 TUSClient.shared.updateUpload(upload)
                 // we start the upload from the first chunk (position 0)
-                self.upload(forChunks: chunks, withUpload: upload, atPosition: 0, completion: uploadFinishedCallback)
+                _ = self.upload(forChunks: chunks, withUpload: upload, atPosition: 0, completion: uploadFinishedCallback)
             }
             
             // Do the work:

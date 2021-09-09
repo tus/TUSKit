@@ -28,9 +28,9 @@ TODO: Add long description of the pod here.
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Mark Masterson' => 'mark@masterson.io' }
   s.source           = { :git => 'https://github.com/tus/tus-ios-client.git', :tag => s.version.to_s }
+  s.platform         = :ios
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '8.2'
   s.osx.deployment_target = '10.10'
 
   s.source_files = 'TUSKit/Classes/**/*'

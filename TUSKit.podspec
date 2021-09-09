@@ -31,7 +31,7 @@ TODO: Add long description of the pod here.
   s.platform         = :ios
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.osx.deployment_target = '10.10'
+  s.ios.deployment_target = '8.2'
 
   s.source_files = 'TUSKit/Classes/**/*'
   

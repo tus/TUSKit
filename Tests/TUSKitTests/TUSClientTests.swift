@@ -1,7 +1,7 @@
 import XCTest
 @testable import TUSKit
 
-final class TUSKitTests: XCTestCase {
+final class TUSClientTests: XCTestCase {
     
     var client: TUSClient!
     
@@ -14,15 +14,15 @@ final class TUSKitTests: XCTestCase {
 
     func testUploadingNonExistentFile() {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("thisfiledoesntexist.jpg")
-        XCTAssertThrowsError(try client.addUploadTask(filePath: fileURL), "If a file doesn't exist, the client should throw a message right when an uploadTask is triggered")
+        XCTAssertThrowsError(try client.uploadFileAt(filePath: fileURL), "If a file doesn't exist, the client should throw a message right when an uploadTask is triggered")
     }
     
     func testUploadingExistingFile() {
-        try XCTAssertNoThrow(client.addUploadTask(filePath: makeFilePath()), "TUSClient should accept files that exist")
+        try XCTAssertNoThrow(client.uploadFileAt(filePath: makeFilePath()), "TUSClient should accept files that exist")
     }
     
     func testUploadingValidData() throws {
-        XCTAssertNoThrow(try client.addUploadTask(data: loadData()))
+        XCTAssertNoThrow(try client.upload(data: loadData()))
     }
     
     func testPausing() {

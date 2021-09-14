@@ -26,6 +26,9 @@ final class Scheduler {
     
     init() {}
     
+    /// A grouped task counts as a single unit that will succeed or fail as a whole.
+    /// Adding these workTasks as a group, means that they all have to succeed together.
+    /// - Parameter workTasks: An array of `WorkTask` elements.
     func addGroupedTasks(workTasks: [WorkTask]) {
         // TODO: Grouped tasks must all succeed or all fail
         // Use DispatchGroup, group.enter() group.leave() etc

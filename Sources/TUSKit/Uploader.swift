@@ -7,13 +7,6 @@
 
 import Foundation
 
-
-// Original Executor tasks:
-// Uploading
-// Background uploading
-// Preparation
-// Making requests
-
 /// The Uploader's responsibility is to perform work related to uploading.
 /// This includes: Making requests, handling requests, handling errors.
 final class Uploader {

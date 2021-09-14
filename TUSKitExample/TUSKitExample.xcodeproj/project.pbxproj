@@ -16,6 +16,7 @@
 		2EB9149426F09D7800548562 /* TUSKitExampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB9149326F09D7800548562 /* TUSKitExampleTests.swift */; };
 		2EB9149F26F09D7800548562 /* TUSKitExampleUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB9149E26F09D7800548562 /* TUSKitExampleUITests.swift */; };
 		2EB914B826F0A2CE00548562 /* TUSKit in Frameworks */ = {isa = PBXBuildFile; productRef = 2EB914B726F0A2CE00548562 /* TUSKit */; };
+		2EB914BA26F0B11C00548562 /* PhotoPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB914B926F0B11C00548562 /* PhotoPicker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +52,7 @@
 		2EB9149E26F09D7800548562 /* TUSKitExampleUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TUSKitExampleUITests.swift; sourceTree = "<group>"; };
 		2EB914A026F09D7800548562 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2EB914B626F0A29E00548562 /* TUSKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TUSKit; path = ..; sourceTree = "<group>"; };
+		2EB914B926F0B11C00548562 /* PhotoPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPicker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -105,6 +107,7 @@
 			isa = PBXGroup;
 			children = (
 				2EB9147C26F09D7600548562 /* AppDelegate.swift */,
+				2EB914B926F0B11C00548562 /* PhotoPicker.swift */,
 				2EB9147E26F09D7600548562 /* SceneDelegate.swift */,
 				2EB9148026F09D7600548562 /* ContentView.swift */,
 				2EB9148226F09D7800548562 /* Assets.xcassets */,
@@ -283,6 +286,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EB914BA26F0B11C00548562 /* PhotoPicker.swift in Sources */,
 				2EB9147D26F09D7600548562 /* AppDelegate.swift in Sources */,
 				2EB9147F26F09D7600548562 /* SceneDelegate.swift in Sources */,
 				2EB9148126F09D7600548562 /* ContentView.swift in Sources */,

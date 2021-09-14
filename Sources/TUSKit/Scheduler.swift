@@ -22,7 +22,18 @@ protocol SchedulerDelegate: AnyObject {
 final class Scheduler {
 
     private var tasks = [WorkTask]()
+    private var runningTasks = [WorkTask]()
     weak var delegate: SchedulerDelegate?
+    
+    var nrOfRunningTasks: Int { runningTasks.count }
+    var nrOfPendingTasks: Int { tasks.count }
+    
+    let queue = DispatchQueue(label: "com.TUSKit.Scheduler") // Tasks happen on background
+
+    // We limit the number of concurrent tasks.
+    // Note that a GroupedTask can still spawn its own threads.
+    static let maxConcurrentActions = 5
+    let semaphore = DispatchSemaphore(value: maxConcurrentActions)
     
     init() {}
     
@@ -30,10 +41,9 @@ final class Scheduler {
     /// Adding these workTasks as a group, means that they all have to succeed together.
     /// - Parameter workTasks: An array of `WorkTask` elements.
     func addGroupedTasks(workTasks: [WorkTask]) {
-        // TODO: Grouped tasks must all succeed or all fail
-        // Use DispatchGroup, group.enter() group.leave() etc
-        let groupedTask = GroupedTask(tasks: workTasks)
-        self.tasks.append(groupedTask)
+//        let groupedTask = GroupedTask(tasks: workTasks, queue: queue)
+//        self.tasks.append(groupedTask)
+        self.tasks.append(contentsOf: workTasks)
         checkNextTask()
     }
     
@@ -41,19 +51,35 @@ final class Scheduler {
         self.tasks.append(workTask)
         checkNextTask()
     }
-    
+
+    // TODO: Call clean up on all related tasks
     private func checkNextTask() {
-        guard !tasks.isEmpty else { return }
-        let task = tasks.removeFirst()
-        delegate?.didStartTask(task: task, scheduler: self)
-        
-        task.run { [weak self] newTasks in
-            // TODO: Call clean up on all related tasks
-            guard let self = self else { return }
-            self.tasks.append(contentsOf: newTasks)
-            self.checkNextTask()
+        queue.async {  [unowned self] in
+            guard !tasks.isEmpty else { return }
+            self.semaphore.wait()
+            let task = self.tasks.removeFirst()
+            self.runningTasks.append(task)
+            self.delegate?.didStartTask(task: task, scheduler: self)
             
-            self.delegate?.didFinishTask(task: task, scheduler: self)
+            task.run { [unowned self] newTasks in
+                self.semaphore.signal()
+                // // Make sure tasks are updated atomically
+                queue.async {
+                    self.tasks.append(contentsOf: newTasks)
+                    if let index = self.runningTasks.firstIndex(where: { $0 === task }) {
+                        print("Index is \(index) tasks count \(self.runningTasks.count)")
+                        // TODO: Crash
+                        self.runningTasks.remove(at: index)
+                    } else {
+                        assertionFailure("Currently finished task does not have an index in running tasks")
+                    }
+                    self.checkNextTask()
+                    self.delegate?.didFinishTask(task: task, scheduler: self)
+                }
+                
+                
+            }
+            
         }
     }
     
@@ -62,7 +88,7 @@ final class Scheduler {
 /// A WorkTask is run by the scheduler
 /// Once a WorkTask is finished. It can spawn new tasks that need to be run.
 /// E.g. If a task is to upload a file, then it can spawn into tasks to cut up the file first. Which can then cut up into a task to upload, which can then add a task to delete the files.
-protocol WorkTask {
+protocol WorkTask: AnyObject {
     func run(completed: @escaping TaskCompletion)
     func cleanUp()
 }
@@ -76,20 +102,31 @@ private final class GroupedTask: WorkTask {
     
     let tasks: [WorkTask]
     let group = DispatchGroup()
+    let queue: DispatchQueue
     
-    init(tasks: [WorkTask]) {
+    init(tasks: [WorkTask], queue: DispatchQueue) {
         self.tasks = tasks
+        self.queue = queue
     }
     
     func run(completed: @escaping TaskCompletion) {
+        print("---- RUNNING GROUPED TASK ---")
+        
+        // Idea: Give tasks back to Scheduler, so that the GroupTask cannot circumvent the max concurrent tasks property.
         for task in tasks {
-            group.enter()
-            task.run { [unowned group] _ in
-                group.leave()
+            self.group.enter()
+            queue.async { [unowned self] in
+                
+                print("Running task \(task)")
+                task.run { [unowned self] _ in
+                    self.group.leave()
+                }
             }
+
         }
         
         group.notify(queue: DispatchQueue.global()) {
+            print("Grouped task finished")
             completed([])
         }
 

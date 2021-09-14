@@ -12,7 +12,7 @@ public struct TUSClientError: Error {
     let code: Int
 
     // Maintenance: We use static lets on a struct, instead of an enum, so that adding new cases won't break stability.
-    // Alternatively we can ask customers to always use `unknown default`, but we can't guarantee that everyone will use that.
+    // Alternatively we can ask users to always use `unknown default`, but we can't guarantee that everyone will use that.
     public static let fileNotFound = TUSClientError(code: 1)
 }
 
@@ -55,18 +55,30 @@ public final class TUSClient {
         scheduleUploadsFor(data: data)
     }
     
+    /// Upload data
+    /// - Parameter data: The data to be uploaded.
+    /// - Throws: TUSClientError
+    public func uploadMultiple(dataFiles: [Data]) throws {
+        for data in dataFiles {
+            scheduleUploadsFor(data: data)
+        }
+    }
+    
     /// Turns a piece of Data into chunked UploadImage tasks
     /// - Parameter data: Image Data, which will be chunked to upload
     private func scheduleUploadsFor(data: Data) {
-        func makeUploadImages(data: Data) -> [UploadImage] {
+        func makeUploadDataTask(data: Data) -> [UploadDataTask] {
             let uploader = Uploader()
-            let chunks = data.chunks(size: 5 * 1024 * 1024)
+            // TODO: Chunk according to speed.
+            let sizeInKiloBytes = 500 * 1024// Uses safe speed, 500kb
+            let chunks = data.chunks(size: sizeInKiloBytes) // Originally 5mb:  5 * 1024 * 1024
             return chunks.map { chunk in
-                return UploadImage(chunk: chunk, uploader: uploader)
+                return UploadDataTask(chunk: chunk, uploader: uploader)
             }
         }
         
-        let groupedTasks = makeUploadImages(data: data)
+        let groupedTasks = makeUploadDataTask(data: data)
+        print("Creating \(groupedTasks.count) tasks for data")
         scheduler.addGroupedTasks(workTasks: groupedTasks)
     }
     
@@ -84,20 +96,21 @@ public final class TUSClient {
             return try data.or(willThrow: TUSClientError.fileNotFound)
         }
     }
-    
 }
 
 extension TUSClient: SchedulerDelegate {
     func didFinishTask(task: WorkTask, scheduler: Scheduler) {
-        print("did finished \(task)")
+        let total = scheduler.nrOfRunningTasks + scheduler.nrOfPendingTasks
+        let progress = Float(scheduler.nrOfRunningTasks) / Float(total) * 100
+        print("PROGRESS \(progress)")
     }
     
     func didStartTask(task: WorkTask, scheduler: Scheduler) {
-        
+        print("Did start \(task)")
     }
 }
 
-final class UploadImage: WorkTask {
+final class UploadDataTask: WorkTask {
     
     let chunk: Data
     let uploader: Uploader
@@ -108,7 +121,9 @@ final class UploadImage: WorkTask {
     }
     
     func run(completed: @escaping ([WorkTask]) -> ()) {
+        
         uploader.upload(data: chunk, offset: 0) {
+            print("Finished uploading task")
             completed([])
         }
     }

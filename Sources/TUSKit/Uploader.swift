@@ -12,7 +12,7 @@ import Foundation
 final class Uploader {
     
     func upload(data: Data, offset: Int, completion: @escaping () -> Void) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             completion()
         }
     }

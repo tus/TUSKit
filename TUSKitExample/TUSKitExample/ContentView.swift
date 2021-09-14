@@ -20,42 +20,25 @@ struct ContentView: View {
     }
 
     var body: some View {
-        
-        
         VStack {
-            Text("Hello, world!")
+            Text("TUSKit Demo")
+                .font(.title)
                 .padding()
             
             Button("Select image") {
                 showingImagePicker.toggle()
             }.sheet(isPresented:$showingImagePicker, content: {
-//                photoPicker.
-                PhotoPicker()
-            })
+                self.photoPicker
+                                                     })
         }
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
     @State static var isPresented = false
-    
+    static let tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!))
     static var previews: some View {
-        let photoPicker = PhotoPicker()
+        let photoPicker = PhotoPicker(tusClient: tusClient)
         ContentView(photoPicker: photoPicker)
     }
 }
-
-/*
-struct ContentView: View {
-    @State private var isPresented: Bool = false
-    var body: some View {
-        Button("Present Picker") {
-            isPresented.toggle()
-        }.sheet(isPresented: $isPresented) {
-            let configuration = PHPickerConfiguration(photoLibrary: PHPhotoLibrary.shared())
-            PhotoPicker(configuration: configuration, isPresented: $isPresented)
-        }
-    }
-}
-
-*/

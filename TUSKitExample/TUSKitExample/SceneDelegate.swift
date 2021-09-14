@@ -7,10 +7,13 @@
 
 import UIKit
 import SwiftUI
+import TUSKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
+
+    var tusClient: TUSClient!
 
     @State var isPresented = false
     
@@ -20,7 +23,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
 
         // Create the SwiftUI view that provides the window contents.
-        let photoPicker = PhotoPicker()
+        tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!))
+        let photoPicker = PhotoPicker(tusClient: tusClient)
         
         let contentView = ContentView(photoPicker: photoPicker)
 

@@ -12,7 +12,7 @@ public struct TUSClientError: Error {
     let code: Int
 
     // Maintenance: We use static lets on a struct, instead of an enum, so that adding new cases won't break stability.
-    // Alternatively we can opt in for unknown default, but we can't guarantee that everyone will use that.
+    // Alternatively we can ask customers to always use `unknown default`, but we can't guarantee that everyone will use that.
     public static let fileNotFound = TUSClientError(code: 1)
 }
 
@@ -31,6 +31,7 @@ public final class TUSClient {
     
     public init(config: TUSConfig, fileManager: FileManager = FileManager.default) {
         self.config = config
+        scheduler.delegate = self
     }
     
     /// Upload data located at a url.
@@ -42,6 +43,7 @@ public final class TUSClient {
             throw TUSClientError.fileNotFound
         }
         
+        // Improvement: Loading data can also happen later, when the task actually runs. Maybe nest this group in another task that will load and chunk the data.
         let data = try findData(for: filePath)
         scheduleUploadsFor(data: data)
     }
@@ -65,7 +67,7 @@ public final class TUSClient {
         }
         
         let groupedTasks = makeUploadImages(data: data)
-        scheduler.addGroupedTasks(workTask: groupedTasks)
+        scheduler.addGroupedTasks(workTasks: groupedTasks)
     }
     
     /// Get Data based on URL
@@ -83,6 +85,16 @@ public final class TUSClient {
         }
     }
     
+}
+
+extension TUSClient: SchedulerDelegate {
+    func didFinishTask(task: WorkTask, scheduler: Scheduler) {
+        print("did finished \(task)")
+    }
+    
+    func didStartTask(task: WorkTask, scheduler: Scheduler) {
+        
+    }
 }
 
 final class UploadImage: WorkTask {
@@ -105,74 +117,3 @@ final class UploadImage: WorkTask {
         // Delete file
     }
 }
-
-/*
-/// The purpose of an `UploadTask` is to get a file uploaded. No matter what happens under the hood
-/// An `UploadTask` takes care of; Preparation (Chunking data), the uploading itself (indirectly, using an uploader), grouping the uploadresults back into one, and cleaning up afterwards.
-public final class UploadTask {
-    let group = DispatchGroup()
-    
-    enum Source {
-        case filePath(URL)
-        case data(Data)
-    }
-    
-    let source: Source
-    let uploader: Uploader
-    
-    init(source: Source, uploader: Uploader) {
-        self.source = source
-        self.uploader = uploader
-    }
-    
-    func run() -> [UploadImage] {
-        let data = getData()
-        
-        // Split data into multiple upload tasks
-        let chunks = data.chunks(size: 5 * 1024 * 1024)
-        return chunks.map { chunk in
-            return UploadImage(chunk, uploader)
-        }
-    }
-    
-    func run(completed: @escaping () -> Void) {
-        let data = getData()
-        
-        // Split data into multiple uploads
-        let chunks = data.chunks(size: 5 * 1024 * 1024)
-        
-        // TODO: Store data
-        
-        // TODO: Continue or new. If new, create different url request
-        
-        // Upload chunks
-        for chunk in chunks {
-            group.enter()
-            uploader.upload(data: chunk, offset: 0) { [unowned group] in
-                group.leave()
-            }
-        }
-        
-        // Group results from chunked uploads back into one again.
-        // TODO: Get results
-        // TODO: Cancel if one fails? Or retry?
-        group.notify(queue: DispatchQueue.global()) {
-            completed()
-        }
-        
-        // TODO: File cleanup
-    }
-    
-    private func getData() -> Data {
-        switch source {
-        case .filePath(let url):
-            return findData(for: url)
-        case .data(let d):
-            return d
-        }
-    }
-    
-    
-}
-
-*/

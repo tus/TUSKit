@@ -1,5 +1,5 @@
 import XCTest
-@testable import TUSKit
+import TUSKit // No testable import. Make sure we test the public api
 
 final class TUSClientTests: XCTestCase {
     

@@ -49,38 +49,75 @@ struct PhotoPicker: UIViewControllerRepresentable {
         
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             
-            dataFrom(pickerResults: results) { [unowned tusClient] data in
-                print("Received \(data.count) results")
-                try! tusClient.uploadMultiple(dataFiles: data)
+            dataFrom(pickerResults: results) { [unowned tusClient] urls in
+                try! tusClient.uploadFiles(filePaths: urls)
             }
             parent.presentationMode.wrappedValue.dismiss()
         }
         
-        func dataFrom(pickerResults: [PHPickerResult], completed: @escaping ([Data]) -> Void) {
+        func dataFrom(pickerResults: [PHPickerResult], completed: @escaping ([URL]) -> Void) {
             let identifiers = pickerResults.compactMap(\.assetIdentifier)
             
             let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil)
-            var assetData = [Data]()
+            var assetURLs = [URL]()
             
             fetchResult.enumerateObjects { asset, count, _ in
                 
-                PHImageManager.default().requestImageDataAndOrientation(for: asset, options: nil) { data, _, _, _ in
-                    guard let data = data else {
-                        print("No data found for asset")
+                asset.getURL { url in
+                    guard let url = url else {
+                        print("No url found for asset")
                         return
                     }
-                    assetData.append(data)
-                    if count == pickerResults.count - 1 {
-                        completed(assetData)
-                    }
+                    assetURLs.append(url)
 
+                    if count == pickerResults.count - 1 {
+                        completed(assetURLs)
+                    }
                 }
+                
+//                PHImageManager.default().requestImageDataAndOrientation(for: asset, options: nil) { data, _, _, _ in
+//                    guard let data = data else {
+//                        print("No data found for asset")
+//                        return
+//                    }
+//                    assetData.append(data)
+//                    if count == pickerResults.count - 1 {
+//                        completed(assetData)
+//                    }
+//
+//                }
             }
            
         }
         
         deinit {
             
+        }
+    }
+}
+
+private extension PHAsset {
+
+    func getURL(completionHandler : @escaping ((_ responseURL : URL?) -> Void)){
+        if self.mediaType == .image {
+            let options: PHContentEditingInputRequestOptions = PHContentEditingInputRequestOptions()
+            options.canHandleAdjustmentData = {(adjustmeta: PHAdjustmentData) -> Bool in
+                return true
+            }
+            self.requestContentEditingInput(with: options, completionHandler: {(contentEditingInput: PHContentEditingInput?, info: [AnyHashable : Any]) -> Void in
+                completionHandler(contentEditingInput!.fullSizeImageURL as URL?)
+            })
+        } else if self.mediaType == .video {
+            let options: PHVideoRequestOptions = PHVideoRequestOptions()
+            options.version = .original
+            PHImageManager.default().requestAVAsset(forVideo: self, options: options, resultHandler: {(asset: AVAsset?, audioMix: AVAudioMix?, info: [AnyHashable : Any]?) -> Void in
+                if let urlAsset = asset as? AVURLAsset {
+                    let localVideoUrl: URL = urlAsset.url as URL
+                    completionHandler(localVideoUrl)
+                } else {
+                    completionHandler(nil)
+                }
+            })
         }
     }
 }

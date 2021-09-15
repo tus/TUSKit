@@ -27,4 +27,15 @@ final class DataTests: XCTestCase {
         
         XCTAssertEqual(1, data.chunks(size: chunkSize).count)
     }
+    
+    func testCollectionRanges() {
+        
+        let ranges = Array(0..<10).chunkRanges(size: 3)
+        
+        let expectedRanges = [0..<3, 3..<6, 6..<9, 9..<10]
+        for (lhs, rhs) in zip(expectedRanges, ranges) {
+            XCTAssertEqual(lhs, rhs)
+        }
+        
+    }
 }

@@ -41,13 +41,25 @@ public final class TUSClient {
     /// - Parameter filePath: The path to a file on a local filesystem.
     /// - Throws: TUSClientError
     public func uploadFileAt(filePath: URL) throws {
-        guard FileManager.default.fileExists(atPath: filePath.absoluteString) else {
+        do {
+            let url = try Files.copy(from: filePath)
+            guard let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize else {
+                print("Size is unknown")
+                // TODO: Load data and try getting size
+                throw TUSClientError.fileNotFound
+            }
+            
+            // TODO: Duplicate
+            let sizeInKiloBytes = 500 * 1024// Uses safe speed, 500kb
+            let ranges = (0..<size).chunkRanges(size: sizeInKiloBytes)
+            
+            scheduleUploadsFor(url: url, ranges: ranges)
+        } catch {
             throw TUSClientError.fileNotFound
         }
-        
-        // Improvement: Loading data can also happen later, when the task actually runs. Maybe nest this group in another task that will load and chunk the data.
-        let data = try findData(for: filePath)
-        scheduleUploadsFor(data: data)
+//        // TODO: Copy file from URL
+//        let data = try findData(for: filePath)
+//        scheduleUploadsFor(data: data)
     }
     
     /// Upload data
@@ -57,7 +69,13 @@ public final class TUSClient {
         scheduleUploadsFor(data: data)
     }
     
-    /// Upload data
+    /// Upload multiple files by giving their url
+    /// - Parameter filePaths: An array of filepaths, represented by URLs
+    public func uploadFiles(filePaths: [URL]) throws {
+        try filePaths.forEach(uploadFileAt)
+    }
+    
+    /// Upload multiple data files
     /// - Parameter data: The data to be uploaded.
     /// - Throws: TUSClientError
     public func uploadMultiple(dataFiles: [Data]) throws {
@@ -69,22 +87,24 @@ public final class TUSClient {
     /// Turns a piece of Data into chunked UploadImage tasks
     /// - Parameter data: Image Data, which will be chunked to upload
     private func scheduleUploadsFor(data: Data) {
-        func makeUploadDataTask(data: Data) -> [UploadDataTask] {
-            let uploader = Uploader()
-            // TODO: Chunk according to speed.
-            let sizeInKiloBytes = 500 * 1024// Uses safe speed, 500kb
-            let chunks = data.chunks(size: sizeInKiloBytes) // Originally 5mb:  5 * 1024 * 1024
-            return chunks.map { chunk in
-                return UploadDataTask(chunk: chunk, uploader: uploader)
-            }
-        }
+        // TODO: error handling
         
-        let groupedTasks = makeUploadDataTask(data: data)
-        total += groupedTasks.count
-        print("Creating \(groupedTasks.count) tasks for data")
-        scheduler.addGroupedTasks(tasks: groupedTasks)
+        // Store file now
+        let url = try! Files.store(data: data)
+        let sizeInKiloBytes = 500 * 1024// Uses safe speed, 500kb
+        let ranges = data.chunkRanges(size: sizeInKiloBytes)
+        scheduleUploadsFor(url: url, ranges: ranges)
     }
     
+    private func scheduleUploadsFor(url: URL, ranges: [Range<Int>]) {
+        let tasks = ranges.map { range in
+            UploadDataTask(url: url, range: range, uploader: Uploader())
+        }
+        
+        total += tasks.count
+        scheduler.addGroupedTasks(tasks: tasks)
+    }
+
     /// Get Data based on URL
     /// - Parameter url: The target url to load data from
     /// - Throws: Throws TUSClientError
@@ -120,18 +140,23 @@ extension TUSClient: SchedulerDelegate {
 
 final class UploadDataTask: Task {
     
-    let chunk: Data
+//    let chunk: Data
+    let url: URL
+    let range: Range<Int>
     let uploader: Uploader
     
-    init(chunk: Data, uploader: Uploader) {
-        self.chunk = chunk
+    init(url: URL, range: Range<Int>, uploader: Uploader) {
+        self.url = url
+        self.range = range
         self.uploader = uploader
     }
     
     func run(completed: @escaping ([Task]) -> ()) {
+        // TODO: Error handling
+        let data = try! Data(contentsOf: url)
+        let sub = data[range]
         
-        uploader.upload(data: chunk, offset: 0) {
-            print("Finished uploading task")
+        uploader.upload(data: sub, range: range) {
             completed([])
         }
     }

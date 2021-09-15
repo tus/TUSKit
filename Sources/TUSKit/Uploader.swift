@@ -11,8 +11,9 @@ import Foundation
 /// This includes: Making requests, handling requests, handling errors.
 final class Uploader {
     
-    func upload(data: Data, offset: Int, completion: @escaping () -> Void) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+    func upload(data: Data, range: Range<Int>, completion: @escaping () -> Void) {
+        print("Going to upload \(data) for range \(range)")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             completion()
         }
     }

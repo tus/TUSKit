@@ -7,6 +7,9 @@
 
 import Foundation
 
+/// This type handles files, it stores, and copies.
+/// Basically it adds convenience methods to handle file loading.
+/// Uses FileManager.default underwater, hence why most methods are static
 final class Files {
     
     static private var TUSDirectory = "TUS"

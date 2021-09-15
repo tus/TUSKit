@@ -74,7 +74,7 @@ final class Scheduler {
                 // // Make sure tasks are updated atomically
                 queue.async {
                     if !newTasks.isEmpty {
-                        self.tasks.append(newTasks)
+                        self.tasks = [newTasks] + self.tasks // If there are new tasks, perform them first. E.g. After creation of a file, start uploading.
                     }
                     if let index = self.runningTasks.firstIndex(where: { $0 === task }) {
                         self.runningTasks.remove(at: index)

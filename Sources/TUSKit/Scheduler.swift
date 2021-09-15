@@ -7,57 +7,65 @@
 
 import Foundation
 
-typealias TaskCompletion = ([WorkTask]) -> ()
+typealias TaskCompletion = ([Task]) -> ()
 
 protocol SchedulerDelegate: AnyObject {
-    func didStartTask(task: WorkTask, scheduler: Scheduler)
-    func didFinishTask(task: WorkTask, scheduler: Scheduler)
+    func didStartTask(task: Task, scheduler: Scheduler)
+    func didFinishTask(task: Task, scheduler: Scheduler)
 }
 
-// Also filter by only upload tasks
-
-/// A scheduler is responsible for running tasks
-/// Keeps track of related tasks and their errors
-/// Some tasks are for clean up, such as deleting files that aren't used anymore.
+/// A scheduler is responsible for processing tasks
+/// It keeps track of related tasks, adds limiter capabilities (e.g. only process x amount of tasks) and concurrency.
+/// Keeps track of related tasks and their errors.
 final class Scheduler {
 
-    private var tasks = [WorkTask]()
-    private var runningTasks = [WorkTask]()
+    private var tasks = [[Task]]()
+    private var runningTasks = [Task]()
     weak var delegate: SchedulerDelegate?
     
     var nrOfRunningTasks: Int { runningTasks.count }
-    var nrOfPendingTasks: Int { tasks.count }
+    var nrOfPendingTasks: Int {
+        var total = 0
+        for group in tasks {
+            total += group.count
+        }
+        return total
+    }
     
-    let queue = DispatchQueue(label: "com.TUSKit.Scheduler") // Tasks happen on background
+    // Tasks are processed in background
+    let queue = DispatchQueue(label: "com.TUSKit.Scheduler")
 
-    // We limit the number of concurrent tasks.
-    // Note that a GroupedTask can still spawn its own threads.
+    // We limit the number of concurrent tasks. E.g. iOS can handle 5 concurrent uploads.
     static let maxConcurrentActions = 5
     let semaphore = DispatchSemaphore(value: maxConcurrentActions)
     
     init() {}
     
     /// A grouped task counts as a single unit that will succeed or fail as a whole.
-    /// Adding these workTasks as a group, means that they all have to succeed together.
-    /// - Parameter workTasks: An array of `WorkTask` elements.
-    func addGroupedTasks(workTasks: [WorkTask]) {
-//        let groupedTask = GroupedTask(tasks: workTasks, queue: queue)
-//        self.tasks.append(groupedTask)
-        self.tasks.append(contentsOf: workTasks)
-        checkNextTask()
+    /// Adding these Tasks as a group, means that they all have to succeed together.
+    /// - Parameter Tasks: An array of `Task` elements.
+    func addGroupedTasks(tasks: [Task]) {
+        self.tasks.append(tasks)
+        checkProcessNextTask()
     }
     
-    func addTask(workTask: WorkTask) {
-        self.tasks.append(workTask)
-        checkNextTask()
+    func addTask(Task: Task) {
+        self.tasks.append([Task])
+        checkProcessNextTask()
     }
 
     // TODO: Call clean up on all related tasks
-    private func checkNextTask() {
-        queue.async {  [unowned self] in
+    private func checkProcessNextTask() {
+        queue.async { [unowned self] in
             guard !tasks.isEmpty else { return }
+            
+            guard let task = extractFirstTask() else {
+                assertionFailure("Could not get a new task, despite tasks being filled \(tasks)")
+                return
+            }
+            
             self.semaphore.wait()
-            let task = self.tasks.removeFirst()
+            
             self.runningTasks.append(task)
             self.delegate?.didStartTask(task: task, scheduler: self)
             
@@ -65,46 +73,59 @@ final class Scheduler {
                 self.semaphore.signal()
                 // // Make sure tasks are updated atomically
                 queue.async {
-                    self.tasks.append(contentsOf: newTasks)
+                    if !newTasks.isEmpty {
+                        self.tasks.append(newTasks)
+                    }
                     if let index = self.runningTasks.firstIndex(where: { $0 === task }) {
-                        print("Index is \(index) tasks count \(self.runningTasks.count)")
-                        // TODO: Crash
                         self.runningTasks.remove(at: index)
                     } else {
                         assertionFailure("Currently finished task does not have an index in running tasks")
                     }
-                    self.checkNextTask()
+                    self.checkProcessNextTask()
                     self.delegate?.didFinishTask(task: task, scheduler: self)
                 }
-                
                 
             }
             
         }
     }
     
+    /// Get first available task, removes it from current tasks
+    /// - Returns: First next task, or nil if tasks are empty
+    private func extractFirstTask() -> Task? {
+        guard let task = tasks.firstNested else {
+            return nil
+        }
+        
+        self.tasks = self.tasks.filterNested { element in
+            task === element
+        }
+        
+        return task
+    }
+    
 }
 
-/// A WorkTask is run by the scheduler
-/// Once a WorkTask is finished. It can spawn new tasks that need to be run.
+/// A Task is run by the scheduler
+/// Once a Task is finished. It can spawn new tasks that need to be run.
 /// E.g. If a task is to upload a file, then it can spawn into tasks to cut up the file first. Which can then cut up into a task to upload, which can then add a task to delete the files.
-protocol WorkTask: AnyObject {
+protocol Task: AnyObject {
     func run(completed: @escaping TaskCompletion)
     func cleanUp()
 }
 
-extension WorkTask {
+extension Task {
     func cleanUp() {}
 }
 
 /// Treats multiple tasks as one.
-private final class GroupedTask: WorkTask {
+private final class GroupedTask: Task {
     
-    let tasks: [WorkTask]
+    let tasks: [Task]
     let group = DispatchGroup()
     let queue: DispatchQueue
     
-    init(tasks: [WorkTask], queue: DispatchQueue) {
+    init(tasks: [Task], queue: DispatchQueue) {
         self.tasks = tasks
         self.queue = queue
     }
@@ -139,12 +160,12 @@ private final class GroupedTask: WorkTask {
 
 /*
 
-/// A WorkTask is a generic task. It wraps a closure as convenience to prevent creating a new type for each task.
-/// Useful for smaller tasks. For big tasks, you can implement the `WorkTask` protocol.
-struct SyncTask: WorkTask {
+/// A Task is a generic task. It wraps a closure as convenience to prevent creating a new type for each task.
+/// Useful for smaller tasks. For big tasks, you can implement the `Task` protocol.
+struct SyncTask: Task {
     
-    let work: () -> [WorkTask]
-    init(work: @escaping () -> [WorkTask]) {
+    let work: () -> [Task]
+    init(work: @escaping () -> [Task]) {
         self.work = work
     }
     
@@ -155,3 +176,35 @@ struct SyncTask: WorkTask {
 }
 */
 
+
+// Convenience extensions to help deal with nested arrays.
+private extension Array where Element: Collection {
+    
+    var firstNested: Element.Element? {
+        for col in self {
+            for el in col {
+                return el
+            }
+        }
+        
+        return nil
+    }
+    
+    func filterNested(predicate: (Element.Element) -> Bool) -> [[Element.Element]] {
+        var arr = [[Element.Element]]()
+        
+        for col in self {
+            var newArr = [Element.Element]()
+            for el in col {
+                if !predicate(el) {
+                    newArr.append(el)
+                }
+            }
+            if !newArr.isEmpty {
+                arr.append(newArr)
+            }
+        }
+        
+        return arr
+    }
+}

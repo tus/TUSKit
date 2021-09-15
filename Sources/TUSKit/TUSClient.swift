@@ -29,6 +29,8 @@ public final class TUSClient {
     private let config: TUSConfig
     private let scheduler = Scheduler()
     
+    private var total = 0
+    
     public init(config: TUSConfig, fileManager: FileManager = FileManager.default) {
         self.config = config
         scheduler.delegate = self
@@ -78,8 +80,9 @@ public final class TUSClient {
         }
         
         let groupedTasks = makeUploadDataTask(data: data)
+        total += groupedTasks.count
         print("Creating \(groupedTasks.count) tasks for data")
-        scheduler.addGroupedTasks(workTasks: groupedTasks)
+        scheduler.addGroupedTasks(tasks: groupedTasks)
     }
     
     /// Get Data based on URL
@@ -99,18 +102,23 @@ public final class TUSClient {
 }
 
 extension TUSClient: SchedulerDelegate {
-    func didFinishTask(task: WorkTask, scheduler: Scheduler) {
-        let total = scheduler.nrOfRunningTasks + scheduler.nrOfPendingTasks
-        let progress = Float(scheduler.nrOfRunningTasks) / Float(total) * 100
-        print("PROGRESS \(progress)")
+    func didFinishTask(task: Task, scheduler: Scheduler) {
+        let progress = 100 - (Float(scheduler.nrOfPendingTasks) / Float(total) * 100)
+        // TODO: Use logger
+        print("total \(total) running \(scheduler.nrOfRunningTasks) pending \(scheduler.nrOfPendingTasks) PROGRESS \(progress)")
+        
+        if progress == 100 {
+            total = 0
+        }
     }
     
-    func didStartTask(task: WorkTask, scheduler: Scheduler) {
+    func didStartTask(task: Task, scheduler: Scheduler) {
+        // TODO: Use logger
         print("Did start \(task)")
     }
 }
 
-final class UploadDataTask: WorkTask {
+final class UploadDataTask: Task {
     
     let chunk: Data
     let uploader: Uploader
@@ -120,7 +128,7 @@ final class UploadDataTask: WorkTask {
         self.uploader = uploader
     }
     
-    func run(completed: @escaping ([WorkTask]) -> ()) {
+    func run(completed: @escaping ([Task]) -> ()) {
         
         uploader.upload(data: chunk, offset: 0) {
             print("Finished uploading task")

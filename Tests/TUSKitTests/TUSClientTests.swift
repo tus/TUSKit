@@ -1,5 +1,5 @@
 import XCTest
-import TUSKit // No testable import. Make sure we test the public api
+import TUSKit // ⚠️ No testable import. Make sure we test the public api here.
 
 final class TUSClientTests: XCTestCase {
     
@@ -12,17 +12,17 @@ final class TUSClientTests: XCTestCase {
         client = TUSClient(config: TUSConfig(server: liveDemoPath))
     }
 
-    func testUploadingNonExistentFile() {
+    func testUploadingNonExistentFileShouldThrow() {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("thisfiledoesntexist.jpg")
         XCTAssertThrowsError(try client.uploadFileAt(filePath: fileURL), "If a file doesn't exist, the client should throw a message right when an uploadTask is triggered")
     }
     
     func testUploadingExistingFile() {
-        try XCTAssertNoThrow(client.uploadFileAt(filePath: makeFilePath()), "TUSClient should accept files that exist")
+        try XCTAssertNoThrow(client.uploadFileAt(filePath: Fixtures.makeFilePath()), "TUSClient should accept files that exist")
     }
     
     func testUploadingValidData() throws {
-        XCTAssertNoThrow(try client.upload(data: loadData()))
+        XCTAssertNoThrow(try client.upload(data: Fixtures.loadData()))
     }
     
     func testPausing() {
@@ -35,17 +35,4 @@ final class TUSClientTests: XCTestCase {
         XCTFail("Implement me")
     }
     
-    private func makeFilePath() throws -> URL {
-        let bundle = Bundle.module
-        
-        let path = try XCTUnwrap(bundle.path(forResource: "memeCat", ofType: "jpg"))
-        
-        return try XCTUnwrap(URL(string: path))
-    }
-    
-    private func loadData() throws -> Data {
-        // We need to prepend with file:// so Data can load it.
-        let prefixedPath = try  "file://" + makeFilePath().absoluteString
-        return try Data(contentsOf: URL(string:prefixedPath)!)
-    }
 }

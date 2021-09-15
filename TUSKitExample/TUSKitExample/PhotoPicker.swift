@@ -10,6 +10,7 @@ import UIKit
 import PhotosUI
 import TUSKit
 
+/// In this example you can see how you can pass on imagefiles to the TUSClient.
 struct PhotoPicker: UIViewControllerRepresentable {
 
     @Environment(\.presentationMode) var presentationMode
@@ -51,6 +52,7 @@ struct PhotoPicker: UIViewControllerRepresentable {
             
             dataFrom(pickerResults: results) { [unowned tusClient] urls in
                 do {
+                    print("PhotoPicker: Selected \(urls.count) photos")
                     try tusClient.uploadFiles(filePaths: urls)
                 } catch {
                     print("Error is \(error)")
@@ -74,7 +76,7 @@ struct PhotoPicker: UIViewControllerRepresentable {
                     }
                     assetURLs.append(url)
 
-                    if count == pickerResults.count - 1 {
+                    if count == 0 {
                         completed(assetURLs)
                     }
                 }

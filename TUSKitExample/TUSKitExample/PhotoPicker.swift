@@ -50,7 +50,11 @@ struct PhotoPicker: UIViewControllerRepresentable {
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             
             dataFrom(pickerResults: results) { [unowned tusClient] urls in
-                try! tusClient.uploadFiles(filePaths: urls)
+                do {
+                    try tusClient.uploadFiles(filePaths: urls)
+                } catch {
+                    print("Error is \(error)")
+                }
             }
             parent.presentationMode.wrappedValue.dismiss()
         }
@@ -75,17 +79,6 @@ struct PhotoPicker: UIViewControllerRepresentable {
                     }
                 }
                 
-//                PHImageManager.default().requestImageDataAndOrientation(for: asset, options: nil) { data, _, _, _ in
-//                    guard let data = data else {
-//                        print("No data found for asset")
-//                        return
-//                    }
-//                    assetData.append(data)
-//                    if count == pickerResults.count - 1 {
-//                        completed(assetData)
-//                    }
-//
-//                }
             }
            
         }
@@ -97,7 +90,7 @@ struct PhotoPicker: UIViewControllerRepresentable {
 }
 
 private extension PHAsset {
-
+    // From https://stackoverflow.com/questions/38183613/how-to-get-url-for-a-phasset
     func getURL(completionHandler : @escaping ((_ responseURL : URL?) -> Void)){
         if self.mediaType == .image {
             let options: PHContentEditingInputRequestOptions = PHContentEditingInputRequestOptions()

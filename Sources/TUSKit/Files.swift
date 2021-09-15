@@ -27,7 +27,11 @@ final class Files {
     static func copy(from location: URL) throws -> URL {
         try makeDirectoryIfNeeded()
         
-        let targetLocation = targetDirectory.appendingPathComponent(location.lastPathComponent)
+        // We don't use lastPathComponent (filename) because then you can't add the same file file.
+        // With a unique name, you can upload the same file twice if you want.
+        let fileName = UUID().uuidString
+        
+        let targetLocation = targetDirectory.appendingPathComponent(fileName)
         try FileManager.default.copyItem(atPath: location.path, toPath: targetLocation.path)
         return targetLocation
     }

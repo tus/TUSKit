@@ -152,6 +152,7 @@ final class CreationTask: Task {
             // TODO: Use logger
             print("Received \(remoteDestination)")
             print("Going to upload \(size) bytes")
+            // File is created remotely. Now start first datatask.
             let task = UploadDataTask(api: api, remoteDestination: remoteDestination, filePath: filePath, range: 0..<chunkSize, totalSize: size)
             // TODO: Update metadata
             completed([task])
@@ -184,18 +185,21 @@ final class UploadDataTask: Task {
         let chunkSize = range.count
         
         // TODO: If concurrency is not supported (or some flag is passed), create a new task after this one to determine what's left. Maybe add count to this task to help determin.
-        api.upload(data: sub, range: range) { [unowned self] in
+        api.upload(data: sub, range: range, location: remoteDestination) { [unowned self] in
             
             // TODO: Force unwrap -> Error / Assertion
-            let max = self.range.max()! + 1
+            
+            // Decide if more datatasks are needed, create those too.
+            let max = self.range.upperBound
             guard max < totalSize else {
                 // Finished uploading.
                 // TODO: Delete file
                 // TODO: Delete metadata
+                print("Upload finished, url is \(remoteDestination)")
                 completed([])
                 return
             }
-            
+
             let nextRange = max..<min((max + chunkSize), totalSize)
             
             let task = UploadDataTask(api: api, remoteDestination: remoteDestination, filePath: filePath, range: nextRange, totalSize: totalSize)

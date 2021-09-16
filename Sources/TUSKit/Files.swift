@@ -65,6 +65,10 @@ final class Files {
     }
     
     static func clearTUSDirectory() throws {
+        guard FileManager.default.fileExists(atPath: targetDirectory.path, isDirectory: nil) else {
+            return
+        }
+        
         for file in try FileManager.default.contentsOfDirectory(atPath: targetDirectory.path) {
             try FileManager.default.removeItem(atPath: targetDirectory.appendingPathComponent(file).path)
         }

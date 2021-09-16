@@ -54,7 +54,6 @@ final class Scheduler {
         checkProcessNextTask()
     }
 
-    // TODO: Call clean up on all related tasks
     private func checkProcessNextTask() {
         queue.async { [unowned self] in
             guard !tasks.isEmpty else { return }
@@ -111,11 +110,6 @@ final class Scheduler {
 /// E.g. If a task is to upload a file, then it can spawn into tasks to cut up the file first. Which can then cut up into a task to upload, which can then add a task to delete the files.
 protocol Task: AnyObject {
     func run(completed: @escaping TaskCompletion)
-    func cleanUp()
-}
-
-extension Task {
-    func cleanUp() {}
 }
 
 /// Treats multiple tasks as one.
@@ -151,10 +145,6 @@ private final class GroupedTask: Task {
             completed([])
         }
 
-    }
-    
-    func cleanUp() {
-        tasks.forEach { $0.cleanUp() }
     }
 }
 

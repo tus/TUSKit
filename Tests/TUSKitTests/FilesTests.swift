@@ -32,4 +32,11 @@ final class FilesTests: XCTestCase {
         }
     }
     
+    func testCantStoreEmptyFile() throws {
+        XCTFail("Implement me")
+    }
+    
+    func testCantStoreEmptyData() throws {
+        XCTFail("Implement me")
+    }
 }

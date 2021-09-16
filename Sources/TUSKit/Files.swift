@@ -9,12 +9,13 @@ import Foundation
 
 /// This type handles files, it stores, and copies.
 /// Basically it adds convenience methods to handle file loading.
-/// Uses FileManager.default underwater, hence why most methods are static
+/// Uses FileManager.default underwater, hence why methods work statically
 final class Files {
     
     static private var TUSDirectory = "TUS"
     
     static var targetDirectory: URL {
+        // TODO: Consider using cache dir? Or mac only?
         return documentsDirectory.appendingPathComponent(TUSDirectory)
     }
     
@@ -29,6 +30,8 @@ final class Files {
     @discardableResult
     static func copy(from location: URL) throws -> URL {
         try makeDirectoryIfNeeded()
+        
+        // TODO: Prefix with file:// if location can't be found
         
         // We don't use lastPathComponent (filename) because then you can't add the same file file.
         // With a unique name, you can upload the same file twice if you want.

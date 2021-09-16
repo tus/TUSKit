@@ -47,7 +47,6 @@ public final class TUSClient {
     /// - Parameter filePath: The path to a file on a local filesystem.
     /// - Throws: TUSClientError
     public func uploadFileAt(filePath: URL) throws {
-        
         do {
             let destinationFilePath = try Files.copy(from: filePath)
             createTaskFor(storedFilePath: destinationFilePath)
@@ -91,9 +90,9 @@ public final class TUSClient {
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
     private func createTaskFor(storedFilePath: URL) {
-        // TODO: Get size based on network speed
+        // TODO: Get size based on api speed
         let sizeInKiloBytes = 500 * 1024// Uses safe speed, 500kb
-        let task = CreationTask(filePath: storedFilePath, network: Network(), chunkSize: sizeInKiloBytes)
+        let task = CreationTask(filePath: storedFilePath, api: TUSAPI(uploadURL: config.server), chunkSize: sizeInKiloBytes)
         scheduler.addTask(Task: task)
     }
 
@@ -117,27 +116,45 @@ extension TUSClient: SchedulerDelegate {
 /// The server will return a path to upload to.
 final class CreationTask: Task {
     let filePath: URL
-    let network: Network
+    let api: TUSAPI
     let chunkSize: Int
 
-    init(filePath: URL, network: Network, chunkSize: Int) {
+    init(filePath: URL, api: TUSAPI, chunkSize: Int) {
         self.filePath = filePath
-        self.network = network
+        self.api = api
         self.chunkSize = chunkSize
     }
     
     func run(completed: @escaping TaskCompletion) {
         // TODO: Write metadata to file
-        network.create { [unowned self] remoteDestination in
-            // TODO: Error handling
-            let size = try! filePath.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? Data(contentsOf: filePath).count
-            let ranges = (0..<size).chunkRanges(size: chunkSize)
+        // TODO: Force
+        let size = try! filePath.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? Data(contentsOf: filePath).count
+        
+        guard size > 0 else {
             
-            let tasks = ranges.map { range in
-                UploadDataTask(remoteDestination: remoteDestination, filePath: filePath, range: range, network: Network())
+            // Make sure even sync code comes next runloop, so behavior stays consistent
+            DispatchQueue.main.async {
+                // TODO: Error. Nothing to upload. Empty file.
+                completed([])
             }
-            
-            completed(tasks)
+            return
+        }
+        
+        api.create(size: size) { [unowned self] remoteDestination in
+            // TODO: Error handling
+            // TODO: Only if concurrency is supported.
+//            let ranges = (0..<size).chunkRanges(size: chunkSize)
+//
+//            let tasks = ranges.map { range in
+//                UploadDataTask(remoteDestination: remoteDestination, filePath: filePath, range: range, api: api)
+//            }
+//
+            // TODO: Use logger
+            print("Received \(remoteDestination)")
+            print("Going to upload \(size) bytes")
+            let task = UploadDataTask(api: api, remoteDestination: remoteDestination, filePath: filePath, range: 0..<chunkSize, totalSize: size)
+            // TODO: Update metadata
+            completed([task])
         }
     }
 }
@@ -145,16 +162,18 @@ final class CreationTask: Task {
 /// The upload task will upload to a destination.
 final class UploadDataTask: Task {
     
+    let api: TUSAPI
     let remoteDestination: URL
     let filePath: URL
     let range: Range<Int>
-    let network: Network
+    let totalSize: Int
     
-    init(remoteDestination: URL, filePath: URL, range: Range<Int>, network: Network) {
+    init(api: TUSAPI, remoteDestination: URL, filePath: URL, range: Range<Int>, totalSize: Int) {
+        self.api = api
         self.remoteDestination = remoteDestination
         self.filePath = filePath
         self.range = range
-        self.network = network
+        self.totalSize = totalSize
     }
     
     func run(completed: @escaping ([Task]) -> ()) {
@@ -162,12 +181,27 @@ final class UploadDataTask: Task {
         let data = try! Data(contentsOf: filePath)
         let sub = data[range]
         
-        network.upload(data: sub, range: range) {
-            completed([])
+        let chunkSize = range.count
+        
+        // TODO: If concurrency is not supported (or some flag is passed), create a new task after this one to determine what's left. Maybe add count to this task to help determin.
+        api.upload(data: sub, range: range) { [unowned self] in
+            
+            // TODO: Force unwrap -> Error / Assertion
+            let max = self.range.max()! + 1
+            guard max < totalSize else {
+                // Finished uploading.
+                // TODO: Delete file
+                // TODO: Delete metadata
+                completed([])
+                return
+            }
+            
+            let nextRange = max..<min((max + chunkSize), totalSize)
+            
+            let task = UploadDataTask(api: api, remoteDestination: remoteDestination, filePath: filePath, range: nextRange, totalSize: totalSize)
+            
+            // Update metadata
+            completed([task])
         }
-    }
-    
-    func cleanUp() {
-        // Delete file
     }
 }

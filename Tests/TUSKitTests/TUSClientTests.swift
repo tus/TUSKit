@@ -35,4 +35,17 @@ final class TUSClientTests: XCTestCase {
         XCTFail("Implement me")
     }
     
+    func testDisablingPersistence() {
+        XCTFail("Implement me")
+        
+        // Give people option to upload without storing to disk. Probably via config.
+    }
+    
+    func testCantUploadEmptyFile() {
+        XCTFail("Implement me")
+    }
+    
+    func testCantUploadEmptyData() {
+        XCTFail("Implement me")
+    }
 }

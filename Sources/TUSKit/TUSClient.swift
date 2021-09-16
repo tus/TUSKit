@@ -49,7 +49,7 @@ public final class TUSClient {
     public func uploadFileAt(filePath: URL) throws {
         do {
             let destinationFilePath = try Files.copy(from: filePath)
-            createTaskFor(storedFilePath: destinationFilePath)
+            scheduleCreationTask(for: destinationFilePath)
         } catch {
             throw TUSClientError.couldNotCopyFile
         }
@@ -61,7 +61,7 @@ public final class TUSClient {
     public func upload(data: Data) throws {
         do {
             let filePath = try Files.store(data: data)
-            createTaskFor(storedFilePath: filePath)
+            scheduleCreationTask(for: filePath)
         } catch {
             throw TUSClientError.couldNotStoreFile
         }
@@ -89,10 +89,10 @@ public final class TUSClient {
     
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
-    private func createTaskFor(storedFilePath: URL) {
+    private func scheduleCreationTask(for storedFilePath: URL) {
         // TODO: Get size based on api speed
         let sizeInKiloBytes = 500 * 1024// Uses safe speed, 500kb
-        let task = CreationTask(filePath: storedFilePath, api: TUSAPI(uploadURL: config.server), chunkSize: sizeInKiloBytes)
+        let task = CreationTask(filePath: storedFilePath, api: TUSAPI(uploadURL: config.server, network: URLSession.shared), chunkSize: sizeInKiloBytes)
         scheduler.addTask(Task: task)
     }
 

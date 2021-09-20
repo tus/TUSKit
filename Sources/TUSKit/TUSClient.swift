@@ -57,7 +57,6 @@ public final class TUSClient {
         
         // TODO: Reuse TUSAPI from other methods
         let api = TUSAPI(uploadURL: config.server, network: URLSession.shared)
-        let sizeInKiloBytes = 500 * 1024// Uses safe speed, 500kb
         return metaData.map { metaData in
             // TODO: Check expiration date?
             
@@ -69,7 +68,7 @@ public final class TUSClient {
             } else {
                 // TODO: Reuse chunksize logic
                 print("Create creation task")
-                return CreationTask(filePath: metaData.filePath, api: api, chunkSize: sizeInKiloBytes)
+                return CreationTask(filePath: metaData.filePath, api: api)
             }
              
         }
@@ -125,10 +124,7 @@ public final class TUSClient {
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
     private func scheduleCreationTask(for storedFilePath: URL) {
-        // TODO: Get size based on api speed
-        // TODO: Can we do int.max?
-        let sizeInKiloBytes = 500 * 1024// Uses safe speed, 500kb
-        let task = CreationTask(filePath: storedFilePath, api: TUSAPI(uploadURL: config.server, network: URLSession.shared), chunkSize: sizeInKiloBytes)
+        let task = CreationTask(filePath: storedFilePath, api: TUSAPI(uploadURL: config.server, network: URLSession.shared))
         scheduler.addTask(task: task)
     }
 
@@ -175,9 +171,18 @@ final class StatusTask: Task {
             }
             
             metaData.uploadedRange = 0..<offset
-            let task = try! UploadDataTask(api: api, metaData: metaData, range: offset..<metaData.size)
             
-            completed([task])
+            if offset == metaData.size {
+                print("Already done")
+                // TODO: Force
+                try! Files.removeFileAndMetadata(metaData)
+                completed([])
+            } else {
+                let task = try! UploadDataTask(api: api, metaData: metaData, range: offset..<metaData.size)
+                completed([task])
+            }
+            
+            
         }
     }
 }
@@ -187,10 +192,10 @@ final class StatusTask: Task {
 final class CreationTask: Task {
     let filePath: URL
     let api: TUSAPI
-    let chunkSize: Int
+    let chunkSize: Int?
     var metaData: UploadMetadata
 
-    init(filePath: URL, api: TUSAPI, chunkSize: Int) {
+    init(filePath: URL, api: TUSAPI, chunkSize: Int? = nil) {
         self.filePath = filePath
         self.api = api
         self.chunkSize = chunkSize
@@ -243,7 +248,12 @@ final class CreationTask: Task {
             print("Going to upload \(size) bytes")
             // File is created remotely. Now start first datatask.
             // TODO: Force try
-            let task = try! UploadDataTask(api: api, metaData: metaData, range: 0..<chunkSize)
+            let task: UploadDataTask
+            if let chunkSize = chunkSize {
+                task = try! UploadDataTask(api: api, metaData: metaData, range: 0..<chunkSize)
+            } else {
+                task = try! UploadDataTask(api: api, metaData: metaData)
+            }
             
             // TODO: Update metadata
             completed([task])
@@ -257,11 +267,29 @@ final class UploadDataTask: Task {
     let api: TUSAPI
     let metaData: UploadMetadata
     let remoteDestination: URL
-    let range: Range<Int>
+    let range: Range<Int>?
     
-    init(api: TUSAPI, metaData: UploadMetadata, range: Range<Int>) throws {
+    /// Specify range, or upload
+    /// - Parameters:
+    ///   - api: The TUSAPI
+    ///   - metaData: The metadata of the file to upload
+    ///   - range: Specify range to upload. If omitted, will upload entire file at once.
+    /// - Throws: File and network related errors
+    init(api: TUSAPI, metaData: UploadMetadata, range: Range<Int>? = nil) throws {
         self.api = api
         self.metaData = metaData
+        
+        if let range = range, range.count == 0 {
+            // Finished here somehow
+            assertionFailure("Ended up with an empty range to upload.")
+            // TODO: Delete file
+        }
+        
+        if (range?.count ?? 0) > metaData.size {
+            // TODO: Make error
+            assertionFailure("The range to upload is larger than the size")
+        }
+        
         if let destination = metaData.remoteDestination {
             self.remoteDestination = destination
         } else {
@@ -283,37 +311,50 @@ final class UploadDataTask: Task {
             }
             return
         }
-        let sub = data[range]
         
-        let chunkSize = range.count
+    
+        
+        let dataToUpload: Data
+        if let range = range {
+            
+            dataToUpload = data[range]
+            
+        } else {
+            dataToUpload = data
+        }
+        print("Going to upload \(String(describing: range))")
         
         // TODO: If concurrency is not supported (or some flag is passed), create a new task after this one to determine what's left. Maybe add count to this task to help determin.
-        api.upload(data: sub, range: range, location: remoteDestination) { [unowned self] in
-            
-            metaData.uploadedRange = 0..<range.upperBound
-            // TODO: Force
+        api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] offset in
+            print("Uploaded \(offset)")
+            metaData.uploadedRange = 0..<offset
+//            // TODO: Force
             try! Files.encodeAndStore(metaData: metaData)
-            
-            // TODO: Force unwrap -> Error / Assertion
-            
-            // Decide if more datatasks are needed, create those too.
-            let max = self.range.upperBound
-            guard max < metaData.size else {
+
+            // Decide if more datatasks are needed, create those too if needed.
+            print("offset \(offset) size \(metaData.size)")
+            if offset == metaData.size {
                 // Finished uploading.
                 try! Files.removeFileAndMetadata(metaData)
                 print("Upload finished, url is \(remoteDestination)")
                 completed([])
                 return
             }
-
-            print("Size \(metaData.size)")
-            print("max is \(max)")
-            let nextRange = max..<min((max + chunkSize), metaData.size)
-            // TODO: Force try
-            let task = try! UploadDataTask(api: api, metaData: metaData, range: nextRange)
             
-            // Update metadata
+            let task: UploadDataTask
+            if let range = range {
+                print("Not finished uploading, will now upload \(range)")
+                let chunkSize = range.count
+                let nextRange = offset..<min((offset + chunkSize), metaData.size)
+                    // TODO: Force try
+                task = try! UploadDataTask(api: api, metaData: metaData, range: nextRange)
+            } else {
+                task = try! UploadDataTask(api: api, metaData: metaData)
+                
+            }
+            
             completed([task])
+            
         }
     }
 }

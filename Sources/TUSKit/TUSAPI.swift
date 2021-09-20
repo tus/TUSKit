@@ -119,23 +119,34 @@ final class TUSAPI {
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
     
-    func upload(data: Data, range: Range<Int>, location: URL, completion: @escaping () -> Void) {
+    func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Int) -> Void) {
         // TODO: Logger
         print("Going to upload \(data) for range \(range)")
-        let offset = range.lowerBound
-        let length = range.upperBound
-        let headers = [
-            "Content-Type": "application/offset+octet-stream",
-            "Upload-Offset": String(offset),
-            "Content-Length": String(length)
-        ]
+        let headers: [String: String]
+        if let range = range {
+            let offset = range.lowerBound
+            let length = range.upperBound
+            headers = [
+                "Content-Type": "application/offset+octet-stream",
+                "Upload-Offset": String(offset),
+                "Content-Length": String(length)
+            ]
+        } else {
+            headers = ["Content-Type": "application/offset+octet-stream"]
+        }
 
         let request = makeRequest(url: location, method: .patch, headers: headers)
         
         let task = network.uploadTask(request: request, data: data) { result in
             switch result {
-            case .success:
-                completion()
+            case .success(_, let response):
+                guard let offsetStr = response.allHeaderFields["Upload-Offset"] as? String,
+                      let offset = Int(offsetStr) else {
+                    // TODO: Error                    
+                    completion(0)
+                    return
+                }
+                completion(offset)
             case .failure:
                 // TODO: Failure
             break

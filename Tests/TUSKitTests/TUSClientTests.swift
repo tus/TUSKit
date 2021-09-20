@@ -49,4 +49,10 @@ final class TUSClientTests: XCTestCase {
     func testCantUploadEmptyData() {
         XCTFail("Implement me")
     }
+    
+    func testStatusDeletesFileIfCompleted() {
+        // If a file is done uploading (as said by status), but not yet deleted.
+        // Then the file can be deleted right after fetching the status.
+        XCTFail("Implement me")
+    }
 }

@@ -7,6 +7,15 @@
 
 import Foundation
 
+enum TUSAPIError: Error {
+    case couldNotFetchStatus
+}
+
+struct Status {
+    let length: Int
+    let offset: Int
+}
+
 /// The Uploader's responsibility is to perform work related to uploading.
 /// This includes: Making requests, handling requests, handling errors.
 final class TUSAPI {
@@ -43,7 +52,7 @@ final class TUSAPI {
         self.uploadURL = uploadURL
     }
     
-    func status(remoteDestination: URL, completion: @escaping (Int, Int) -> Void) {
+    func status(remoteDestination: URL, completion: @escaping (Result<Status, TUSAPIError>) -> Void) {
         let request = makeRequest(url: remoteDestination, method: .head, headers: [:])
         let task = network.dataTask(request: request) { result in
             switch result {
@@ -58,9 +67,11 @@ final class TUSAPI {
                     return
                 }
 
-                completion(length, offset)
+                let status = Status(length: length, offset: offset)
+                completion(.success(status))
             case .failure(let error):
                 print("Failure \(error)")
+                completion(.failure(TUSAPIError.couldNotFetchStatus))
                 break
             }
         }
@@ -121,7 +132,7 @@ final class TUSAPI {
     
     func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Int) -> Void) {
         // TODO: Logger
-        print("Going to upload \(data) for range \(range)")
+        print("Going to upload \(data) for range \(String(describing: range))")
         let headers: [String: String]
         if let range = range {
             let offset = range.lowerBound
@@ -139,8 +150,8 @@ final class TUSAPI {
         
         let task = network.uploadTask(request: request, data: data) { result in
             switch result {
-            case .success(_, let response):
-                guard let offsetStr = response.allHeaderFields["Upload-Offset"] as? String,
+            case .success(let values):
+                guard let offsetStr = values.1.allHeaderFields["Upload-Offset"] as? String,
                       let offset = Int(offsetStr) else {
                     // TODO: Error                    
                     completion(0)

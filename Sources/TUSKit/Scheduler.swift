@@ -7,7 +7,7 @@
 
 import Foundation
 
-typealias TaskCompletion = ([Task]) -> ()
+typealias TaskCompletion = (Result<[Task], Error>) -> ()
 
 protocol SchedulerDelegate: AnyObject {
     func didStartTask(task: Task, scheduler: Scheduler)
@@ -83,21 +83,31 @@ final class Scheduler {
             self.runningTasks.append(task)
             self.delegate?.didStartTask(task: task, scheduler: self)
             
-            task.run { [unowned self] newTasks in
-                self.semaphore.signal()
-                // // Make sure tasks are updated atomically
-                queue.async {
-                    if !newTasks.isEmpty {
-                        self.tasks = [newTasks] + self.tasks // If there are new tasks, perform them first. E.g. After creation of a file, start uploading.
+            task.run { [unowned self] result in
+                
+                switch result {
+                case .success(let newTasks):
+                    self.semaphore.signal()
+                    // // Make sure tasks are updated atomically
+                    queue.async {
+                        if !newTasks.isEmpty {
+                            self.tasks = [newTasks] + self.tasks // If there are new tasks, perform them first. E.g. After creation of a file, start uploading.
+                        }
+                        if let index = self.runningTasks.firstIndex(where: { $0 === task }) {
+                            self.runningTasks.remove(at: index)
+                        } else {
+                            assertionFailure("Currently finished task does not have an index in running tasks")
+                        }
+                        self.checkProcessNextTask()
+                        self.delegate?.didFinishTask(task: task, scheduler: self)
                     }
-                    if let index = self.runningTasks.firstIndex(where: { $0 === task }) {
-                        self.runningTasks.remove(at: index)
-                    } else {
-                        assertionFailure("Currently finished task does not have an index in running tasks")
-                    }
-                    self.checkProcessNextTask()
-                    self.delegate?.didFinishTask(task: task, scheduler: self)
+                case .failure(let error):
+                    // TODO: Error handling
+                    print("Scheduler received an error \(error)")
+                    break
                 }
+                
+                
                 
             }
             
@@ -157,7 +167,7 @@ private final class GroupedTask: Task {
         
         group.notify(queue: DispatchQueue.global()) {
             print("Grouped task finished")
-            completed([])
+            completed(.success([]))
         }
 
     }

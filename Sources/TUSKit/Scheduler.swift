@@ -45,12 +45,27 @@ final class Scheduler {
     /// Adding these Tasks as a group, means that they all have to succeed together.
     /// - Parameter Tasks: An array of `Task` elements.
     func addGroupedTasks(tasks: [Task]) {
-        self.tasks.append(tasks)
+        queue.async {
+            self.tasks.append(tasks)
+        }
+
         checkProcessNextTask()
     }
     
-    func addTask(Task: Task) {
-        self.tasks.append([Task])
+    /// Add multiple tasks. Note that these are independent tasks. If you want multiple tasks that are related in one way or another, use addGroupedTasks
+    /// - Parameter tasks: The tasks to add
+    func addTasks(tasks: [Task]) {
+        guard !tasks.isEmpty else { return }
+        queue.async {
+            self.tasks.append(tasks)
+        }
+        checkProcessNextTask()
+    }
+        
+    func addTask(task: Task) {
+        queue.async {
+            self.tasks.append([task])
+        }
         checkProcessNextTask()
     }
 

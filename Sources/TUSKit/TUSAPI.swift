@@ -14,6 +14,7 @@ final class TUSAPI {
     let network: Network
     
     enum HTTPMethod: CustomStringConvertible {
+        case head
         case post
         case get
         case patch
@@ -21,7 +22,8 @@ final class TUSAPI {
         
         var description: String {
             switch self {
-            
+            case .head:
+                return "HEAD"
             case .post:
                 return "POST"
             case .get:
@@ -41,21 +43,56 @@ final class TUSAPI {
         self.uploadURL = uploadURL
     }
     
-    func create(size: Int, completion: @escaping (URL) -> Void) {
-        // TODO: Encode metadata
-        //        "Upload-Metadata": [
-        //           "filename": "TESTFILENAME"]]
+    func status(remoteDestination: URL, completion: @escaping (Int, Int) -> Void) {
+        let request = makeRequest(url: remoteDestination, method: .head, headers: [:])
+        let task = network.dataTask(request: request) { result in
+            switch result {
+            case .success(let (_, response)):
+                // Improvement: Make length optional
+                guard let lengthStr = response.allHeaderFields["Upload-Length"] as? String,
+                      let length = Int(lengthStr),
+                      let offsetStr = response.allHeaderFields["Upload-Offset"] as? String,
+                      let offset = Int(offsetStr) else {
+                    // TODO: Call completion with error
+                    
+                    return
+                }
+
+                completion(length, offset)
+            case .failure(let error):
+                print("Failure \(error)")
+                break
+            }
+        }
         
-        // TODO Filename
-        let headers: [String: String] =
-            ["Upload-Extension": "creation",
-             "Upload-Length": String(size)
-            ]
+        task.resume()
+    }
+    
+    func create(metaData: UploadMetadata, completion: @escaping (URL) -> Void) {
+        /// Add extra mimetype parameters headers
+        func makeEncodedMetaDataHeaders(name: String, mimeType: String?) -> [String: String] {
+            switch (name.isEmpty, mimeType) {
+            case (false, let type?):
+                // Both fileName and fileType can be given. FileName goes first.
+                return ["Upload-Metadata": "fileName \(name.toBase64()), filetype \(type.toBase64())"]
+            case (true, let type?):
+                // Only type is known.
+                return ["Upload-Metadata": "filetype \(type.toBase64())"]
+            case (false, nil):
+                // Only name is known.
+                return ["Upload-Metadata": "fileName \(name.toBase64())"]
+            default:
+                return [:]
+            }
+        }
         
-        print(headers)
+        var headers = ["Upload-Extension": "creation",
+                       "Upload-Length": String(metaData.size)]
         
+        let fileName = metaData.filePath.lastPathComponent
+        headers.merge(makeEncodedMetaDataHeaders(name: fileName, mimeType: metaData.mimeType)) { lhs, _ in lhs }
+
         let request = makeRequest(url: uploadURL, method: .post, headers: headers)
-        
         let task = network.dataTask(request: request) { result in
             switch result {
             case .success(let (_, response)):
@@ -82,7 +119,6 @@ final class TUSAPI {
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
     
-    static var uploads = 0
     func upload(data: Data, range: Range<Int>, location: URL, completion: @escaping () -> Void) {
         // TODO: Logger
         print("Going to upload \(data) for range \(range)")
@@ -117,4 +153,20 @@ final class TUSAPI {
         }
         return request
     }
+}
+
+private extension String {
+
+    func fromBase64() -> String? {
+        guard let data = Data(base64Encoded: self) else {
+            return nil
+        }
+
+        return String(data: data, encoding: .utf8)
+    }
+
+    func toBase64() -> String {
+        return Data(self.utf8).base64EncodedString()
+    }
+
 }

@@ -18,8 +18,6 @@ public struct TUSClientError: Error {
     public static let filesizeNotKnown = TUSClientError(code: 3)
 }
 
-// TODO: Doc comments TUSClient
-
 /// The TUSKit client.
 ///
 /// Use this type to initiate uploads.
@@ -32,12 +30,49 @@ public final class TUSClient {
     
     private let config: TUSConfig
     private let scheduler = Scheduler()
+    private let storageDirectory: URL?
     
     private var total = 0
     
-    public init(config: TUSConfig, fileManager: FileManager = FileManager.default) {
+    public init(config: TUSConfig, storageDirectory: URL?) {
         self.config = config
+        self.storageDirectory = storageDirectory
+        
         scheduler.delegate = self
+        
+        do {
+            let tasks = try loadTasksFromPersistentStore()
+            scheduler.addTasks(tasks: tasks)
+        } catch {
+            // TODO: Return error, can't load from store
+        }
+    }
+    
+    private func loadTasksFromPersistentStore() throws -> [Task] {
+        // Improvement: Doesn't group a single upload into multiple.
+        // Once concurrent uploading comes into play. Return [[Task]] so
+        
+        // Get the document directory url
+        let metaData = try Files.loadAllMetadata()
+        
+        // TODO: Reuse TUSAPI from other methods
+        let api = TUSAPI(uploadURL: config.server, network: URLSession.shared)
+        let sizeInKiloBytes = 500 * 1024// Uses safe speed, 500kb
+        return metaData.map { metaData in
+            // TODO: Check expiration date?
+            
+            if let remoteDestination = metaData.remoteDestination {
+                print("Creating status task")
+                // TODO: Only create status task if we don't support concurrency
+                // TODO: What about status if chunks have been randomly uploaded? Status only gives one number.
+                return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData)
+            } else {
+                // TODO: Reuse chunksize logic
+                print("Create creation task")
+                return CreationTask(filePath: metaData.filePath, api: api, chunkSize: sizeInKiloBytes)
+            }
+             
+        }
     }
     
     // MARK: - Upload single file
@@ -91,9 +126,10 @@ public final class TUSClient {
     /// - Parameter storedFilePath: The path where the file is stored for processing.
     private func scheduleCreationTask(for storedFilePath: URL) {
         // TODO: Get size based on api speed
+        // TODO: Can we do int.max?
         let sizeInKiloBytes = 500 * 1024// Uses safe speed, 500kb
         let task = CreationTask(filePath: storedFilePath, api: TUSAPI(uploadURL: config.server, network: URLSession.shared), chunkSize: sizeInKiloBytes)
-        scheduler.addTask(Task: task)
+        scheduler.addTask(task: task)
     }
 
 }
@@ -112,24 +148,72 @@ extension TUSClient: SchedulerDelegate {
     }
 }
 
+final class StatusTask: Task {
+    
+    let api: TUSAPI
+    let remoteDestination: URL
+    let metaData: UploadMetadata
+    
+    init(api: TUSAPI, remoteDestination: URL, metaData: UploadMetadata) {
+        self.api = api
+        self.remoteDestination = remoteDestination
+        self.metaData = metaData
+    }
+    
+    func run(completed: @escaping TaskCompletion) {
+        // TODO: Logger
+        print("Statustask running for \(metaData.filePath)")
+        // TODO: On failure, try uploading from the start. Create creationtask.
+        api.status(remoteDestination: remoteDestination) { [unowned self] length, offset in
+            if length != metaData.size {
+                // TODO: Server has different size, handle this out of sync situation.
+                // TODO: Document this situation too?
+            }
+            
+            if offset > metaData.size {
+                // TODO: Recover
+            }
+            
+            metaData.uploadedRange = 0..<offset
+            let task = try! UploadDataTask(api: api, metaData: metaData, range: offset..<metaData.size)
+            
+            completed([task])
+        }
+    }
+}
+
 /// `CreationTask` Prepares the server for a file upload.
 /// The server will return a path to upload to.
 final class CreationTask: Task {
     let filePath: URL
     let api: TUSAPI
     let chunkSize: Int
+    var metaData: UploadMetadata
 
     init(filePath: URL, api: TUSAPI, chunkSize: Int) {
         self.filePath = filePath
         self.api = api
         self.chunkSize = chunkSize
+        
+        // TODO: Resolve force unwrap
+        let size = try! filePath.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? Data(contentsOf: filePath).count
+        var mimeType: String?
+        
+        let retrievedMimeType = filePath.mimeType
+        if !retrievedMimeType.isEmpty {
+            mimeType = retrievedMimeType
+        }
+        
+        self.metaData = UploadMetadata(filePath: filePath, size: size, mimeType: mimeType)
+        // TODO: Remove force unwrap
+        try! Files.encodeAndStore(metaData: metaData)
+        // We already store metadata, cause if this isn't run. The file is stored by now.
     }
     
     func run(completed: @escaping TaskCompletion) {
         // TODO: Write metadata to file
         // TODO: Force
-        let size = try! filePath.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? Data(contentsOf: filePath).count
-        
+        let size = metaData.size
         guard size > 0 else {
             
             // Make sure even sync code comes next runloop, so behavior stays consistent
@@ -140,7 +224,7 @@ final class CreationTask: Task {
             return
         }
         
-        api.create(size: size) { [unowned self] remoteDestination in
+        api.create(metaData: metaData) { [unowned self] remoteDestination in
             // TODO: Error handling
             // TODO: Only if concurrency is supported.
 //            let ranges = (0..<size).chunkRanges(size: chunkSize)
@@ -149,11 +233,18 @@ final class CreationTask: Task {
 //                UploadDataTask(remoteDestination: remoteDestination, filePath: filePath, range: range, api: api)
 //            }
 //
+            // TODO: Only if persistence is allowed
+            metaData.remoteDestination = remoteDestination
+            // TODO: Force unwrap
+            try! Files.encodeAndStore(metaData: metaData)
+            
             // TODO: Use logger
             print("Received \(remoteDestination)")
             print("Going to upload \(size) bytes")
             // File is created remotely. Now start first datatask.
-            let task = UploadDataTask(api: api, remoteDestination: remoteDestination, filePath: filePath, range: 0..<chunkSize, totalSize: size)
+            // TODO: Force try
+            let task = try! UploadDataTask(api: api, metaData: metaData, range: 0..<chunkSize)
+            
             // TODO: Update metadata
             completed([task])
         }
@@ -164,22 +255,34 @@ final class CreationTask: Task {
 final class UploadDataTask: Task {
     
     let api: TUSAPI
+    let metaData: UploadMetadata
     let remoteDestination: URL
-    let filePath: URL
     let range: Range<Int>
-    let totalSize: Int
     
-    init(api: TUSAPI, remoteDestination: URL, filePath: URL, range: Range<Int>, totalSize: Int) {
+    init(api: TUSAPI, metaData: UploadMetadata, range: Range<Int>) throws {
         self.api = api
-        self.remoteDestination = remoteDestination
-        self.filePath = filePath
+        self.metaData = metaData
+        if let destination = metaData.remoteDestination {
+            self.remoteDestination = destination
+        } else {
+            // TODO: Throw. Recover from error
+            fatalError("No remote destination for upload task")
+        }
         self.range = range
-        self.totalSize = totalSize
     }
     
     func run(completed: @escaping ([Task]) -> ()) {
+        // TODO: Check if data is already uploaded. Maybe deletion got interrupted.
+        print("RUnning upload datatask \(range)")
+
         // TODO: Error handling
-        let data = try! Data(contentsOf: filePath)
+        guard let data = try? Data(contentsOf: metaData.filePath) else {
+            // TODO: Error handling. Suggest to delete metadata?
+            DispatchQueue.main.async {
+                completed([])
+            }
+            return
+        }
         let sub = data[range]
         
         let chunkSize = range.count
@@ -187,22 +290,27 @@ final class UploadDataTask: Task {
         // TODO: If concurrency is not supported (or some flag is passed), create a new task after this one to determine what's left. Maybe add count to this task to help determin.
         api.upload(data: sub, range: range, location: remoteDestination) { [unowned self] in
             
+            metaData.uploadedRange = 0..<range.upperBound
+            // TODO: Force
+            try! Files.encodeAndStore(metaData: metaData)
+            
             // TODO: Force unwrap -> Error / Assertion
             
             // Decide if more datatasks are needed, create those too.
             let max = self.range.upperBound
-            guard max < totalSize else {
+            guard max < metaData.size else {
                 // Finished uploading.
-                // TODO: Delete file
-                // TODO: Delete metadata
+                try! Files.removeFileAndMetadata(metaData)
                 print("Upload finished, url is \(remoteDestination)")
                 completed([])
                 return
             }
 
-            let nextRange = max..<min((max + chunkSize), totalSize)
-            
-            let task = UploadDataTask(api: api, remoteDestination: remoteDestination, filePath: filePath, range: nextRange, totalSize: totalSize)
+            print("Size \(metaData.size)")
+            print("max is \(max)")
+            let nextRange = max..<min((max + chunkSize), metaData.size)
+            // TODO: Force try
+            let task = try! UploadDataTask(api: api, metaData: metaData, range: nextRange)
             
             // Update metadata
             completed([task])

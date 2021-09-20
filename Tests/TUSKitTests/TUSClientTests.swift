@@ -9,7 +9,8 @@ final class TUSClientTests: XCTestCase {
         super.setUp()
         
         let liveDemoPath = URL(string: "https://tusd.tusdemo.net/files")!
-        client = TUSClient(config: TUSConfig(server: liveDemoPath))
+        // TODO: Add default
+        client = TUSClient(config: TUSConfig(server: liveDemoPath), storageDirectory: nil)
     }
 
     func testUploadingNonExistentFileShouldThrow() {

@@ -155,7 +155,7 @@ extension TUSClient: SchedulerDelegate {
     }
 }
 
-/// A `StatusTask` fetches the status of an upload. It returns from which offset we can continue uploading.
+/// A `StatusTask` fetches the status of an upload. It fetches the offset from we can continue uploading, and then makes a possible uploadtask.
 final class StatusTask: Task {
     
     let api: TUSAPI
@@ -246,14 +246,10 @@ final class CreationTask: Task {
     
     func run(completed: @escaping TaskCompletion) {
         // TODO: Write metadata to file
-        // TODO: Force
         
         api.create(metaData: metaData) { [unowned self] remoteDestination in
-            // TODO: Error handling
             metaData.remoteDestination = remoteDestination
-            // TODO: Force unwrap
 
-            
             // TODO: Use logger
             print("Received \(remoteDestination)")
 
@@ -324,7 +320,6 @@ final class UploadDataTask: Task {
         // TODO: Check if data is already uploaded. Maybe deletion got interrupted.
         print("RUnning upload datatask \(String(describing: range))")
 
-        // TODO: Error handling
         guard let data = try? Data(contentsOf: metaData.filePath) else {
             // TODO: Suggest to delete metadata? Let client do that?
             DispatchQueue.main.async {
@@ -337,7 +332,6 @@ final class UploadDataTask: Task {
         
         let dataToUpload: Data
         if let range = range {
-            
             dataToUpload = data[range]
             
         } else {

@@ -84,7 +84,6 @@ final class Scheduler {
             self.delegate?.didStartTask(task: task, scheduler: self)
             
             task.run { [unowned self] result in
-                
                 switch result {
                 case .success(let newTasks):
                     self.semaphore.signal()
@@ -172,25 +171,6 @@ private final class GroupedTask: Task {
 
     }
 }
-
-/*
-
-/// A Task is a generic task. It wraps a closure as convenience to prevent creating a new type for each task.
-/// Useful for smaller tasks. For big tasks, you can implement the `Task` protocol.
-struct SyncTask: Task {
-    
-    let work: () -> [Task]
-    init(work: @escaping () -> [Task]) {
-        self.work = work
-    }
-    
-    func run(completed: TaskCompletion) {
-        let newTasks = self.work()
-        completed(newTasks)
-    }
-}
-*/
-
 
 // Convenience extensions to help deal with nested arrays.
 private extension Array where Element: Collection {

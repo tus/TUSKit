@@ -9,7 +9,6 @@ final class TUSClientTests: XCTestCase {
         super.setUp()
         
         let liveDemoPath = URL(string: "https://tusd.tusdemo.net/files")!
-        // TODO: Add default
         client = TUSClient(config: TUSConfig(server: liveDemoPath), storageDirectory: nil)
     }
 

@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// The errors a TUSAPI can return
 enum TUSAPIError: Error {
     case underlyingError(Error)
     case couldNotFetchStatus
@@ -14,6 +15,7 @@ enum TUSAPIError: Error {
     case couldNotRetrieveLocation
 }
 
+/// The status of an upload.
 struct Status {
     let length: Int
     let offset: Int
@@ -55,7 +57,11 @@ final class TUSAPI {
         self.uploadURL = uploadURL
     }
     
-    
+    /// Fetch the status of an upload if an upload is not finished (e.g. interrupted).
+    /// By retrieving the status,  we know where to continue when we upload again.
+    /// - Parameters:
+    ///   - remoteDestination: A URL to retrieve the status from (received from the create call)
+    ///   - completion: A completion giving us the `Status` of an upload.
     func status(remoteDestination: URL, completion: @escaping (Result<Status, TUSAPIError>) -> Void) {
         let request = makeRequest(url: remoteDestination, method: .head, headers: [:])
         let task = network.dataTask(request: request) { result in
@@ -76,6 +82,12 @@ final class TUSAPI {
         task.resume()
     }
     
+    /// The create step of an upload. In this step, we tell the server we are about to upload data.
+    /// The server returns a URL to upload to, we can use the `create` call for this.
+    /// Use file metadata to enrich the information so the server knows what filetype something is.
+    /// - Parameters:
+    ///   - metaData: The file metadata.
+    ///   - completion: Completes with a result that gives a URL to upload to.
     func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) {
         /// Add extra mimetype parameters headers
         func makeEncodedMetaDataHeaders(name: String, mimeType: String?) -> [String: String] {
@@ -123,7 +135,6 @@ final class TUSAPI {
     ///   - range: The range of which to upload. Leave empty to upload the entire data in one piece.
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
-    
     func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Result<Int, TUSAPIError>) -> Void) {
         // TODO: Logger
         print("Going to upload \(data) for range \(String(describing: range))")
@@ -160,6 +171,12 @@ final class TUSAPI {
         task.resume()
     }
     
+    /// A factory to make requests with sane defaults.
+    /// - Parameters:
+    ///   - url: The URL of the request.
+    ///   - method: The HTTP method of a request.
+    ///   - headers: The headers to add to the request.
+    /// - Returns: A new URLRequest to use in any TUS API call.
     private func makeRequest(url: URL, method: HTTPMethod, headers: [String: String]) -> URLRequest {
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
         request.httpMethod = String(describing: method)
@@ -171,6 +188,7 @@ final class TUSAPI {
     }
 }
 
+/// Base 64 extensions
 private extension String {
 
     func fromBase64() -> String? {

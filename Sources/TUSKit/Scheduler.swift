@@ -12,7 +12,7 @@ typealias TaskCompletion = (Result<[Task], Error>) -> ()
 protocol SchedulerDelegate: AnyObject {
     func didStartTask(task: Task, scheduler: Scheduler)
     func didFinishTask(task: Task, scheduler: Scheduler)
-    func onError(task: Task, scheduler: Scheduler)
+    func onError(error: Error, task: Task, scheduler: Scheduler)
 }
 
 /// A scheduler is responsible for processing tasks
@@ -79,30 +79,27 @@ final class Scheduler {
             self.delegate?.didStartTask(task: task, scheduler: self)
             
             task.run { [unowned self] result in
-                switch result {
-                case .success(let newTasks):
-                    self.semaphore.signal()
-                    // // Make sure tasks are updated atomically
-                    queue.async {
+                self.semaphore.signal()
+                // // Make sure tasks are updated atomically
+                queue.async {
+                    if let index = self.runningTasks.firstIndex(where: { $0 === task }) {
+                        self.runningTasks.remove(at: index)
+                    } else {
+                        assertionFailure("Currently finished task does not have an index in running tasks")
+                    }
+                    
+                    switch result {
+                    case .success(let newTasks):
                         if !newTasks.isEmpty {
                             self.tasks = [newTasks] + self.tasks // If there are new tasks, perform them first. E.g. After creation of a file, start uploading.
                         }
-                        if let index = self.runningTasks.firstIndex(where: { $0 === task }) {
-                            self.runningTasks.remove(at: index)
-                        } else {
-                            assertionFailure("Currently finished task does not have an index in running tasks")
-                        }
-                        self.checkProcessNextTask()
-                        self.delegate?.didFinishTask(task: task, scheduler: self)
+                        delegate?.didFinishTask(task: task, scheduler: self)
+                    case .failure(let error):
+                        delegate?.onError(error: error, task: task, scheduler: self)
                     }
-                case .failure(let error):
-                    // TODO: Error handling
-                    print("Scheduler received an error \(error)")
-                    break
+                    self.checkProcessNextTask()
                 }
-                
-                
-                
+                    
             }
             
         }

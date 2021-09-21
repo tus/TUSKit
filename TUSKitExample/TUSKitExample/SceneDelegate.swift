@@ -77,4 +77,8 @@ extension SceneDelegate: TUSClientDelegate {
     func didFinishUpload(id: UUID, url: URL, client: TUSClient) {
         print("TUSClient finished upload, id is \(id) url is \(url)")
     }
+    
+    func uploadFailed(id: UUID, error: Error, client: TUSClient) {
+        print("TUSClient upload failed for \(id) error \(error)")
+    }
 }

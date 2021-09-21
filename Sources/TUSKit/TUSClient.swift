@@ -10,6 +10,7 @@ import Foundation
 public protocol TUSClientDelegate: AnyObject {
     func didStartUpload(id: UUID, client: TUSClient)
     func didFinishUpload(id: UUID, url: URL, client: TUSClient)
+    func uploadFailed(id: UUID, error: Error, client: TUSClient)
 }
 
 /// The errors that are passed from TUSClient
@@ -255,8 +256,20 @@ extension TUSClient: SchedulerDelegate {
         delegate?.didStartUpload(id: id, client: self)
     }
     
-    func onError(task: Task, scheduler: Scheduler) {
-        print("Did error on \(task), recommend to delete metadata")
+    func onError(error: Error, task: Task, scheduler: Scheduler) {
+        let id: UUID
+        switch task {
+        case let task as CreationTask:
+            id = task.metaData.id
+        case let task as UploadDataTask:
+            id = task.metaData.id
+        case let task as StatusTask:
+            id = task.metaData.id
+        default:
+            assertionFailure("Unsupported task errored")
+            return
+        }
+        delegate?.uploadFailed(id: id, error: error, client: self)
     }
 }
 

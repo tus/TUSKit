@@ -5,12 +5,20 @@ final class FilesTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        try! Files.clearTUSDirectory()
+        do {
+            try Files.clearTUSDirectory()
+        } catch {
+            XCTFail("Could not clear dir \(error)")
+        }
     }
     
     override func tearDown() {
-        try! Files.clearTUSDirectory()
-        try! emptyCacheDir()
+        do {
+            try Files.clearTUSDirectory()
+            try emptyCacheDir()
+        } catch {
+            XCTFail("Could not clear cache \(error)")
+        }
     }
     
     private func emptyCacheDir() throws {

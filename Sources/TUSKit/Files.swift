@@ -64,17 +64,18 @@ final class Files {
     
     /// Copy a file from location to a TUS directory, get the URL from the new location
     /// - Parameter location: The location where to copy a file from
+    /// - Parameter id: The unique identifier for the data. Will be used as a filename.
     /// - Throws: Any error related to file handling.
     /// - Returns:The URL of the new location.
     @discardableResult
-    static func copy(from location: URL) throws -> URL {
+    static func copy(from location: URL, id: UUID) throws -> URL {
         try makeDirectoryIfNeeded()
         
         // TODO: Prefix with file:// if location can't be found
         
         // We don't use lastPathComponent (filename) because then you can't add the same file file.
         // With a unique name, you can upload the same file twice if you want.
-        let fileName = UUID().uuidString + location.lastPathComponent
+        let fileName = id.uuidString + location.lastPathComponent
         let targetLocation = targetDirectory.appendingPathComponent(fileName)
         
         try FileManager.default.copyItem(atPath: location.path, toPath: targetLocation.path)
@@ -83,12 +84,13 @@ final class Files {
     
     /// Store data in the TUS directory, get a URL of the location
     /// - Parameter data: The data to store
+    /// - Parameter id: The unique identifier for the data. Will be used as a filename.
     /// - Throws: Any file related error (e.g. can't save)
     /// - Returns: The URL of the stored file
     @discardableResult
-    static func store(data: Data) throws -> URL {
+    static func store(data: Data, id: UUID) throws -> URL {
         try makeDirectoryIfNeeded()
-        let fileName = UUID().uuidString
+        let fileName = id.uuidString
         
         let targetLocation = targetDirectory.appendingPathComponent(fileName)
         try data.write(to: targetLocation)

@@ -48,7 +48,7 @@ public final class TUSClient {
     public weak var delegate: TUSClientDelegate?
     
     public var remainingUploads: Int {
-        return scheduler.allTasks.filter { $0 is UploadDataTask }.count
+        uploads.count
     }
     
     public init(config: TUSConfig, storageDirectory: URL?) {
@@ -70,8 +70,10 @@ public final class TUSClient {
     @discardableResult
     public func uploadFileAt(filePath: URL) throws -> UUID {
         do {
-            let destinationFilePath = try Files.copy(from: filePath)
-            return try scheduleCreationTask(for: destinationFilePath)
+            let id = UUID()
+            let destinationFilePath = try Files.copy(from: filePath, id: id)
+            try scheduleCreationTask(for: destinationFilePath, id: id)
+            return id
         } catch let error as TUSClientError {
             throw error
         } catch {
@@ -85,8 +87,10 @@ public final class TUSClient {
     @discardableResult
     public func upload(data: Data) throws -> UUID {
         do {
-            let filePath = try Files.store(data: data)
-            return try scheduleCreationTask(for: filePath)
+            let id = UUID()
+            let filePath = try Files.store(data: data, id: id)
+            try scheduleCreationTask(for: filePath, id: id)
+            return id
         } catch let error as TUSClientError {
             throw error
         } catch {
@@ -153,7 +157,7 @@ public final class TUSClient {
     
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
-    private func scheduleCreationTask(for storedFilePath: URL) throws -> UUID {
+    private func scheduleCreationTask(for storedFilePath: URL, id: UUID) throws {
         let filePath = storedFilePath
         
         func getSize() throws -> Int {
@@ -168,15 +172,13 @@ public final class TUSClient {
         
         let size = try getSize()
         
-        let metaData = UploadMetadata(id: UUID(), filePath: filePath, size: size, mimeType: filePath.mimeType.nonEmpty)
+        let metaData = UploadMetadata(id: id, filePath: filePath, size: size, mimeType: filePath.mimeType.nonEmpty)
         try store(metaData: metaData)
         
-        uploads[filePath] = metaData.id
+        uploads[filePath] = id
 
         let task = try CreationTask(metaData: metaData, api: TUSAPI(uploadURL: config.server, network: URLSession.shared))
         scheduler.addTask(task: task)
-        
-        return metaData.id
     }
     
     private func store(metaData: UploadMetadata) throws {

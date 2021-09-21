@@ -8,7 +8,10 @@
 import Foundation
 
 enum TUSAPIError: Error {
+    case underlyingError(Error)
     case couldNotFetchStatus
+    case couldNotRetrieveOffset
+    case couldNotRetrieveLocation
 }
 
 struct Status {
@@ -52,34 +55,28 @@ final class TUSAPI {
         self.uploadURL = uploadURL
     }
     
+    
     func status(remoteDestination: URL, completion: @escaping (Result<Status, TUSAPIError>) -> Void) {
         let request = makeRequest(url: remoteDestination, method: .head, headers: [:])
         let task = network.dataTask(request: request) { result in
-            switch result {
-            case .success(let (_, response)):
+            processResult(completion: completion) {
+                let (_, response) =  try result.get()
                 // Improvement: Make length optional
                 guard let lengthStr = response.allHeaderFields["Upload-Length"] as? String,
                       let length = Int(lengthStr),
                       let offsetStr = response.allHeaderFields["Upload-Offset"] as? String,
                       let offset = Int(offsetStr) else {
-                    // TODO: Call completion with error
-                    
-                    return
+                    throw TUSAPIError.couldNotFetchStatus
                 }
 
-                let status = Status(length: length, offset: offset)
-                completion(.success(status))
-            case .failure(let error):
-                print("Failure \(error)")
-                completion(.failure(TUSAPIError.couldNotFetchStatus))
-                break
+                return Status(length: length, offset: offset)
             }
         }
         
         task.resume()
     }
     
-    func create(metaData: UploadMetadata, completion: @escaping (URL) -> Void) {
+    func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) {
         /// Add extra mimetype parameters headers
         func makeEncodedMetaDataHeaders(name: String, mimeType: String?) -> [String: String] {
             switch (name.isEmpty, mimeType) {
@@ -104,19 +101,16 @@ final class TUSAPI {
         headers.merge(makeEncodedMetaDataHeaders(name: fileName, mimeType: metaData.mimeType)) { lhs, _ in lhs }
 
         let request = makeRequest(url: uploadURL, method: .post, headers: headers)
-        let task = network.dataTask(request: request) { result in
-            switch result {
-            case .success(let (_, response)):
+        let task = network.dataTask(request: request) { (result: Result<(Data?, HTTPURLResponse), Error>) in
+            processResult(completion: completion) {
+                let (_, response) = try result.get()
+
                 guard let location = response.allHeaderFields["Location"] as? String,
                       let locationURL = URL(string: location) else {
-                    // TODO: Call completion with error
-                    return
+                    throw TUSAPIError.couldNotRetrieveLocation
                 }
-                
-                // TODO: Send result back to completion. Map the result.
-                completion(locationURL)
-            case .failure:
-                break
+
+                return locationURL
             }
         }
         
@@ -126,41 +120,41 @@ final class TUSAPI {
     /// Uploads data
     /// - Parameters:
     ///   - data: The data to upload. The data will not be chunked by this method! You must supply chunked data.
-    ///   - range: The range of which the chunked data relates to. Helps determine the offset for the server.
+    ///   - range: The range of which to upload. Leave empty to upload the entire data in one piece.
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
     
-    func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Int) -> Void) {
+    func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Result<Int, TUSAPIError>) -> Void) {
         // TODO: Logger
         print("Going to upload \(data) for range \(String(describing: range))")
         let headers: [String: String]
+        let offset: Int
+        let length: Int
         if let range = range {
-            let offset = range.lowerBound
-            let length = range.upperBound
-            headers = [
-                "Content-Type": "application/offset+octet-stream",
-                "Upload-Offset": String(offset),
-                "Content-Length": String(length)
-            ]
+            offset = range.lowerBound
+            length = range.upperBound
         } else {
-            headers = ["Content-Type": "application/offset+octet-stream"]
+            // Use entire range
+            offset = 0
+            length = data.count
         }
+        
+        headers = [
+            "Content-Type": "application/offset+octet-stream",
+            "Upload-Offset": String(offset),
+            "Content-Length": String(length)
+        ]
 
         let request = makeRequest(url: location, method: .patch, headers: headers)
         
         let task = network.uploadTask(request: request, data: data) { result in
-            switch result {
-            case .success(let values):
-                guard let offsetStr = values.1.allHeaderFields["Upload-Offset"] as? String,
+            processResult(completion: completion) {
+                let (_, response) = try result.get()
+                guard let offsetStr = response.allHeaderFields["Upload-Offset"] as? String,
                       let offset = Int(offsetStr) else {
-                    // TODO: Error                    
-                    completion(0)
-                    return
+                    throw TUSAPIError.couldNotRetrieveOffset
                 }
-                completion(offset)
-            case .failure:
-                // TODO: Failure
-            break
+                return offset
             }
         }
         task.resume()
@@ -191,4 +185,27 @@ private extension String {
         return Data(self.utf8).base64EncodedString()
     }
 
+}
+
+/// Little helper function that will transform all errors to a TUSAPIError.
+///
+/// This helper function solves a couple problems:
+/// - It removes boilerplate. E.g. always converting to a Result with TUSAPIError as its error type. No need to have multitple do catch or mapError flatMap cases in every return.
+/// - It makes the callsite friendly, all you need to do is process your response normally, and throw if needed.
+/// - It prevents littering the callsite with completion() calls all over the api responses.
+/// - It also makes sure that completion is always called.
+///
+/// - Note: This method is synchronous and expects a throwing closure.
+/// - Parameters:
+///   - completion: The completion block to call after the processing is done.
+///   - perform: The code to run. Is expected to return a value that will be passed to the completion block. This method may throw.
+private func processResult<T>(completion: (Result<T, TUSAPIError>) -> Void, perform: () throws -> T) {
+    do {
+        let value = try perform()
+        completion(Result.success(value))
+    } catch let error as TUSAPIError {
+        completion(Result.failure(error))
+    } catch {
+        completion(Result.failure(TUSAPIError.underlyingError(error)))
+    }
 }

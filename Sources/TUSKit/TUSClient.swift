@@ -247,15 +247,15 @@ final class CreationTask: Task {
     func run(completed: @escaping TaskCompletion) {
         // TODO: Write metadata to file
         
-        api.create(metaData: metaData) { [unowned self] remoteDestination in
-            metaData.remoteDestination = remoteDestination
-
-            // TODO: Use logger
-            print("Received \(remoteDestination)")
-
+        api.create(metaData: metaData) { [unowned self] result in
             // File is created remotely. Now start first datatask.
-            
+
             do {
+                
+                let remoteDestination = try result.get()
+                // TODO: Use logger
+                print("Received \(remoteDestination)")
+                metaData.remoteDestination = remoteDestination
                 try Files.encodeAndStore(metaData: metaData)
                 let task: UploadDataTask
                 if let chunkSize = chunkSize {
@@ -318,8 +318,6 @@ final class UploadDataTask: Task {
     
     func run(completed: @escaping TaskCompletion) {
         // TODO: Check if data is already uploaded. Maybe deletion got interrupted.
-        print("RUnning upload datatask \(String(describing: range))")
-
         guard let data = try? Data(contentsOf: metaData.filePath) else {
             // TODO: Suggest to delete metadata? Let client do that?
             DispatchQueue.main.async {
@@ -328,20 +326,17 @@ final class UploadDataTask: Task {
             return
         }
         
-    
-        
         let dataToUpload: Data
         if let range = range {
             dataToUpload = data[range]
-            
         } else {
             dataToUpload = data
         }
-        print("Going to upload \(String(describing: range))")
+        print("Going to upload range \(String(describing: range))")
         
-        // TODO: If concurrency is not supported (or some flag is passed), create a new task after this one to determine what's left. Maybe add count to this task to help determin.
-        api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] offset in
+        api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] result in
             do {
+                let offset = try result.get()
                 metaData.uploadedRange = 0..<offset
                 try Files.encodeAndStore(metaData: metaData)
                 

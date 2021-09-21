@@ -65,9 +65,15 @@ final class TUSAPITests: XCTestCase {
     func testCreation() throws {
         let size = 300
         let expectation = expectation(description: "Call api.create()")
-        api.create(size: size) { [unowned self] url in
-            XCTAssertEqual(url, self.mockNetwork.uploadURL)
-            expectation.fulfill()
+        let metaData = UploadMetadata(filePath: URL(string: "file://whatever/")!, size: size)
+        api.create(metaData: metaData) { [unowned self] result in
+            do {
+                let url = try result.get()
+                XCTAssertEqual(url, self.mockNetwork.uploadURL)
+                expectation.fulfill()
+            } catch {
+                XCTFail("Expected to retrieve a URL for this test")
+            }
         }
         
         waitForExpectations(timeout: 3, handler: nil)
@@ -88,8 +94,9 @@ final class TUSAPITests: XCTestCase {
         let length = 10
         let range = offset..<length
         let expectation = expectation(description: "Call api.upload()")
-        api.upload(data: Data(), range: range, location: mockNetwork.uploadURL) {
-            
+    
+        api.upload(data: Data(), range: range, location: mockNetwork.uploadURL) { result in
+
             expectation.fulfill()
         }
         

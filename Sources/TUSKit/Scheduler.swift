@@ -149,14 +149,10 @@ private final class GroupedTask: Task {
     }
     
     func run(completed: @escaping TaskCompletion) {
-        print("---- RUNNING GROUPED TASK ---")
-        
         // Idea: Give tasks back to Scheduler, so that the GroupTask cannot circumvent the max concurrent tasks property.
         for task in tasks {
             self.group.enter()
             queue.async { [unowned self] in
-                
-                print("Running task \(task)")
                 task.run { [unowned self] _ in
                     self.group.leave()
                 }
@@ -165,7 +161,7 @@ private final class GroupedTask: Task {
         }
         
         group.notify(queue: DispatchQueue.global()) {
-            print("Grouped task finished")
+            // Improve: Gather errors
             completed(.success([]))
         }
 

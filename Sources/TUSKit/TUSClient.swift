@@ -28,6 +28,7 @@ public struct TUSClientError: Error {
     public static let couldNotUploadFile = TUSClientError(code: 7)
     public static let couldNotGetFileStatus = TUSClientError(code: 8)
     public static let fileSizeMismatchWithServer = TUSClientError(code: 9)
+    public static let couldNotDeleteFile = TUSClientError(code: 10)
 }
 
 /// The TUSKit client.
@@ -113,12 +114,39 @@ public final class TUSClient {
     
     // MARK: - Cache
     
+    /// Throw away all files.
+    /// - Important:Don't call this while the client is active. Only between uploading sessions.
+    /// - Throws: TUSClientError if a file is found but couldn't be deleted. Or if files couldn't be loaded.
     public func clearAllCache() throws {
-        // TODO: Implement me
+        do {
+            for metaData in try Files.loadAllMetadata() {
+                try Files.removeFileAndMetadata(metaData)
+            }
+        } catch {
+            throw TUSClientError.couldNotDeleteFile
+        }
     }
     
-    public func clearCacheFor(filePath: URL) throws {
-        // TODO: Implement me
+    @discardableResult
+    /// Remove a cache related to an id
+    /// - Important:Don't call this while the client is active. Only between uploading sessions.
+    /// - Parameter id: The id of a (scheduled) upload that you wish to delete.
+    /// - Returns: A bool whether or not the upload was found and deleted.
+    /// - Throws: TUSClientError if a file is found but couldn't be deleted. Or if files couldn't be loaded.
+    public func remoteCacheFor(id: UUID) throws -> Bool {
+        do {
+            let metaData = try Files.loadAllMetadata().first(where: { metaData in
+                metaData.id == id
+            })
+            guard let metaData = metaData else {
+                return false
+            }
+            
+            try Files.removeFileAndMetadata(metaData)
+            return true
+        } catch {
+            throw TUSClientError.couldNotDeleteFile
+        }
     }
     
     // MARK: - Private

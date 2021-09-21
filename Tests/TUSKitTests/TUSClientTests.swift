@@ -64,4 +64,12 @@ final class TUSClientTests: XCTestCase {
         XCTFail("Implement me")
         // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
     }
+    
+    func testDeletingFile() {
+        XCTFail("Implement me")
+    }
+    
+    func testDeletingAllFiles() {
+        XCTFail("Implement me")
+    }
 }

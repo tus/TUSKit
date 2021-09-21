@@ -54,4 +54,14 @@ final class TUSClientTests: XCTestCase {
         // Then the file can be deleted right after fetching the status.
         XCTFail("Implement me")
     }
+    
+    func testIdsAreGivenAndReturnedWhenFinished() {
+        XCTFail("Implement me")
+        // Make sure id's that are given when uploading, are returned when uploads are finished
+    }
+    
+    func testIdsArePreservedBetweenSessions() {
+        XCTFail("Implement me")
+        // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
+    }
 }

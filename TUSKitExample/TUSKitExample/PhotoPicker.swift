@@ -52,7 +52,6 @@ struct PhotoPicker: UIViewControllerRepresentable {
             
             dataFrom(pickerResults: results) { [unowned tusClient] urls in
                 do {
-                    print("PhotoPicker: Selected \(urls.count) photos")
                     try tusClient.uploadFiles(filePaths: urls)
                 } catch {
                     print("Error is \(error)")
@@ -67,16 +66,17 @@ struct PhotoPicker: UIViewControllerRepresentable {
             let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil)
             var assetURLs = [URL]()
             
+            var expectedCount = pickerResults.count // Can't rely on count in enumerateObjects in Xcode 13
             fetchResult.enumerateObjects { asset, count, _ in
-                
                 asset.getURL { url in
+                    expectedCount -= 1
                     guard let url = url else {
                         print("No url found for asset")
                         return
                     }
                     assetURLs.append(url)
 
-                    if count == 0 {
+                    if expectedCount == 0 {
                         completed(assetURLs)
                     }
                 }

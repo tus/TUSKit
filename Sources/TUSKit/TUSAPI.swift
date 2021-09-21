@@ -137,7 +137,6 @@ final class TUSAPI {
     ///   - completion: Completionhandler for when the upload is finished.
     func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Result<Int, TUSAPIError>) -> Void) {
         // TODO: Logger
-        print("Going to upload \(data) for range \(String(describing: range))")
         let headers: [String: String]
         let offset: Int
         let length: Int

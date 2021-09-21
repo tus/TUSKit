@@ -12,6 +12,7 @@ typealias TaskCompletion = (Result<[Task], Error>) -> ()
 protocol SchedulerDelegate: AnyObject {
     func didStartTask(task: Task, scheduler: Scheduler)
     func didFinishTask(task: Task, scheduler: Scheduler)
+    func onError(task: Task, scheduler: Scheduler)
 }
 
 /// A scheduler is responsible for processing tasks
@@ -23,14 +24,8 @@ final class Scheduler {
     private var runningTasks = [Task]()
     weak var delegate: SchedulerDelegate?
     
-    var nrOfRunningTasks: Int { runningTasks.count }
-    var nrOfPendingTasks: Int {
-        var total = 0
-        for group in tasks {
-            total += group.count
-        }
-        return total
-    }
+    var allTasks: [Task] { runningTasks + pendingTasks }
+    var pendingTasks: [Task] { tasks.flatMap { $0 } }
     
     // Tasks are processed in background
     let queue = DispatchQueue(label: "com.TUSKit.Scheduler")

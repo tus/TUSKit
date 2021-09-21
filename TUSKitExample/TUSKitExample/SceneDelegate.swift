@@ -24,6 +24,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // Create the SwiftUI view that provides the window contents.
         tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), storageDirectory: nil)
+        tusClient.delegate = self
         let photoPicker = PhotoPicker(tusClient: tusClient)
         
         let contentView = ContentView(photoPicker: photoPicker)
@@ -68,3 +69,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 }
 
+extension SceneDelegate: TUSClientDelegate {
+    func didStartUpload(id: UUID, client: TUSClient) {
+        print("TUSClient started upload, id is \(id)")
+    }
+    
+    func didFinishUpload(id: UUID, url: URL, client: TUSClient) {
+        print("TUSClient finished upload, id is \(id) url is \(url)")
+    }
+}

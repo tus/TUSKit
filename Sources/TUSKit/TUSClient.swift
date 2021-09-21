@@ -137,7 +137,7 @@ public final class TUSClient {
     /// - Parameter id: The id of a (scheduled) upload that you wish to delete.
     /// - Returns: A bool whether or not the upload was found and deleted.
     /// - Throws: TUSClientError if a file is found but couldn't be deleted. Or if files couldn't be loaded.
-    public func remoteCacheFor(id: UUID) throws -> Bool {
+    public func removeCacheFor(id: UUID) throws -> Bool {
         do {
             let metaData = try Files.loadAllMetadata().first(where: { metaData in
                 metaData.id == id

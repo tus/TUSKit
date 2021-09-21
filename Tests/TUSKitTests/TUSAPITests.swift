@@ -65,7 +65,7 @@ final class TUSAPITests: XCTestCase {
     func testCreation() throws {
         let size = 300
         let expectation = expectation(description: "Call api.create()")
-        let metaData = UploadMetadata(filePath: URL(string: "file://whatever/")!, size: size)
+        let metaData = UploadMetadata(id: UUID(), filePath: URL(string: "file://whatever/")!, size: size)
         api.create(metaData: metaData) { [unowned self] result in
             do {
                 let url = try result.get()

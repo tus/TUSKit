@@ -28,22 +28,27 @@ final class FilesTests: XCTestCase {
     
     func testCopyingFileFromURL() throws {
         let path = try Fixtures.makeFilePath()
-        let url = try Files.copy(from: path)
+        let url = try Files.copy(from: path, id: UUID())
         
         let _ = try Data(contentsOf: url)
+        
+        XCTFail("Implement id check, see if file gets id as path")
     }
     
     func testStoringData() throws {
-        let url = try Files.store(data: Fixtures.loadData())
+        let url = try Files.store(data: Fixtures.loadData(), id: UUID())
         let _ = try Data(contentsOf: url)
+        XCTFail("Implement id check, see if file gets id as path")
     }
     
     func testCanCopyMultipleFilesWithSameName() throws {
         // Make sure that a filename isn't reused and that you can upload the same file multiple times.
         let path = try Fixtures.makeFilePath()
         for _ in 0..<2 {
-            let _ = try Files.copy(from: path)
+            let _ = try Files.copy(from: path, id: UUID())
         }
+        
+        XCTFail("Implement id check, see if file gets id as path")
     }
     
     func testCantStoreEmptyFile() throws {
@@ -57,7 +62,7 @@ final class FilesTests: XCTestCase {
     
     func testCheckMetadataHasWrongFilepath() throws {
         // TODO: Changing file url, and then storing it, and retrieving it, should have same fileurl as the metadata path again. E.g. if doc dir changed
-        let metaData = UploadMetadata(filePath: URL(string: "www.not-a-file-path.com")!, size: 300)
+        let metaData = UploadMetadata(id: UUID(), filePath: URL(string: "www.not-a-file-path.com")!, size: 300)
         XCTAssertThrowsError(try Files.encodeAndStore(metaData: metaData), "Expected Files to catch unknown file")
     }
     
@@ -79,7 +84,7 @@ final class FilesTests: XCTestCase {
             // Manually store metadata, so we bypass the storing of files in a proper directory.
             // We are intentionally storing a file to cache dir (which is not expected).
             
-            let metaData = UploadMetadata(filePath: filePath, size: 5)
+            let metaData = UploadMetadata(id: UUID(), filePath: filePath, size: 5)
             
             let targetLocation = Files.targetDirectory.appendingPathComponent("dummyfile.plist")
             

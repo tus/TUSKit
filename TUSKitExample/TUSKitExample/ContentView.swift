@@ -36,7 +36,7 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     @State static var isPresented = false
-    static let tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), storageDirectory: nil)
+    static let tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), sessionIdentifier: "TUSClient", storageDirectory: URL(string: "TUS")!)
     static var previews: some View {
         let photoPicker = PhotoPicker(tusClient: tusClient)
         ContentView(photoPicker: photoPicker)

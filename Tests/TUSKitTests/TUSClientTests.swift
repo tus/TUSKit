@@ -55,6 +55,10 @@ final class TUSClientTests: XCTestCase {
         XCTFail("Implement me")
     }
     
+    func testDeleteUploadedFilesOnStartup() {
+       XCTFail("Implement me")
+    }
+    
     func testIdsAreGivenAndReturnedWhenFinished() {
         XCTFail("Implement me")
         // Make sure id's that are given when uploading, are returned when uploads are finished
@@ -77,4 +81,20 @@ final class TUSClientTests: XCTestCase {
 //         A file is stored under a UUID, this must be the same as the metadata's id
         XCTFail("Implement me")
     }
+    
+    func testClientCanHandleDirectoryStartingWithOrWithoutForwardSlash() {
+        // Initialize tusclient with either "TUS" or "/TUS" and it should work
+        XCTFail("Implement me")
+    }
+    
+    func testMakeSureErronousUploadsAreNotUploadedAgain() {
+        // Only for x amount of errors
+        XCTFail("Implement me")
+    }
+    
+    func testMakeSureErronousUploadsAreRetriedXTimes() {
+        // Only retry error upload x times
+        XCTFail("Implement me")
+    }
 }
+

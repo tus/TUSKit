@@ -21,6 +21,7 @@ final class UploadMetadata: Codable {
     
     var uploadedRange: Range<Int>?
     let size: Int
+    var errorCount: Int
     
     init(id: UUID, filePath: URL, size: Int, mimeType: String? = nil) {
         self.id = id
@@ -28,6 +29,7 @@ final class UploadMetadata: Codable {
         self.size = size
         self.mimeType = mimeType
         self.version = 1 // Can't make default property because of Codable
+        self.errorCount = 0
         // TODO: Check nil size error?
     }
 }

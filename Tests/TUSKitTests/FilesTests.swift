@@ -118,5 +118,9 @@ final class FilesTests: XCTestCase {
         let retrievedMetaData = allMetadata[0]
         XCTAssertEqual(expectedLocation, retrievedMetaData.filePath)
     }
+    
+    func testMakeSureMetadataWithTooManyErrorsArentLoaded() {
+        XCTFail("Implement me")
+    }
    
 }

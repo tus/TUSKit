@@ -23,7 +23,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
 
         // Create the SwiftUI view that provides the window contents.
-        tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), storageDirectory: nil)
+        tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "TUS")!)
         tusClient.delegate = self
         let photoPicker = PhotoPicker(tusClient: tusClient)
         
@@ -66,19 +66,27 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // to restore the scene back to its current state.
     }
 
-
 }
 
 extension SceneDelegate: TUSClientDelegate {
     func didStartUpload(id: UUID, client: TUSClient) {
         print("TUSClient started upload, id is \(id)")
+        print("TUSClient remaining is \(client.remainingUploads)")
     }
     
     func didFinishUpload(id: UUID, url: URL, client: TUSClient) {
         print("TUSClient finished upload, id is \(id) url is \(url)")
+        print("TUSClient remaining is \(client.remainingUploads)")
+        if client.remainingUploads == 0 {
+            print("Finished uploading")
+        }
     }
     
     func uploadFailed(id: UUID, error: Error, client: TUSClient) {
         print("TUSClient upload failed for \(id) error \(error)")
+    }
+    
+    func fileError(error: TUSClientError, client: TUSClient) {
+        print("TUSClient File error \(error)")
     }
 }

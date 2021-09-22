@@ -11,14 +11,16 @@ public protocol TUSClientDelegate: AnyObject {
     func didStartUpload(id: UUID, client: TUSClient)
     func didFinishUpload(id: UUID, url: URL, client: TUSClient)
     func uploadFailed(id: UUID, error: Error, client: TUSClient)
+    func fileError(error: TUSClientError, client: TUSClient)
 }
 
 /// The errors that are passed from TUSClient
 public struct TUSClientError: Error {
-    let code: Int
-
     // Maintenance: We use static lets on a struct, instead of an enum, so that adding new cases won't break stability.
     // Alternatively we can ask users to always use `unknown default`, but we can't guarantee that everyone will use that.
+    
+    let code: Int
+
     // TODO: Describe for each error what it could mean, or add localizable string support.
     public static let couldNotCopyFile = TUSClientError(code: 1)
     public static let couldNotStoreFile = TUSClientError(code: 2)
@@ -32,6 +34,7 @@ public struct TUSClientError: Error {
     public static let couldNotDeleteFile = TUSClientError(code: 10)
 }
 
+
 /// The TUSKit client.
 ///
 /// ## Example
@@ -40,9 +43,10 @@ public struct TUSClientError: Error {
 ///
 public final class TUSClient {
     
+    public let sessionIdentifier: String
     private let config: TUSConfig
     private let scheduler = Scheduler()
-    private let storageDirectory: URL?
+    private let storageDirectory: URL
     private let api: TUSAPI
     /// Keep track of uploads and their id's
     private var uploads = [URL: UUID]()
@@ -52,14 +56,33 @@ public final class TUSClient {
         uploads.count
     }
     
-    public init(config: TUSConfig, storageDirectory: URL?) {
+    /// Initialize a TUSClient
+    /// - Parameters:
+    ///   - config: A config
+    ///   - sessionIdentifier: An identifier to know which TUSClient calls delegate methods, also used for URLSession configurations.
+    ///   - storageDirectory: A directory to save files to, if it isn't passed, the documents directory will be used. Prefer to use reverse DNS notation, such as io.tus, so that you have a unique folder for your app
+    public init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL) {
         self.config = config
+        self.sessionIdentifier = sessionIdentifier
         self.storageDirectory = storageDirectory
         self.api = TUSAPI(uploadURL: config.server, network: URLSession.shared)
         
         scheduler.delegate = self
         
+        removeFinishedUploads()
         scheduleStoredTasks()
+    }
+    
+    private func removeFinishedUploads() {
+        do {
+            try Files.loadAllMetadata()
+              .filter { metaData in
+                  metaData.size == metaData.uploadedRange?.count
+              }.forEach(Files.removeFileAndMetadata)
+        } catch {
+            // log
+            print("Could not clear / remove old uploads")
+        }
     }
 
     // MARK: - Upload single file
@@ -141,8 +164,8 @@ public final class TUSClient {
     public func removeCacheFor(id: UUID) throws -> Bool {
         do {
             let metaData = try Files.loadAllMetadata().first(where: { metaData in
-                metaData.id == id
-            })
+                                                                      metaData.id == id
+                                                                  })
             guard let metaData = metaData else {
                 return false
             }
@@ -178,7 +201,7 @@ public final class TUSClient {
         
         uploads[filePath] = id
 
-        let task = try CreationTask(metaData: metaData, api: TUSAPI(uploadURL: config.server, network: URLSession.shared))
+        let task = try CreationTask(metaData: metaData, api: api)
         scheduler.addTask(task: task)
     }
     
@@ -197,8 +220,6 @@ public final class TUSClient {
             // Improvement: Doesn't group a single upload into multiple.
             // Once concurrent uploading comes into play. Return [[Task]] so
             return try metaData.map { metaData in
-                // TODO: Check expiration date?
-                
                 if let remoteDestination = metaData.remoteDestination {
                     return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData)
                 } else {
@@ -223,9 +244,11 @@ public final class TUSClient {
 extension TUSClient: SchedulerDelegate {
     func didFinishTask(task: Task, scheduler: Scheduler) {
         if let uploadTask = task as? UploadDataTask {
-            // TODO: Force unwrap
-            // TODO: Mark metadata as finished? Then ignore when opening files? Maybe do cleanup on start?
-            try! Files.removeFileAndMetadata(uploadTask.metaData)
+            do {
+                try Files.removeFileAndMetadata(uploadTask.metaData)
+            } catch {
+                delegate?.fileError(error: TUSClientError.couldNotDeleteFile, client: self)
+            }
             
             guard let url = uploadTask.metaData.remoteDestination else {
                 assertionFailure("Somehow uploaded task did not have a url")
@@ -237,7 +260,6 @@ extension TUSClient: SchedulerDelegate {
                 delegate?.didFinishUpload(id: UUID(), url: url, client: self)
                 return
             }
-            
             
             uploads[uploadTask.metaData.filePath] = nil
             delegate?.didFinishUpload(id: id, url: url, client: self)
@@ -258,16 +280,26 @@ extension TUSClient: SchedulerDelegate {
     
     func onError(error: Error, task: Task, scheduler: Scheduler) {
         let id: UUID
+        let metaData: UploadMetadata
         switch task {
         case let task as CreationTask:
             id = task.metaData.id
+            metaData = task.metaData
         case let task as UploadDataTask:
             id = task.metaData.id
+            metaData = task.metaData
         case let task as StatusTask:
             id = task.metaData.id
+            metaData = task.metaData
         default:
-            assertionFailure("Unsupported task errored")
-            return
+            fatalError("Unsupported task errored")
+        }
+        
+        metaData.errorCount += 1
+        do {
+            try Files.encodeAndStore(metaData: metaData)
+        } catch {
+            delegate?.fileError(error: TUSClientError.couldNotStoreFileMetadata, client: self)
         }
         delegate?.uploadFailed(id: id, error: error, client: self)
     }

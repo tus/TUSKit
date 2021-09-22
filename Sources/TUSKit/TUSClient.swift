@@ -21,7 +21,6 @@ public struct TUSClientError: Error {
     
     let code: Int
 
-    // TODO: Describe for each error what it could mean, or add localizable string support.
     public static let couldNotCopyFile = TUSClientError(code: 1)
     public static let couldNotStoreFile = TUSClientError(code: 2)
     public static let fileSizeUnknown = TUSClientError(code: 3)
@@ -64,42 +63,18 @@ public final class TUSClient {
     ///   - config: A config
     ///   - sessionIdentifier: An identifier to know which TUSClient calls delegate methods, also used for URLSession configurations.
     ///   - storageDirectory: A directory to save files to, if it isn't passed, the documents directory will be used. Prefer to use reverse DNS notation, such as io.tus, so that you have a unique folder for your app
-    public init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL) {
-        self.config = config
-        self.sessionIdentifier = sessionIdentifier
-        self.storageDirectory = storageDirectory
-        self.api = TUSAPI(uploadURL: config.server, network: URLSession.shared)
-        
-        Files.TUSDirectory = storageDirectory.relativePath
-        scheduler.delegate = self
-        
-        removeFinishedUploads()
-        scheduleStoredTasks()
+    public convenience init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL) {
+        self.init(config: config, sessionIdentifier: sessionIdentifier, storageDirectory: storageDirectory, network: URLSession.shared)
     }
     
+    /// Internal initializer to gain access to the Network protocol. To allow for mocking yet keeping the protocol shielded from public API.
     init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL, network: Network) {
         self.config = config
         self.sessionIdentifier = sessionIdentifier
         self.storageDirectory = storageDirectory
         self.api = TUSAPI(uploadURL: config.server, network: network)
         
-        Files.TUSDirectory = storageDirectory.relativePath
-        scheduler.delegate = self
-        
-        removeFinishedUploads()
-        scheduleStoredTasks()
-    }
-    
-    private func removeFinishedUploads() {
-        do {
-            try Files.loadAllMetadata()
-              .filter { metaData in
-                  metaData.size == metaData.uploadedRange?.count
-              }.forEach(Files.removeFileAndMetadata)
-        } catch {
-            // log
-            print("Could not clear / remove old uploads")
-        }
+        start()
     }
 
     // MARK: - Upload single file
@@ -178,12 +153,12 @@ public final class TUSClient {
         }
     }
     
-    @discardableResult
     /// Remove a cache related to an id
     /// - Important:Don't call this while the client is active. Only between uploading sessions.
     /// - Parameter id: The id of a (scheduled) upload that you wish to delete.
     /// - Returns: A bool whether or not the upload was found and deleted.
     /// - Throws: TUSClientError if a file is found but couldn't be deleted. Or if files couldn't be loaded.
+    @discardableResult
     public func removeCacheFor(id: UUID) throws -> Bool {
         do {
             let metaData = try Files.loadAllMetadata().first(where: { metaData in
@@ -201,6 +176,28 @@ public final class TUSClient {
     }
     
     // MARK: - Private
+    
+    /// Kick off the client to configure itself and upload any remaining files.
+    private func start() {
+        scheduler.delegate = self
+        Files.TUSDirectory = storageDirectory.relativePath
+        
+        removeFinishedUploads()
+        scheduleStoredTasks()
+    }
+    
+    /// Ceck for any uploads that are finished and remove them from the cache.
+    private func removeFinishedUploads() {
+        do {
+            try Files.loadAllMetadata()
+              .filter { metaData in
+                  metaData.size == metaData.uploadedRange?.count
+              }.forEach(Files.removeFileAndMetadata)
+        } catch {
+            // log
+            print("Could not clear / remove old uploads")
+        }
+    }
     
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
@@ -270,27 +267,29 @@ public final class TUSClient {
 
 extension TUSClient: SchedulerDelegate {
     func didFinishTask(task: Task, scheduler: Scheduler) {
-        if let uploadTask = task as? UploadDataTask {
-            do {
-                try Files.removeFileAndMetadata(uploadTask.metaData)
-            } catch {
-                delegate?.fileError(error: TUSClientError.couldNotDeleteFile, client: self)
-            }
-            
-            guard let url = uploadTask.metaData.remoteDestination else {
-                assertionFailure("Somehow uploaded task did not have a url")
-                return
-            }
-            
-            guard let id = uploads[uploadTask.metaData.filePath] else {
-                assertionFailure("Somehow task \(task) did not have an id")
-                delegate?.didFinishUpload(id: UUID(), url: url, client: self)
-                return
-            }
-            
-            uploads[uploadTask.metaData.filePath] = nil
-            delegate?.didFinishUpload(id: id, url: url, client: self)
+        guard  let uploadTask = task as? UploadDataTask else {
+            return
         }
+        
+        do {
+            try Files.removeFileAndMetadata(uploadTask.metaData)
+        } catch {
+            delegate?.fileError(error: TUSClientError.couldNotDeleteFile, client: self)
+        }
+        
+        guard let url = uploadTask.metaData.remoteDestination else {
+            assertionFailure("Somehow uploaded task did not have a url")
+            return
+        }
+        
+        guard let id = uploads[uploadTask.metaData.filePath] else {
+            assertionFailure("Somehow task \(task) did not have an id")
+            delegate?.didFinishUpload(id: UUID(), url: url, client: self)
+            return
+        }
+        
+        uploads[uploadTask.metaData.filePath] = nil
+        delegate?.didFinishUpload(id: id, url: url, client: self)
     }
     
     func didStartTask(task: Task, scheduler: Scheduler) {

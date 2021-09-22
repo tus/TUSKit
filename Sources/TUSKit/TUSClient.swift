@@ -43,6 +43,9 @@ public struct TUSClientError: Error {
 ///
 public final class TUSClient {
     
+    /// How often to try an upload if it fails. A retryCount of 2 means 3 total uploads max. (1 initial upload, and on repeated failure, 2 more retries.)
+    private let retryCount = 2
+    
     public let sessionIdentifier: String
     private let config: TUSConfig
     private let scheduler = Scheduler()
@@ -67,6 +70,20 @@ public final class TUSClient {
         self.storageDirectory = storageDirectory
         self.api = TUSAPI(uploadURL: config.server, network: URLSession.shared)
         
+        Files.TUSDirectory = storageDirectory.relativePath
+        scheduler.delegate = self
+        
+        removeFinishedUploads()
+        scheduleStoredTasks()
+    }
+    
+    init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL, network: Network) {
+        self.config = config
+        self.sessionIdentifier = sessionIdentifier
+        self.storageDirectory = storageDirectory
+        self.api = TUSAPI(uploadURL: config.server, network: network)
+        
+        Files.TUSDirectory = storageDirectory.relativePath
         scheduler.delegate = self
         
         removeFinishedUploads()
@@ -92,11 +109,11 @@ public final class TUSClient {
     /// - Parameter filePath: The path to a file on a local filesystem.
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadFileAt(filePath: URL) throws -> UUID {
+    public func uploadFileAt(filePath: URL, customHeaders: [String: String] = [:]) throws -> UUID {
         do {
             let id = UUID()
             let destinationFilePath = try Files.copy(from: filePath, id: id)
-            try scheduleCreationTask(for: destinationFilePath, id: id)
+            try scheduleCreationTask(for: destinationFilePath, id: id, customHeaders: customHeaders)
             return id
         } catch let error as TUSClientError {
             throw error
@@ -109,11 +126,11 @@ public final class TUSClient {
     /// - Parameter data: The data to be uploaded.
     /// - Throws: TUSClientError
     @discardableResult
-    public func upload(data: Data) throws -> UUID {
+    public func upload(data: Data, customHeaders: [String: String] = [:]) throws -> UUID {
         do {
             let id = UUID()
             let filePath = try Files.store(data: data, id: id)
-            try scheduleCreationTask(for: filePath, id: id)
+            try scheduleCreationTask(for: filePath, id: id, customHeaders: customHeaders)
             return id
         } catch let error as TUSClientError {
             throw error
@@ -128,16 +145,24 @@ public final class TUSClient {
     /// - Parameter filePaths: An array of filepaths, represented by URLs
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadFiles(filePaths: [URL]) throws -> [UUID] {
-        return try filePaths.map(uploadFileAt)
+    public func uploadFiles(filePaths: [URL], customHeaders: [String: String] = [:]) throws -> [UUID] {
+        var ids = [UUID]()
+        for filePath in filePaths {
+            try ids.append(uploadFileAt(filePath: filePath, customHeaders: customHeaders))
+        }
+        return ids
     }
     
     /// Upload multiple data files
     /// - Parameter data: The data to be uploaded.
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadMultiple(dataFiles: [Data]) throws -> [UUID] {
-        return try dataFiles.map(upload)
+    public func uploadMultiple(dataFiles: [Data], customHeaders: [String: String] = [:]) throws -> [UUID] {
+        var ids = [UUID]()
+        for data in dataFiles {
+            try ids.append(upload(data: data, customHeaders: customHeaders))
+        }
+        return ids
     }
     
     // MARK: - Cache
@@ -147,9 +172,7 @@ public final class TUSClient {
     /// - Throws: TUSClientError if a file is found but couldn't be deleted. Or if files couldn't be loaded.
     public func clearAllCache() throws {
         do {
-            for metaData in try Files.loadAllMetadata() {
-                try Files.removeFileAndMetadata(metaData)
-            }
+            try Files.clearTUSDirectory()
         } catch {
             throw TUSClientError.couldNotDeleteFile
         }
@@ -181,7 +204,7 @@ public final class TUSClient {
     
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
-    private func scheduleCreationTask(for storedFilePath: URL, id: UUID) throws {
+    private func scheduleCreationTask(for storedFilePath: URL, id: UUID, customHeaders: [String: String]) throws {
         let filePath = storedFilePath
         
         func getSize() throws -> Int {
@@ -196,12 +219,12 @@ public final class TUSClient {
         
         let size = try getSize()
         
-        let metaData = UploadMetadata(id: id, filePath: filePath, size: size, mimeType: filePath.mimeType.nonEmpty)
+        let metaData = UploadMetadata(id: id, filePath: filePath, size: size, customHeaders: customHeaders, mimeType: filePath.mimeType.nonEmpty)
         try store(metaData: metaData)
         
         uploads[filePath] = id
 
-        let task = try CreationTask(metaData: metaData, api: api)
+        let task = try CreationTask(metaData: metaData, api: api, customHeaders: customHeaders)
         scheduler.addTask(task: task)
     }
     
@@ -223,13 +246,17 @@ public final class TUSClient {
                 if let remoteDestination = metaData.remoteDestination {
                     return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData)
                 } else {
-                    return try CreationTask(metaData: metaData, api: api)
+                    return try CreationTask(metaData: metaData, api: api, customHeaders: metaData.customHeaders)
                 }
             }
         }
         
         do {
-            let metaDataItems = try Files.loadAllMetadata()
+            let metaDataItems = try Files.loadAllMetadata().filter({ metaData in
+                // Only allow uploads where errors are below an amount
+                metaData.errorCount <= retryCount
+            })
+            
             for metaData in metaDataItems {
                 uploads[metaData.filePath] = metaData.id
             }
@@ -301,7 +328,12 @@ extension TUSClient: SchedulerDelegate {
         } catch {
             delegate?.fileError(error: TUSClientError.couldNotStoreFileMetadata, client: self)
         }
-        delegate?.uploadFailed(id: id, error: error, client: self)
+        
+        if metaData.errorCount <= retryCount {
+            scheduler.addTask(task: task) // Let's retry
+        } else { // Exhausted all retries, reporting back as failure.
+            delegate?.uploadFailed(id: id, error: error, client: self)
+        }
     }
 }
 

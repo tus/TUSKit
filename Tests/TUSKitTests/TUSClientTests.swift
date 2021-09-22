@@ -4,12 +4,23 @@ import TUSKit // ⚠️ No testable import. Make sure we test the public api her
 final class TUSClientTests: XCTestCase {
     
     var client: TUSClient!
+    var relativeStoragePath: URL!
+    var fullStoragePath: URL!
     
     override func setUp() {
         super.setUp()
         
         let liveDemoPath = URL(string: "https://tusd.tusdemo.net/files")!
-        client = TUSClient(config: TUSConfig(server: liveDemoPath), storageDirectory: nil)
+        relativeStoragePath = URL(string: "TUSTEST")!
+        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
+        client = TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: relativeStoragePath)
+        _ = try? client.clearAllCache()
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+        XCTAssertNoThrow(try client.clearAllCache())
     }
 
     func testUploadingNonExistentFileShouldThrow() {
@@ -25,38 +36,24 @@ final class TUSClientTests: XCTestCase {
         XCTAssertNoThrow(try client.upload(data: Fixtures.loadData()))
     }
     
-    func testPausing() {
-        XCTFail("Implement me")
-        // Test pausing before adding files
-        // Probably it has no pause? Just start stop.
-    }
-    
-    func testResuming() {
-        XCTFail("Implement me")
-    }
-    
-    func testDisablingPersistence() {
-        XCTFail("Implement me")
+    func testCantUploadEmptyFile() throws {
+        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let targetLocation = docDir.appendingPathComponent("myfile.txt")
+        let data = Data()
+        try data.write(to: targetLocation)
         
-        // Give people option to upload without storing to disk. Probably via config.
-    }
-    
-    func testCantUploadEmptyFile() {
-        XCTFail("Implement me")
+        try XCTAssertThrowsError(client.uploadFileAt(filePath: targetLocation))
     }
     
     func testCantUploadEmptyData() {
-        XCTFail("Implement me")
+        let data = Data()
+        try XCTAssertThrowsError(client.upload(data: data))
     }
     
-    func testStatusDeletesFileIfCompleted() {
-        // If a file is done uploading (as said by status), but not yet deleted.
-        // Then the file can be deleted right after fetching the status.
+    func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() {
+        // Make multiple instances, they shouldn't interfere with each other's files.
+        // Already know to remove the Files. singleton dir
         XCTFail("Implement me")
-    }
-    
-    func testDeleteUploadedFilesOnStartup() {
-       XCTFail("Implement me")
     }
     
     func testIdsAreGivenAndReturnedWhenFinished() {
@@ -64,37 +61,46 @@ final class TUSClientTests: XCTestCase {
         // Make sure id's that are given when uploading, are returned when uploads are finished
     }
     
-    func testIdsArePreservedBetweenSessions() {
+    func testUploadIdsArePreservedBetweenSessions() {
         XCTFail("Implement me")
         // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
     }
     
-    func testDeletingFile() {
-        XCTFail("Implement me")
+    func testDeletingAllFiles() throws {
+        try makeDirectoryIfNeeded(url: fullStoragePath)
+        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(contents.isEmpty, "Prerequisite for tests fails")
+        
+        let data = Data("abc".utf8)
+        try data.write(to: fullStoragePath.appendingPathComponent("abc.txt"))
+        
+        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssertFalse(contents.isEmpty)
+        try client.clearAllCache()
+        
+        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(contents.isEmpty)
     }
     
-    func testDeletingAllFiles() {
-        XCTFail("Implement me")
+    func testDeleteSingleFile() throws {
+        let data = Data("abc".utf8)
+        let id = try client.upload(data: data)
+        
+        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssertEqual(2, contents.count, "Prerequisite for tests fails, expected 2 files to exist, the file to upload and metadata")
+        
+        try client.removeCacheFor(id: id)
+        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        
+        XCTAssert(contents.isEmpty, "Expected the client to delete the file")
     }
     
-    func testMakeSureFileIdIsSameAsStoredId() {
-//         A file is stored under a UUID, this must be the same as the metadata's id
-        XCTFail("Implement me")
-    }
-    
-    func testClientCanHandleDirectoryStartingWithOrWithoutForwardSlash() {
-        // Initialize tusclient with either "TUS" or "/TUS" and it should work
-        XCTFail("Implement me")
-    }
-    
-    func testMakeSureErronousUploadsAreNotUploadedAgain() {
-        // Only for x amount of errors
-        XCTFail("Implement me")
-    }
-    
-    func testMakeSureErronousUploadsAreRetriedXTimes() {
-        // Only retry error upload x times
-        XCTFail("Implement me")
-    }
 }
 
+private func makeDirectoryIfNeeded(url: URL) throws {
+    let doesExist = FileManager.default.fileExists(atPath: url.path, isDirectory: nil)
+    
+    if !doesExist {
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    }
+}

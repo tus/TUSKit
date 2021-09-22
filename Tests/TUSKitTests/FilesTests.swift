@@ -122,5 +122,10 @@ final class FilesTests: XCTestCase {
     func testMakeSureMetadataWithTooManyErrorsArentLoaded() {
         XCTFail("Implement me")
     }
+    
+    func testMakeSureFileIdIsSameAsStoredId() {
+//         A file is stored under a UUID, this must be the same as the metadata's id
+        XCTFail("Implement me")
+    }
    
 }

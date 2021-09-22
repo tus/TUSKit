@@ -19,7 +19,7 @@ enum FilesError: Error {
 /// Uses FileManager.default underwater, hence why methods work statically
 final class Files {
     
-    static private var TUSDirectory = "TUS"
+    static var TUSDirectory = "TUS"
     
     static var targetDirectory: URL {
         // TODO: Consider using cache dir? Or mac only?

@@ -19,14 +19,16 @@ final class UploadMetadata: Codable {
     
     let mimeType: String?
     
+    let customHeaders: [String: String]?
     var uploadedRange: Range<Int>?
     let size: Int
     var errorCount: Int
     
-    init(id: UUID, filePath: URL, size: Int, mimeType: String? = nil) {
+    init(id: UUID, filePath: URL, size: Int, customHeaders: [String: String]? = nil, mimeType: String? = nil) {
         self.id = id
         self.filePath = filePath
         self.size = size
+        self.customHeaders = customHeaders
         self.mimeType = mimeType
         self.version = 1 // Can't make default property because of Codable
         self.errorCount = 0

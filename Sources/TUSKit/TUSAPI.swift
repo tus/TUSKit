@@ -111,6 +111,9 @@ final class TUSAPI {
         
         let fileName = metaData.filePath.lastPathComponent
         headers.merge(makeEncodedMetaDataHeaders(name: fileName, mimeType: metaData.mimeType)) { lhs, _ in lhs }
+        if let customHeaders = metaData.customHeaders {
+            headers.merge(customHeaders) { _, rhs in rhs }
+        }
 
         let request = makeRequest(url: uploadURL, method: .post, headers: headers)
         let task = network.dataTask(request: request) { (result: Result<(Data?, HTTPURLResponse), Error>) in
@@ -187,25 +190,6 @@ final class TUSAPI {
     }
 }
 
-/// Base 64 extensions
-private extension String {
-
-    func fromBase64() -> String? {
-        guard let data = Data(base64Encoded: self) else {
-            return nil
-        }
-
-        return String(data: data, encoding: .utf8)
-    }
-
-    func toBase64() -> String {
-        return Data(self.utf8).base64EncodedString()
-    }
-
-}
-
-/// Little helper function that will transform all errors to a TUSAPIError.
-///
 /// This helper function solves a couple problems:
 /// - It removes boilerplate. E.g. always converting to a Result with TUSAPIError as its error type. No need to have multitple do catch or mapError flatMap cases in every return.
 /// - It makes the callsite friendly, all you need to do is process your response normally, and throw if needed.

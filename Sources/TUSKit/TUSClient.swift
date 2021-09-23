@@ -7,10 +7,15 @@
 
 import Foundation
 
+/// Implement this delegate to receive updates from the TUSClient
 public protocol TUSClientDelegate: AnyObject {
+    /// TUSClient is starting an upload
     func didStartUpload(id: UUID, client: TUSClient)
+    /// `TUSClient` just finished an upload, returns the URL of the uploaded file.
     func didFinishUpload(id: UUID, url: URL, client: TUSClient)
+    /// An upload failed. Returns an error. Could either be a TUSClientError or a networking related error.
     func uploadFailed(id: UUID, error: Error, client: TUSClient)
+    /// Receive an error related to files. E.g. The `TUSClient` couldn't store a file or remove a file.
     func fileError(error: TUSClientError, client: TUSClient)
 }
 
@@ -202,6 +207,15 @@ public final class TUSClient {
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
     private func scheduleCreationTask(for storedFilePath: URL, id: UUID, customHeaders: [String: String]) throws {
+        func store(metaData: UploadMetadata) throws {
+            do {
+                // We store metadata here, so it's saved even if this job doesn't run this session. (Only created, doesn't mean it will run)
+                try Files.encodeAndStore(metaData: metaData)
+            } catch {
+                throw TUSClientError.couldNotStoreFileMetadata
+            }
+        }
+    
         let filePath = storedFilePath
         
         func getSize() throws -> Int {
@@ -223,15 +237,6 @@ public final class TUSClient {
 
         let task = try CreationTask(metaData: metaData, api: api, customHeaders: customHeaders)
         scheduler.addTask(task: task)
-    }
-    
-    private func store(metaData: UploadMetadata) throws {
-        do {
-            // We store metadata here, so it's saved even if this job doesn't run this session. (Only created, doesn't mean it will run)
-            try Files.encodeAndStore(metaData: metaData)
-        } catch {
-            throw TUSClientError.couldNotStoreFileMetadata
-        }
     }
     
     /// Check which uploads aren't finished. Load them from a store and turn these into tasks.

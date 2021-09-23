@@ -31,7 +31,8 @@ extension URLSession: Network {
     }
     
     func uploadTask(request: URLRequest, data: Data, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> NetworkTask {
-        return URLSession.shared.uploadTask(with: request, from: data, completionHandler: makeCompletion(completion: completion))
+        
+        return uploadTask(with: request, from: data, completionHandler: makeCompletion(completion: completion))
     }
     
 }

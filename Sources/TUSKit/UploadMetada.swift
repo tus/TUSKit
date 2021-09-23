@@ -12,6 +12,10 @@ import Foundation
 /// The reason this is a class is to preserve refernece semantics.
 final class UploadMetadata: Codable {
     
+    var isFinished: Bool {
+        size == uploadedRange?.count
+    }
+    
     let id: UUID
     var filePath: URL
     var remoteDestination: URL?

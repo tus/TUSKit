@@ -67,7 +67,7 @@ To upload data, use the `upload(data:)` method`
 
 ```swift
 let data = Data("I am some data".utf8)
-client.upload(data: data)
+let uploadId = client.upload(data: data)
 ```
 
 To upload multiple data files at once, use the `uploadMultiple(dataFiles:)` method.
@@ -76,10 +76,28 @@ To upload a single stored file, retrieve a file path and pass it to the client.
 
 ```swift
 let pathToFile:URL = ...
-tusClient.uploadFileAt(filePath: pathToFile)
+let uploadId = tusClient.uploadFileAt(filePath: pathToFile)
 ```
 
 To upload multiple files at once, you can use the `uploadFiles(filePaths:)` method.
+
+## Measuring upload progress
+
+To know how many files have yet to be uploaded, please refer to the `remainingUploads` property.
+
+Please note that there isn't a percentage supplied, since it's up to you to define what the starting point is of an upload.
+For example. If you upload 10 files, and 3 are finished, then you are at 3/10. However, if during this upload you add 2 more, should that count as 3/12 or do you consider it a a fresh upload? So 0/9. It's up to you to define how finished uploads are counted when adding new uploads.
+
+
+## Upload id's
+
+By starting an upload you will receive an id. This id is passed to you to the `TUSClientDelegate` for reference.
+You can use this id to identify which files are finished or failed. You can also delete these files on failure if you want.
+
+## Parallelism 
+
+At the time of writing, this client does not support TUS' concatenation option. 
+It does, however, support parallel uploads in a single client. It does also support multiple clients.
 
 ## Mechanics
 
@@ -91,6 +109,7 @@ The `TUSClient` will try to upload a file fully, and if it gets interrupted (e.g
 
 The `TUSClient` stored files locally to upload them. It will use the `storageDirectory` path that is passed in the initializer.
 
+The `TUSClient` will automatically removed locally stored files (internally) once their upload is complete.
 
 ## Multiple instances
 

@@ -48,6 +48,14 @@ final class TUSClientInternalTests: XCTestCase {
         XCTFail("Implement me")
     }
     
+    func testClientDoesNotScheduleFilesThatArentFinished() {
+        XCTFail("Implement me")
+    }
+    
+    func testClientDoesNotScheduleFilesThatAreRetried() {
+        XCTFail("Implement me")
+    }
+    
     func testUploadingWithCustomHeaders() {
         // Make sure client adds custom headers
         XCTFail("Implement me")
@@ -62,6 +70,9 @@ final class TUSClientInternalTests: XCTestCase {
     func testDeleteUploadedFilesOnStartup() {
        XCTFail("Implement me")
     }
-    
+   
+    func testRetryMechanic() {
+        XCTFail("Implement me")
+    }
     
 }

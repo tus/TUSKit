@@ -25,7 +25,7 @@ public struct TUSClientError: Error {
     // Alternatively we can ask users to always use `unknown default`, but we can't guarantee that everyone will use that.
     
     let code: Int
-
+    
     public static let couldNotCopyFile = TUSClientError(code: 1)
     public static let couldNotStoreFile = TUSClientError(code: 2)
     public static let fileSizeUnknown = TUSClientError(code: 3)
@@ -36,15 +36,14 @@ public struct TUSClientError: Error {
     public static let couldNotGetFileStatus = TUSClientError(code: 8)
     public static let fileSizeMismatchWithServer = TUSClientError(code: 9)
     public static let couldNotDeleteFile = TUSClientError(code: 10)
+    public static let uploadIsAlreadyFinished = TUSClientError(code: 11)
+    public static let couldNotRetryUpload = TUSClientError(code: 12)
+    public static let couldnotRemoveFinishedUploads = TUSClientError(code: 13)
+ 
 }
 
-
 /// The TUSKit client.
-///
-/// ## Example
-///
-///     let client = TUSClient(config: TUSConfig(server: liveDemoPath))
-///
+/// Please refer to the Readme.md on how to use this type.
 public final class TUSClient {
     
     /// How often to try an upload if it fails. A retryCount of 2 means 3 total uploads max. (1 initial upload, and on repeated failure, 2 more retries.)
@@ -81,7 +80,7 @@ public final class TUSClient {
         
         start()
     }
-
+    
     // MARK: - Upload single file
     
     /// Upload data located at a url.  This file will be copied to a TUS directory for processing..
@@ -167,8 +166,8 @@ public final class TUSClient {
     public func removeCacheFor(id: UUID) throws -> Bool {
         do {
             let metaData = try Files.loadAllMetadata().first(where: { metaData in
-                                                                      metaData.id == id
-                                                                  })
+                metaData.id == id
+            })
             guard let metaData = metaData else {
                 return false
             }
@@ -179,6 +178,33 @@ public final class TUSClient {
             throw TUSClientError.couldNotDeleteFile
         }
     }
+   
+    /// Retry a failed upload. Note that `TUSClient` already has an internal retry mechanic before it reports an upload as failure.
+    /// If however, you like to retry an upload at a later stage, you can use this method to trigger the upload again.
+    /// - Important: Don't retry an upload while it's still being uploaded. You get undefined behavior.
+    /// - Parameter id: The id of an upload. Received when starting an upload, or via the `TUSClientDelegate`.
+    /// - Returns: True if the id is found. False if it's not found
+    /// - Throws: `TUSClientError.couldNotRetryUpload` if it can't load an the file. Or file related errors.
+    public func retry(id: UUID) throws -> Bool {
+        do {
+            let metaData = try Files.loadAllMetadata().first(where: { metaData in
+                metaData.id == id
+            })
+            guard let metaData = metaData else {
+                return false
+            }
+            
+            metaData.errorCount = 0
+            
+            try scheduleTask(for: metaData)
+            return true
+        } catch let error as TUSClientError {
+            throw error
+        } catch {
+            throw TUSClientError.couldNotRetryUpload
+        }
+    }
+    
     
     // MARK: - Private
     
@@ -195,27 +221,17 @@ public final class TUSClient {
     private func removeFinishedUploads() {
         do {
             try Files.loadAllMetadata()
-              .filter { metaData in
-                  metaData.size == metaData.uploadedRange?.count
-              }.forEach(Files.removeFileAndMetadata)
+                .filter { metaData in
+                    metaData.size == metaData.uploadedRange?.count
+                }.forEach(Files.removeFileAndMetadata)
         } catch {
-            // log
-            print("Could not clear / remove old uploads")
+            delegate?.fileError(error: TUSClientError.couldnotRemoveFinishedUploads, client: self)
         }
     }
     
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
     private func scheduleCreationTask(for storedFilePath: URL, id: UUID, customHeaders: [String: String]) throws {
-        func store(metaData: UploadMetadata) throws {
-            do {
-                // We store metadata here, so it's saved even if this job doesn't run this session. (Only created, doesn't mean it will run)
-                try Files.encodeAndStore(metaData: metaData)
-            } catch {
-                throw TUSClientError.couldNotStoreFileMetadata
-            }
-        }
-    
         let filePath = storedFilePath
         
         func getSize() throws -> Int {
@@ -234,40 +250,64 @@ public final class TUSClient {
         try store(metaData: metaData)
         
         uploads[filePath] = id
-
+        
         let task = try CreationTask(metaData: metaData, api: api, customHeaders: customHeaders)
         scheduler.addTask(task: task)
     }
     
+    /// Store UploadMetadata to sdisk
+    /// - Parameter metaData: The `UploadMetadata` to store.
+    /// - Throws: TUSClientError.couldNotStoreFileMetadata
+    private func store(metaData: UploadMetadata) throws {
+        do {
+            // We store metadata here, so it's saved even if this job doesn't run this session. (Only created, doesn't mean it will run)
+            try Files.encodeAndStore(metaData: metaData)
+        } catch {
+            throw TUSClientError.couldNotStoreFileMetadata
+        }
+    }
+    
     /// Check which uploads aren't finished. Load them from a store and turn these into tasks.
     private func scheduleStoredTasks() {
-        func tasksFrom(metaData: [UploadMetadata]) throws -> [Task] {
-            // Improvement: Doesn't group a single upload into multiple.
-            // Once concurrent uploading comes into play. Return [[Task]] so
-            return try metaData.map { metaData in
-                if let remoteDestination = metaData.remoteDestination {
-                    return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData)
-                } else {
-                    return try CreationTask(metaData: metaData, api: api, customHeaders: metaData.customHeaders)
-                }
-            }
-        }
-        
         do {
             let metaDataItems = try Files.loadAllMetadata().filter({ metaData in
                 // Only allow uploads where errors are below an amount
-                metaData.errorCount <= retryCount
+                metaData.errorCount <= retryCount && !metaData.isFinished
             })
             
             for metaData in metaDataItems {
                 uploads[metaData.filePath] = metaData.id
+                try scheduleTask(for: metaData)
             }
-            let tasks = try tasksFrom(metaData: metaDataItems)
-            scheduler.addTasks(tasks: tasks)
         } catch {
             // TODO: Return error, can't load from store
         }
     }
+    
+    /// Schedule a single task if needed. Will decide what task to schedule for the metaData.
+    /// - Parameter metaData:The metaData the schedule.
+    private func scheduleTask(for metaData: UploadMetadata) throws {
+        guard let task = try taskFor(metaData: metaData) else {
+            throw TUSClientError.uploadIsAlreadyFinished
+        }
+        scheduler.addTask(task: task)
+    }
+    
+    /// Decide which task to create based on metaData.
+    /// - Parameter metaData: The `UploadMetadata` for which to create a `Task`.
+    /// - Returns: The task that has to be performed for the relevant metaData. Will return nil if metaData's file is already uploaded / finished. (no task needed).
+    private func taskFor(metaData: UploadMetadata) throws -> Task? {
+        guard !metaData.isFinished else {
+            return nil
+        }
+        
+        if let remoteDestination = metaData.remoteDestination {
+            return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData)
+        } else {
+            return try CreationTask(metaData: metaData, api: api, customHeaders: metaData.customHeaders)
+        }
+    }
+    
 }
 
 extension TUSClient: SchedulerDelegate {

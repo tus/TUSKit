@@ -48,9 +48,14 @@ final class UploadDataTask: Task {
     }
     
     func run(completed: @escaping TaskCompletion) {
-        // TODO: Check if data is already uploaded. Maybe deletion got interrupted.
+        guard !metaData.isFinished else {
+            DispatchQueue.main.async {
+                completed(.failure(TUSClientError.uploadIsAlreadyFinished))
+            }
+            return
+        }
+        
         guard let data = try? Data(contentsOf: metaData.filePath) else {
-            // TODO: Suggest to delete metadata? Let client do that?
             DispatchQueue.main.async {
                 completed(.failure(TUSClientError.couldNotLoadData))
             }

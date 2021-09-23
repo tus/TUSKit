@@ -37,6 +37,8 @@ final class StatusTask: Task {
                 
                 metaData.uploadedRange = 0..<offset
                 
+                try Files.encodeAndStore(metaData: metaData)
+                
                 if offset == metaData.size {
                     completed(.success([]))
                 } else {

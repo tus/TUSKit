@@ -30,7 +30,9 @@ final class MyClass {
 
 Note that you can register as a delegate to retrieve the URL's of the uploads, and also any errors that may arise.
 
-You can conform to the `TUSClientDelegate`
+Note that you *can* pass your own `URLSession` instance to the initializer.
+
+You can conform to the `TUSClientDelegate` to receive updates from the `TUSClient`.
 
 
 ```swift
@@ -67,7 +69,7 @@ To upload data, use the `upload(data:)` method`
 
 ```swift
 let data = Data("I am some data".utf8)
-let uploadId = client.upload(data: data)
+let uploadId = try tusClient.upload(data: data)
 ```
 
 To upload multiple data files at once, use the `uploadMultiple(dataFiles:)` method.
@@ -76,7 +78,7 @@ To upload a single stored file, retrieve a file path and pass it to the client.
 
 ```swift
 let pathToFile:URL = ...
-let uploadId = tusClient.uploadFileAt(filePath: pathToFile)
+let uploadId = try tusClient.uploadFileAt(filePath: pathToFile)
 ```
 
 To upload multiple files at once, you can use the `uploadFiles(filePaths:)` method.
@@ -91,8 +93,12 @@ For example. If you upload 10 files, and 3 are finished, then you are at 3/10. H
 
 ## Upload id's
 
-By starting an upload you will receive an id. This id is passed to you to the `TUSClientDelegate` for reference.
-You can use this id to identify which files are finished or failed. You can also delete these files on failure if you want.
+By starting an upload you will receive an id. These id's are also passed to you via if you implement the `TUSClientDelegate`.
+You can use these id's to identify which files are finished or failed. You can also delete these files on failure if you want. You can also use these id's to retry a failed upload.
+
+Note that `TUSClient` will automatically retry an upload a few times, but will eventually give up, after which it will report an error. At a later moment you can call the `retry` method and try again.
+
+*Note that calling `retry` before an upload is fniished, will cause indefined behavior.*
 
 ## Parallelism 
 

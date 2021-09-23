@@ -67,7 +67,8 @@ public final class TUSClient {
     ///   - config: A config
     ///   - sessionIdentifier: An identifier to know which TUSClient calls delegate methods, also used for URLSession configurations.
     ///   - storageDirectory: A directory to save files to, if it isn't passed, the documents directory will be used. Prefer to use reverse DNS notation, such as io.tus, so that you have a unique folder for your app
-    public convenience init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL) {
+    ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
+    public convenience init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL, session: URLSession = URLSession.shared) {
         self.init(config: config, sessionIdentifier: sessionIdentifier, storageDirectory: storageDirectory, network: URLSession.shared)
     }
     
@@ -220,10 +221,14 @@ public final class TUSClient {
     /// Ceck for any uploads that are finished and remove them from the cache.
     private func removeFinishedUploads() {
         do {
-            try Files.loadAllMetadata()
+            let metaDataList = try Files.loadAllMetadata()
                 .filter { metaData in
                     metaData.size == metaData.uploadedRange?.count
-                }.forEach(Files.removeFileAndMetadata)
+                }
+            
+            for metaData in metaDataList {
+                try Files.removeFileAndMetadata(metaData)
+            }
         } catch {
             delegate?.fileError(error: TUSClientError.couldnotRemoveFinishedUploads, client: self)
         }
@@ -312,10 +317,23 @@ public final class TUSClient {
 
 extension TUSClient: SchedulerDelegate {
     func didFinishTask(task: Task, scheduler: Scheduler) {
-        guard  let uploadTask = task as? UploadDataTask else {
-            return
+        switch task {
+        case let task as UploadDataTask:
+            handleFinishedUploadTask(task)
+        case let task as StatusTask:
+            handleFinishedStatusTask(task)
+        default:
+            break
         }
-        
+    }
+    
+    func handleFinishedStatusTask(_ statusTask: StatusTask) {
+        if statusTask.metaData.isFinished {
+            _ = try? Files.removeFileAndMetadata(statusTask.metaData) // If removing the file fails here, then it will be attempted again at next startup.
+        }
+    }
+    
+    func handleFinishedUploadTask(_ uploadTask: UploadDataTask) {
         do {
             try Files.removeFileAndMetadata(uploadTask.metaData)
         } catch {
@@ -328,7 +346,7 @@ extension TUSClient: SchedulerDelegate {
         }
         
         guard let id = uploads[uploadTask.metaData.filePath] else {
-            assertionFailure("Somehow task \(task) did not have an id")
+            assertionFailure("Somehow task \(uploadTask) did not have an id")
             delegate?.didFinishUpload(id: UUID(), url: url, client: self)
             return
         }

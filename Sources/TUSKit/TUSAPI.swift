@@ -89,6 +89,24 @@ final class TUSAPI {
     ///   - metaData: The file metadata.
     ///   - completion: Completes with a result that gives a URL to upload to.
     func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) {
+        let request = makeCreateRequest(metaData: metaData)
+        let task = network.dataTask(request: request) { (result: Result<(Data?, HTTPURLResponse), Error>) in
+            processResult(completion: completion) {
+                let (_, response) = try result.get()
+
+                guard let location = response.allHeaderFields["Location"] as? String,
+                      let locationURL = URL(string: location) else {
+                    throw TUSAPIError.couldNotRetrieveLocation
+                }
+
+                return locationURL
+            }
+        }
+        
+        task.resume()
+    }
+    
+    func makeCreateRequest(metaData: UploadMetadata) -> URLRequest {
         /// Add extra mimetype parameters headers
         func makeEncodedMetaDataHeaders(name: String, mimeType: String?) -> [String: String] {
             switch (name.isEmpty, mimeType) {
@@ -115,21 +133,7 @@ final class TUSAPI {
             headers.merge(customHeaders) { _, rhs in rhs }
         }
 
-        let request = makeRequest(url: uploadURL, method: .post, headers: headers)
-        let task = network.dataTask(request: request) { (result: Result<(Data?, HTTPURLResponse), Error>) in
-            processResult(completion: completion) {
-                let (_, response) = try result.get()
-
-                guard let location = response.allHeaderFields["Location"] as? String,
-                      let locationURL = URL(string: location) else {
-                    throw TUSAPIError.couldNotRetrieveLocation
-                }
-
-                return locationURL
-            }
-        }
-        
-        task.resume()
+        return makeRequest(url: uploadURL, method: .post, headers: headers)
     }
     
     /// Uploads data
@@ -139,8 +143,6 @@ final class TUSAPI {
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
     func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Result<Int, TUSAPIError>) -> Void) {
-        // TODO: Logger
-        let headers: [String: String]
         let offset: Int
         let length: Int
         if let range = range {
@@ -152,7 +154,7 @@ final class TUSAPI {
             length = data.count
         }
         
-        headers = [
+        let headers = [
             "Content-Type": "application/offset+octet-stream",
             "Upload-Offset": String(offset),
             "Content-Length": String(length)
@@ -171,6 +173,20 @@ final class TUSAPI {
             }
         }
         task.resume()
+    }
+    
+    func makeUploadRequest(data: Data, location: URL) -> URLRequest {
+        let offset: Int = 0
+        let length: Int = data.count
+        
+        let headers = [
+            "Content-Type": "application/offset+octet-stream",
+            "Upload-Offset": String(offset),
+            "Content-Length": String(length)
+        ]
+
+        return makeRequest(url: location, method: .patch, headers: headers)
+        
     }
     
     /// A factory to make requests with sane defaults.

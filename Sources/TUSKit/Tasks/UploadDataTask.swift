@@ -13,6 +13,7 @@ final class UploadDataTask: Task {
     
     let api: TUSAPI
     let metaData: UploadMetadata
+    let files: Files
     let range: Range<Int>?
     weak var networkTask: NetworkTask?
     
@@ -22,9 +23,10 @@ final class UploadDataTask: Task {
     ///   - metaData: The metadata of the file to upload
     ///   - range: Specify range to upload. If omitted, will upload entire file at once.
     /// - Throws: File and network related errors
-    init(api: TUSAPI, metaData: UploadMetadata, range: Range<Int>? = nil) throws {
+    init(api: TUSAPI, metaData: UploadMetadata, files: Files, range: Range<Int>? = nil) throws {
         self.api = api
         self.metaData = metaData
+        self.files = files
         
         if let range = range, range.count == 0 {
             // Improve: Enrich error
@@ -80,7 +82,7 @@ final class UploadDataTask: Task {
             do {
                 let offset = try result.get()
                 metaData.uploadedRange = 0..<offset
-                try Files.encodeAndStore(metaData: metaData)
+                try files.encodeAndStore(metaData: metaData)
                 
                 let hasFinishedUploading = offset == metaData.size
                 if hasFinishedUploading {
@@ -92,9 +94,9 @@ final class UploadDataTask: Task {
                 if let range = range {
                     let chunkSize = range.count
                     let nextRange = offset..<min((offset + chunkSize), metaData.size)
-                    task = try UploadDataTask(api: api, metaData: metaData, range: nextRange)
+                    task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
                 } else {
-                    task = try UploadDataTask(api: api, metaData: metaData)
+                    task = try UploadDataTask(api: api, metaData: metaData, files: files)
                     
                 }
                 completed(.success([task]))

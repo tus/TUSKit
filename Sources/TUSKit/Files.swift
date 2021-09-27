@@ -19,11 +19,15 @@ enum FilesError: Error {
 /// Uses FileManager.default underwater, hence why methods work statically
 final class Files {
     
-    static var TUSDirectory = "TUS"
+    private let storageDirectory: URL
+    
+    init(storageDirectory: URL = targetDirectory) {
+        self.storageDirectory = storageDirectory
+    }
     
     static var targetDirectory: URL {
         // TODO: Consider using cache dir? Or mac only?
-        return documentsDirectory.appendingPathComponent(TUSDirectory)
+        return documentsDirectory.appendingPathComponent("TUS")
     }
     
     static private var documentsDirectory: URL {
@@ -38,15 +42,14 @@ final class Files {
     /// It's a little magic, but it helps prevent strange issues.
     /// - Throws: File related errors
     /// - Returns: An array of UploadMetadata types
-    static func loadAllMetadata() throws -> [UploadMetadata] {
-        let directoryContents = try FileManager.default.contentsOfDirectory(at: targetDirectory, includingPropertiesForKeys: nil)
+    func loadAllMetadata() throws -> [UploadMetadata] {
+        let directoryContents = try FileManager.default.contentsOfDirectory(at: storageDirectory, includingPropertiesForKeys: nil)
         
         // if you want to filter the directory contents you can do like this:
         let files = directoryContents.filter{ $0.pathExtension == "plist" }
         let decoder = PropertyListDecoder()
         
         return files.compactMap { url in
-            
             if let data = try? Data(contentsOf: url) {
                 let metaData = try? decoder.decode(UploadMetadata.self, from: data)
                         
@@ -68,7 +71,7 @@ final class Files {
     /// - Throws: Any error related to file handling.
     /// - Returns:The URL of the new location.
     @discardableResult
-    static func copy(from location: URL, id: UUID) throws -> URL {
+    func copy(from location: URL, id: UUID) throws -> URL {
         try makeDirectoryIfNeeded()
         
         // TODO: Prefix with file:// if location can't be found
@@ -76,7 +79,7 @@ final class Files {
         // We don't use lastPathComponent (filename) because then you can't add the same file file.
         // With a unique name, you can upload the same file twice if you want.
         let fileName = id.uuidString + location.lastPathComponent
-        let targetLocation = targetDirectory.appendingPathComponent(fileName)
+        let targetLocation = storageDirectory.appendingPathComponent(fileName)
         
         try FileManager.default.copyItem(atPath: location.path, toPath: targetLocation.path)
         return targetLocation
@@ -88,11 +91,11 @@ final class Files {
     /// - Throws: Any file related error (e.g. can't save)
     /// - Returns: The URL of the stored file
     @discardableResult
-    static func store(data: Data, id: UUID) throws -> URL {
+    func store(data: Data, id: UUID) throws -> URL {
         try makeDirectoryIfNeeded()
         let fileName = id.uuidString
         
-        let targetLocation = targetDirectory.appendingPathComponent(fileName)
+        let targetLocation = storageDirectory.appendingPathComponent(fileName)
         try data.write(to: targetLocation)
         return targetLocation
     }
@@ -100,7 +103,7 @@ final class Files {
     /// Removes metadata and its related file from disk
     /// - Parameter metaData: The metadata description
     /// - Throws: Any error from FileManager when removing a file.
-    static func removeFileAndMetadata(_ metaData: UploadMetadata) throws {
+    func removeFileAndMetadata(_ metaData: UploadMetadata) throws {
         let filePath = metaData.filePath
         let metaDataPath = metaData.filePath.appendingPathExtension("plist")
         
@@ -115,7 +118,7 @@ final class Files {
     /// - Throws: Any error related to file handling
     /// - Returns: The URL of the location where the metadata is stored.
     @discardableResult
-    static func encodeAndStore(metaData: UploadMetadata) throws -> URL {
+    func encodeAndStore(metaData: UploadMetadata) throws -> URL {
         guard FileManager.default.fileExists(atPath: metaData.filePath.path) else {
             // Could not find the file that's related to this metadata.
             throw FilesError.relatedFileNotFound
@@ -130,25 +133,33 @@ final class Files {
         return targetLocation
     }
     
-    static func makeDirectoryIfNeeded() throws {
-        let doesExist = FileManager.default.fileExists(atPath: targetDirectory.path, isDirectory: nil)
+    func makeDirectoryIfNeeded() throws {
+        let doesExist = FileManager.default.fileExists(atPath: storageDirectory.path, isDirectory: nil)
         
         if !doesExist {
-            try FileManager.default.createDirectory(at: targetDirectory, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: storageDirectory, withIntermediateDirectories: true)
         }
     }
     
-    static func clearTUSDirectory() throws {
-        guard FileManager.default.fileExists(atPath: targetDirectory.path, isDirectory: nil) else {
+    func clearCacheInStorageDirectory() throws {
+        guard FileManager.default.fileExists(atPath: storageDirectory.path, isDirectory: nil) else {
             return
         }
         
-        for file in try FileManager.default.contentsOfDirectory(atPath: targetDirectory.path) {
-            try FileManager.default.removeItem(atPath: targetDirectory.appendingPathComponent(file).path)
+        // We collect errors since we don't want to stop iterating at any error
+        // We try to delete whatever we can.
+        let metaDataFiles = try loadAllMetadata()
+        let errors = metaDataFiles.collectErrors { metaData in
+            try removeFileAndMetadata(metaData)
+        }
+        
+        if let error = errors.first {
+            throw error
         }
     }
     
 }
+
 
 extension URL {
     var mimeType: String {
@@ -159,5 +170,25 @@ extension URL {
             }
         }
         return "application/octet-stream"
+    }
+}
+
+private extension Array {
+    
+    /// Iterate through the array. If any error occurs, keep going. Then at the end, return an array of errors received
+    /// Useful if you don't want to stop iteration when an error occurs
+    /// - Parameter action: Anything you want to perform.
+    /// - Returns: An array of possible errors
+    func collectErrors(action: (Element) throws -> Void) -> [Error] {
+        var errors = [Error]()
+        for element in self {
+            do {
+                try action(element)
+            } catch {
+                errors.append(error)
+            }
+        }
+        
+        return errors
     }
 }

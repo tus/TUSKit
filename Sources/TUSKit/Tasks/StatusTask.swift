@@ -11,14 +11,16 @@ import Foundation
 final class StatusTask: Task {
     
     let api: TUSAPI
+    let files: Files
     let remoteDestination: URL
     let metaData: UploadMetadata
     weak var networkTask: NetworkTask?
     
-    init(api: TUSAPI, remoteDestination: URL, metaData: UploadMetadata) {
+    init(api: TUSAPI, remoteDestination: URL, metaData: UploadMetadata, files: Files) {
         self.api = api
         self.remoteDestination = remoteDestination
         self.metaData = metaData
+        self.files = files
     }
     
     func run(completed: @escaping TaskCompletion) {
@@ -38,12 +40,12 @@ final class StatusTask: Task {
                 
                 metaData.uploadedRange = 0..<offset
                 
-                try Files.encodeAndStore(metaData: metaData)
+                try files.encodeAndStore(metaData: metaData)
                 
                 if offset == metaData.size {
                     completed(.success([]))
                 } else {
-                    let task = try UploadDataTask(api: api, metaData: metaData, range: offset..<metaData.size)
+                    let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: offset..<metaData.size)
                     completed(.success([task]))
                 }
             } catch let error as TUSClientError {

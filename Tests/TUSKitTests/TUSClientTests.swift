@@ -15,12 +15,10 @@ final class TUSClientTests: XCTestCase {
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
         client = TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: relativeStoragePath)
-        _ = try? client.clearAllCache()
     }
     
     override func tearDown() {
         super.tearDown()
-        XCTAssertNoThrow(try client.clearAllCache())
     }
 
     func testUploadingNonExistentFileShouldThrow() {

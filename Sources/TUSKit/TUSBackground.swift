@@ -18,10 +18,12 @@ final class TUSBackground {
     private var currentTask: Task?
     private let scheduler: BGTaskScheduler
     private let api: TUSAPI
+    private let files: Files
     
-    init(scheduler: BGTaskScheduler, api: TUSAPI) {
+    init(scheduler: BGTaskScheduler, api: TUSAPI, files: Files) {
         self.scheduler = scheduler
         self.api = api
+        self.files = files
         
         registerForBackgroundTasks()
     }
@@ -94,13 +96,13 @@ final class TUSBackground {
     /// Return first available task
     /// - Returns: A possible task to run
     private func firstTask() -> Task? {
-        guard let allMetaData = try? Files.loadAllMetadata() else {
+        guard let allMetaData = try? files.loadAllMetadata() else {
             print("No background task to run")
             return nil
         }
         
         return allMetaData.firstMap { metaData in
-            try? taskFor(metaData: metaData, api: api)
+            try? taskFor(metaData: metaData, api: api, files: files)
         }
     }
     

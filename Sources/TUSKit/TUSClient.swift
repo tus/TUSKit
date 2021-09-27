@@ -51,6 +51,7 @@ public final class TUSClient {
     private let retryCount = 2
     
     public let sessionIdentifier: String
+    private let files: Files
     private let config: TUSConfig
     private let scheduler = Scheduler()
     private let storageDirectory: URL
@@ -61,7 +62,7 @@ public final class TUSClient {
     
     @available(iOS 13.0, *)
     private lazy var backgroundClient: TUSBackground = {
-        return TUSBackground(scheduler: BGTaskScheduler.shared, api: api)
+        return TUSBackground(scheduler: BGTaskScheduler.shared, api: api, files: files)
     }()
     
     public var remainingUploads: Int {
@@ -72,7 +73,7 @@ public final class TUSClient {
     /// - Parameters:
     ///   - config: A config
     ///   - sessionIdentifier: An identifier to know which TUSClient calls delegate methods, also used for URLSession configurations.
-    ///   - storageDirectory: A directory to save files to, if it isn't passed, the documents directory will be used. Prefer to use reverse DNS notation, such as io.tus, so that you have a unique folder for your app
+    ///   - storageDirectory: A directory to save files to, if it isn't passed the documents directory will be used. Prefer to use reverse DNS notation, such as io.tus, so that you have a unique folder for your app
     ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
     public convenience init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL, session: URLSession = URLSession.shared) {
         self.init(config: config, sessionIdentifier: sessionIdentifier, storageDirectory: storageDirectory, network: URLSession.shared)
@@ -84,6 +85,7 @@ public final class TUSClient {
         self.sessionIdentifier = sessionIdentifier
         self.storageDirectory = storageDirectory
         self.api = TUSAPI(uploadURL: config.server, network: network)
+        self.files = Files(storageDirectory: storageDirectory)
         
         start()
     }
@@ -98,7 +100,7 @@ public final class TUSClient {
     public func uploadFileAt(filePath: URL, customHeaders: [String: String] = [:]) throws -> UUID {
         do {
             let id = UUID()
-            let destinationFilePath = try Files.copy(from: filePath, id: id)
+            let destinationFilePath = try files.copy(from: filePath, id: id)
             try scheduleCreationTask(for: destinationFilePath, id: id, customHeaders: customHeaders)
             return id
         } catch let error as TUSClientError {
@@ -115,7 +117,7 @@ public final class TUSClient {
     public func upload(data: Data, customHeaders: [String: String] = [:]) throws -> UUID {
         do {
             let id = UUID()
-            let filePath = try Files.store(data: data, id: id)
+            let filePath = try files.store(data: data, id: id)
             try scheduleCreationTask(for: filePath, id: id, customHeaders: customHeaders)
             return id
         } catch let error as TUSClientError {
@@ -158,17 +160,18 @@ public final class TUSClient {
     /// - Throws: File related errors
     public func stopAndCancelAllUploads() throws {
         scheduler.cancelAll()
-        try Files.clearTUSDirectory()
+        try clearAllCache()
     }
     
     // MARK: - Cache
     
     /// Throw away all files.
+    /// - Important:This will clear the storage directory that you supplied.
     /// - Important:Don't call this while the client is active. Only between uploading sessions.
     /// - Throws: TUSClientError if a file is found but couldn't be deleted. Or if files couldn't be loaded.
     public func clearAllCache() throws {
         do {
-            try Files.clearTUSDirectory()
+            try files.clearCacheInStorageDirectory()
         } catch {
             throw TUSClientError.couldNotDeleteFile
         }
@@ -182,14 +185,14 @@ public final class TUSClient {
     @discardableResult
     public func removeCacheFor(id: UUID) throws -> Bool {
         do {
-            let metaData = try Files.loadAllMetadata().first(where: { metaData in
+            let metaData = try files.loadAllMetadata().first(where: { metaData in
                 metaData.id == id
             })
             guard let metaData = metaData else {
                 return false
             }
             
-            try Files.removeFileAndMetadata(metaData)
+            try files.removeFileAndMetadata(metaData)
             return true
         } catch {
             throw TUSClientError.couldNotDeleteFile
@@ -204,7 +207,7 @@ public final class TUSClient {
     /// - Throws: `TUSClientError.couldNotRetryUpload` if it can't load an the file. Or file related errors.
     public func retry(id: UUID) throws -> Bool {
         do {
-            let metaData = try Files.loadAllMetadata().first(where: { metaData in
+            let metaData = try files.loadAllMetadata().first(where: { metaData in
                 metaData.id == id
             })
             guard let metaData = metaData else {
@@ -213,7 +216,7 @@ public final class TUSClient {
             
             metaData.errorCount = 0
             
-            try scheduleTask(for: metaData, api: api)
+            try scheduleTask(for: metaData)
             return true
         } catch let error as TUSClientError {
             throw error
@@ -228,24 +231,6 @@ public final class TUSClient {
     @available(iOS 13.0, *)
     public func scheduleBackgroundTasks() {
         backgroundClient.scheduleBackgroundTasks()
-//        // TODO: Implement
-//        let config = URLSessionConfiguration.background(withIdentifier: "MySession")
-//        config.isDiscretionary = true
-//        let session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
-//
-//        // TODO: Only support un-uploaded files?
-//        // TODO: Loop through all files that have to be uploaded.
-//        // force:
-//        guard let metaData = try! Files.loadAllMetadata().first,
-//        let url = metaData.remoteDestination
-//        else {
-//            print("NO METADATA or url FOUND FOR BACKGROUND")
-//            return
-//        }
-//        let data = Data("abcdefghijlkmnop".utf8)
-//        // TODO: Chunk for upload. Maybe trim file? But if trimmed. then don't use range anymore on local data.
-//        let request = api.makeUploadRequest(data: data , location: url)
-//        session.uploadTask(with: request, fromFile: metaData.filePath)
     }
     
     // MARK: - Private
@@ -253,7 +238,6 @@ public final class TUSClient {
     /// Kick off the client to configure itself and upload any remaining files.
     private func start() {
         scheduler.delegate = self
-        Files.TUSDirectory = storageDirectory.relativePath
         
         removeFinishedUploads()
         scheduleStoredTasks()
@@ -262,13 +246,13 @@ public final class TUSClient {
     /// Ceck for any uploads that are finished and remove them from the cache.
     private func removeFinishedUploads() {
         do {
-            let metaDataList = try Files.loadAllMetadata()
+            let metaDataList = try files.loadAllMetadata()
                 .filter { metaData in
                     metaData.size == metaData.uploadedRange?.count
                 }
             
             for metaData in metaDataList {
-                try Files.removeFileAndMetadata(metaData)
+                try files.removeFileAndMetadata(metaData)
             }
         } catch {
             delegate?.fileError(error: TUSClientError.couldnotRemoveFinishedUploads, client: self)
@@ -297,7 +281,7 @@ public final class TUSClient {
         
         uploads[filePath] = id
         
-        let task = try CreationTask(metaData: metaData, api: api)
+        let task = try CreationTask(metaData: metaData, api: api, files: files)
         scheduler.addTask(task: task)
     }
     
@@ -307,7 +291,7 @@ public final class TUSClient {
     private func store(metaData: UploadMetadata) throws {
         do {
             // We store metadata here, so it's saved even if this job doesn't run this session. (Only created, doesn't mean it will run)
-            try Files.encodeAndStore(metaData: metaData)
+            try files.encodeAndStore(metaData: metaData)
         } catch {
             throw TUSClientError.couldNotStoreFileMetadata
         }
@@ -316,14 +300,14 @@ public final class TUSClient {
     /// Check which uploads aren't finished. Load them from a store and turn these into tasks.
     private func scheduleStoredTasks() {
         do {
-            let metaDataItems = try Files.loadAllMetadata().filter({ metaData in
+            let metaDataItems = try files.loadAllMetadata().filter({ metaData in
                 // Only allow uploads where errors are below an amount
                 metaData.errorCount <= retryCount && !metaData.isFinished
             })
             
             for metaData in metaDataItems {
                 uploads[metaData.filePath] = metaData.id
-                try scheduleTask(for: metaData, api: api)
+                try scheduleTask(for: metaData)
             }
         } catch {
             // TODO: Return error, can't load from store
@@ -332,8 +316,8 @@ public final class TUSClient {
     
     /// Schedule a single task if needed. Will decide what task to schedule for the metaData.
     /// - Parameter metaData:The metaData the schedule.
-    private func scheduleTask(for metaData: UploadMetadata, api: TUSAPI) throws {
-        guard let task = try taskFor(metaData: metaData, api: api) else {
+    private func scheduleTask(for metaData: UploadMetadata) throws {
+        guard let task = try taskFor(metaData: metaData, api: api, files: files) else {
             throw TUSClientError.uploadIsAlreadyFinished
         }
         scheduler.addTask(task: task)
@@ -355,13 +339,13 @@ extension TUSClient: SchedulerDelegate {
     
     func handleFinishedStatusTask(_ statusTask: StatusTask) {
         if statusTask.metaData.isFinished {
-            _ = try? Files.removeFileAndMetadata(statusTask.metaData) // If removing the file fails here, then it will be attempted again at next startup.
+            _ = try? files.removeFileAndMetadata(statusTask.metaData) // If removing the file fails here, then it will be attempted again at next startup.
         }
     }
     
     func handleFinishedUploadTask(_ uploadTask: UploadDataTask) {
         do {
-            try Files.removeFileAndMetadata(uploadTask.metaData)
+            try files.removeFileAndMetadata(uploadTask.metaData)
         } catch {
             delegate?.fileError(error: TUSClientError.couldNotDeleteFile, client: self)
         }
@@ -412,7 +396,7 @@ extension TUSClient: SchedulerDelegate {
         
         metaData.errorCount += 1
         do {
-            try Files.encodeAndStore(metaData: metaData)
+            try files.encodeAndStore(metaData: metaData)
         } catch {
             delegate?.fileError(error: TUSClientError.couldNotStoreFileMetadata, client: self)
         }
@@ -440,15 +424,15 @@ private extension String {
 /// Decide which task to create based on metaData.
 /// - Parameter metaData: The `UploadMetadata` for which to create a `Task`.
 /// - Returns: The task that has to be performed for the relevant metaData. Will return nil if metaData's file is already uploaded / finished. (no task needed).
-func taskFor(metaData: UploadMetadata, api: TUSAPI) throws -> Task? {
+func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files) throws -> Task? {
     guard !metaData.isFinished else {
         return nil
     }
     
     if let remoteDestination = metaData.remoteDestination {
-        return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData)
+        return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData, files: files)
     } else {
-        return try CreationTask(metaData: metaData, api: api)
+        return try CreationTask(metaData: metaData, api: api, files: files)
     }
 }
 

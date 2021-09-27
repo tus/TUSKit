@@ -15,6 +15,10 @@ final class MockNetworkTask: NetworkTask {
     func resume() {
         
     }
+    
+    func cancel() {
+        
+    }
 }
 
 final class MockNetwork: Network {

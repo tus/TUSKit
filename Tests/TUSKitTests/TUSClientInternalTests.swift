@@ -75,4 +75,10 @@ final class TUSClientInternalTests: XCTestCase {
         XCTFail("Implement me")
     }
     
+    func funcStopAndCancel() {
+        XCTFail("Implement me")
+        // Do we want delegate to report it all?
+    }
+    
+    
 }

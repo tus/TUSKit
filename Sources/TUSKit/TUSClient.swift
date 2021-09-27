@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import BackgroundTasks
 
 /// Implement this delegate to receive updates from the TUSClient
 public protocol TUSClientDelegate: AnyObject {
@@ -57,6 +58,11 @@ public final class TUSClient {
     /// Keep track of uploads and their id's
     private var uploads = [URL: UUID]()
     public weak var delegate: TUSClientDelegate?
+    
+    @available(iOS 13.0, *)
+    private lazy var backgroundClient: TUSBackground = {
+        return TUSBackground(scheduler: BGTaskScheduler.shared, api: api)
+    }()
     
     public var remainingUploads: Int {
         uploads.count
@@ -145,6 +151,16 @@ public final class TUSClient {
         return ids
     }
     
+    // MARK: - Cancellation
+    
+    /// This will cancel all running uploads and clear the local cache.
+    /// Can pass errors to delegate for running tasks.
+    /// - Throws: File related errors
+    public func stopAndCancelAllUploads() throws {
+        scheduler.cancelAll()
+        try Files.clearTUSDirectory()
+    }
+    
     // MARK: - Cache
     
     /// Throw away all files.
@@ -197,7 +213,7 @@ public final class TUSClient {
             
             metaData.errorCount = 0
             
-            try scheduleTask(for: metaData)
+            try scheduleTask(for: metaData, api: api)
             return true
         } catch let error as TUSClientError {
             throw error
@@ -206,6 +222,31 @@ public final class TUSClient {
         }
     }
     
+    /// When your app moves to the background, you can call this method to schedule background tasks to perform.
+    /// This will signal the OS to upload files when appropriate (e.g. when a phone is on a charger and on Wifi).
+    /// Note that the OS decided when uploading begins.
+    @available(iOS 13.0, *)
+    public func scheduleBackgroundTasks() {
+        backgroundClient.scheduleBackgroundTasks()
+//        // TODO: Implement
+//        let config = URLSessionConfiguration.background(withIdentifier: "MySession")
+//        config.isDiscretionary = true
+//        let session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
+//
+//        // TODO: Only support un-uploaded files?
+//        // TODO: Loop through all files that have to be uploaded.
+//        // force:
+//        guard let metaData = try! Files.loadAllMetadata().first,
+//        let url = metaData.remoteDestination
+//        else {
+//            print("NO METADATA or url FOUND FOR BACKGROUND")
+//            return
+//        }
+//        let data = Data("abcdefghijlkmnop".utf8)
+//        // TODO: Chunk for upload. Maybe trim file? But if trimmed. then don't use range anymore on local data.
+//        let request = api.makeUploadRequest(data: data , location: url)
+//        session.uploadTask(with: request, fromFile: metaData.filePath)
+    }
     
     // MARK: - Private
     
@@ -256,7 +297,7 @@ public final class TUSClient {
         
         uploads[filePath] = id
         
-        let task = try CreationTask(metaData: metaData, api: api, customHeaders: customHeaders)
+        let task = try CreationTask(metaData: metaData, api: api)
         scheduler.addTask(task: task)
     }
     
@@ -282,7 +323,7 @@ public final class TUSClient {
             
             for metaData in metaDataItems {
                 uploads[metaData.filePath] = metaData.id
-                try scheduleTask(for: metaData)
+                try scheduleTask(for: metaData, api: api)
             }
         } catch {
             // TODO: Return error, can't load from store
@@ -291,26 +332,11 @@ public final class TUSClient {
     
     /// Schedule a single task if needed. Will decide what task to schedule for the metaData.
     /// - Parameter metaData:The metaData the schedule.
-    private func scheduleTask(for metaData: UploadMetadata) throws {
-        guard let task = try taskFor(metaData: metaData) else {
+    private func scheduleTask(for metaData: UploadMetadata, api: TUSAPI) throws {
+        guard let task = try taskFor(metaData: metaData, api: api) else {
             throw TUSClientError.uploadIsAlreadyFinished
         }
         scheduler.addTask(task: task)
-    }
-    
-    /// Decide which task to create based on metaData.
-    /// - Parameter metaData: The `UploadMetadata` for which to create a `Task`.
-    /// - Returns: The task that has to be performed for the relevant metaData. Will return nil if metaData's file is already uploaded / finished. (no task needed).
-    private func taskFor(metaData: UploadMetadata) throws -> Task? {
-        guard !metaData.isFinished else {
-            return nil
-        }
-        
-        if let remoteDestination = metaData.remoteDestination {
-            return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData)
-        } else {
-            return try CreationTask(metaData: metaData, api: api, customHeaders: metaData.customHeaders)
-        }
     }
     
 }
@@ -410,3 +436,19 @@ private extension String {
         }
     }
 }
+
+/// Decide which task to create based on metaData.
+/// - Parameter metaData: The `UploadMetadata` for which to create a `Task`.
+/// - Returns: The task that has to be performed for the relevant metaData. Will return nil if metaData's file is already uploaded / finished. (no task needed).
+func taskFor(metaData: UploadMetadata, api: TUSAPI) throws -> Task? {
+    guard !metaData.isFinished else {
+        return nil
+    }
+    
+    if let remoteDestination = metaData.remoteDestination {
+        return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData)
+    } else {
+        return try CreationTask(metaData: metaData, api: api)
+    }
+}
+

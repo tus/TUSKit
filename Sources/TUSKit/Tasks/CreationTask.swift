@@ -13,17 +13,16 @@ final class CreationTask: Task {
     let api: TUSAPI
     let chunkSize: Int?
     var metaData: UploadMetadata
-    let customHeaders: [String: String]
+    weak var networkTask: NetworkTask?
 
-    init(metaData: UploadMetadata, api: TUSAPI, customHeaders: [String: String]?, chunkSize: Int? = nil) throws {
+    init(metaData: UploadMetadata, api: TUSAPI, chunkSize: Int? = nil) throws {
         self.metaData = metaData
         self.api = api
         self.chunkSize = chunkSize
-        self.customHeaders = customHeaders ?? [:]
     }
     
     func run(completed: @escaping TaskCompletion) {
-        api.create(metaData: metaData) { [unowned self] result in
+        networkTask = api.create(metaData: metaData) { [unowned self] result in
             // File is created remotely. Now start first datatask.
 
             do {
@@ -45,5 +44,9 @@ final class CreationTask: Task {
             }
             
         }
+    }
+    
+    func cancel() {
+        networkTask?.cancel()
     }
 }

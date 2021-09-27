@@ -11,8 +11,9 @@ enum NetworkError: Error {
     case noHTTPURLResponse
 }
 
-protocol NetworkTask {
+protocol NetworkTask: AnyObject {
     func resume()
+    func cancel()
 }
 
 /// Network represents the network we can make requests to. Can be a real URLSession or mock or something else.

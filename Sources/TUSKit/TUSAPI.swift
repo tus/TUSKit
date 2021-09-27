@@ -62,7 +62,7 @@ final class TUSAPI {
     /// - Parameters:
     ///   - remoteDestination: A URL to retrieve the status from (received from the create call)
     ///   - completion: A completion giving us the `Status` of an upload.
-    func status(remoteDestination: URL, completion: @escaping (Result<Status, TUSAPIError>) -> Void) {
+    func status(remoteDestination: URL, completion: @escaping (Result<Status, TUSAPIError>) -> Void) -> NetworkTask {
         let request = makeRequest(url: remoteDestination, method: .head, headers: [:])
         let task = network.dataTask(request: request) { result in
             processResult(completion: completion) {
@@ -80,6 +80,7 @@ final class TUSAPI {
         }
         
         task.resume()
+        return task
     }
     
     /// The create step of an upload. In this step, we tell the server we are about to upload data.
@@ -88,7 +89,8 @@ final class TUSAPI {
     /// - Parameters:
     ///   - metaData: The file metadata.
     ///   - completion: Completes with a result that gives a URL to upload to.
-    func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) {
+    @discardableResult
+    func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) -> NetworkTask {
         let request = makeCreateRequest(metaData: metaData)
         let task = network.dataTask(request: request) { (result: Result<(Data?, HTTPURLResponse), Error>) in
             processResult(completion: completion) {
@@ -104,6 +106,7 @@ final class TUSAPI {
         }
         
         task.resume()
+        return task
     }
     
     func makeCreateRequest(metaData: UploadMetadata) -> URLRequest {
@@ -142,7 +145,8 @@ final class TUSAPI {
     ///   - range: The range of which to upload. Leave empty to upload the entire data in one piece.
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
-    func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Result<Int, TUSAPIError>) -> Void) {
+    @discardableResult
+    func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> NetworkTask {
         let offset: Int
         let length: Int
         if let range = range {
@@ -159,7 +163,7 @@ final class TUSAPI {
             "Upload-Offset": String(offset),
             "Content-Length": String(length)
         ]
-
+        
         let request = makeRequest(url: location, method: .patch, headers: headers)
         
         let task = network.uploadTask(request: request, data: data) { result in
@@ -173,6 +177,8 @@ final class TUSAPI {
             }
         }
         task.resume()
+        
+        return task
     }
     
     func makeUploadRequest(data: Data, location: URL) -> URLRequest {

@@ -14,6 +14,7 @@ final class UploadDataTask: Task {
     let api: TUSAPI
     let metaData: UploadMetadata
     let range: Range<Int>?
+    weak var networkTask: NetworkTask?
     
     /// Specify range, or upload
     /// - Parameters:
@@ -75,7 +76,7 @@ final class UploadDataTask: Task {
             return
         }
        
-        api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] result in
+        networkTask = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] result in
             do {
                 let offset = try result.get()
                 metaData.uploadedRange = 0..<offset
@@ -104,5 +105,9 @@ final class UploadDataTask: Task {
             }
             
         }
+    }
+    
+    func cancel() {
+        networkTask?.cancel()
     }
 }

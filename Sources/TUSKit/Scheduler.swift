@@ -63,6 +63,11 @@ final class Scheduler {
         }
         checkProcessNextTask()
     }
+    
+    func cancelAll() {
+        self.tasks = [[]]
+        self.runningTasks.forEach { $0.cancel() }
+    }
 
     private func checkProcessNextTask() {
         queue.async { [unowned self] in
@@ -126,38 +131,7 @@ final class Scheduler {
 /// E.g. If a task is to upload a file, then it can spawn into tasks to cut up the file first. Which can then cut up into a task to upload, which can then add a task to delete the files.
 protocol Task: AnyObject {
     func run(completed: @escaping TaskCompletion)
-}
-
-/// Treats multiple tasks as one.
-private final class GroupedTask: Task {
-    
-    let tasks: [Task]
-    let group = DispatchGroup()
-    let queue: DispatchQueue
-    
-    init(tasks: [Task], queue: DispatchQueue) {
-        self.tasks = tasks
-        self.queue = queue
-    }
-    
-    func run(completed: @escaping TaskCompletion) {
-        // Idea: Give tasks back to Scheduler, so that the GroupTask cannot circumvent the max concurrent tasks property.
-        for task in tasks {
-            self.group.enter()
-            queue.async { [unowned self] in
-                task.run { [unowned self] _ in
-                    self.group.leave()
-                }
-            }
-
-        }
-        
-        group.notify(queue: DispatchQueue.global()) {
-            // Improve: Gather errors
-            completed(.success([]))
-        }
-
-    }
+    func cancel()
 }
 
 // Convenience extensions to help deal with nested arrays.

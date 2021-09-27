@@ -1,6 +1,6 @@
 # TUSKit
 
-An iOS client written in `Swift` for [tus resumable upload protocol](http://tus.io/).
+An iOS client written in `Swift` for [TUS resumable upload protocol](http://tus.io/).
 
 [![Protocol](http://img.shields.io/badge/tus_protocol-v1.0.0-blue.svg?style=flat)](http://tus.io/protocols/resumable-upload.html)
 [![Version](https://img.shields.io/cocoapods/v/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit)
@@ -8,8 +8,7 @@ An iOS client written in `Swift` for [tus resumable upload protocol](http://tus.
 [![License](https://img.shields.io/cocoapods/l/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit)
 [![Platform](https://img.shields.io/cocoapods/p/TUSKit.svg?style=flat)](http://cocoadocs.org/docsets/TUSKit**
 
-
-With this client, you can upload regular raw `Data` or filepaths. 
+With this client, you can upload regular raw `Data` or file-paths. 
 Please refer to the documentation inside `TUSClient` for details.
 
 ## Usage
@@ -98,7 +97,7 @@ You can use these id's to identify which files are finished or failed. You can a
 
 Note that `TUSClient` will automatically retry an upload a few times, but will eventually give up, after which it will report an error. At a later moment you can call the `retry` method and try again.
 
-*Note that calling `retry` before an upload is fniished, will cause indefined behavior.*
+*Note that calling `retry` before an upload is finished, will cause undefined behavior.*
 
 ## Parallelism 
 

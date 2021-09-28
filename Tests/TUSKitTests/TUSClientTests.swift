@@ -99,14 +99,53 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(!otherClientContents.isEmpty)
     }
     
-    func testIdsAreGivenAndReturnedWhenFinished() {
+    func testUploadsCanBeChunked() throws {
+        // TODO: Be sure to trigger multiple uploads (e.g. small chunk to upload, first offset is half of data, then complete)
+        // TODO: Support MockURLProtocol to update the offset during uploads
         XCTFail("Implement me")
+    }
+    
+    func testIdsAreGivenAndReturnedWhenFinished() throws {
         // Make sure id's that are given when uploading, are returned when uploads are finished
+        let data = Data("hello".utf8)
+        let expectedId = try client.upload(data: data)
+        
+        MockURLProtocol.uploadDataSize = data.count
+        
+        XCTAssert(tusDelegate.finishedUploads.isEmpty)
+        
+        tusDelegate.finishUploadExpectation = expectation(description: "Waiting for upload to fail")
+        waitForExpectations(timeout: 3, handler: nil)
+        
+        XCTAssert(tusDelegate.failedUploads.isEmpty, "Found a failed uploads, should have been empty. Something went wrong with uploading.")
+        XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Upload didn't finish.")
+        for (id, _) in tusDelegate.finishedUploads {
+            XCTAssertEqual(id, expectedId)
+        }
+    }
+    
+    func testCorrectIdsAreGivenOnFailure() throws {
+        let expectedId = try client.upload(data: Data("hello".utf8))
+        
+        XCTAssert(tusDelegate.failedUploads.isEmpty)
+        
+        tusDelegate.uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
+        waitForExpectations(timeout: 3, handler: nil)
+        
+        XCTAssertEqual(1, tusDelegate.failedUploads.count)
+        for (id, _) in tusDelegate.failedUploads {
+            XCTAssertEqual(id, expectedId)
+        }
     }
     
     func testUploadIdsArePreservedBetweenSessions() {
         XCTFail("Implement me")
         // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
+    }
+    
+    func testClearingEverythingAndStartingNewUploads (){
+        // TODO: Make sure uploads are renewed. No lingering uploads.
+        XCTFail("Implement me")
     }
     
     func testClearingCache() throws {

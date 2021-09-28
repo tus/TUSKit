@@ -108,6 +108,8 @@ public final class TUSClient {
     public func stopAndCancelAllUploads() throws {
         scheduler.cancelAll()
         try clearAllCache()
+        // TODO: Maybe not needed if tasks cancel already
+//        uploads = [:]
     }
     
     // MARK: - Upload single file
@@ -297,7 +299,7 @@ public final class TUSClient {
         try store(metaData: metaData)
         
         uploads[filePath] = id
-        
+
         let task = try CreationTask(metaData: metaData, api: api, files: files)
         scheduler.addTask(task: task)
     }
@@ -346,7 +348,9 @@ extension TUSClient: SchedulerDelegate {
     func didFinishTask(task: Task, scheduler: Scheduler) {
         switch task {
         case let task as UploadDataTask:
-            handleFinishedUploadTask(task)
+            if task.metaData.isFinished {
+                handleFinishedUploadTask(task)
+            }
         case let task as StatusTask:
             handleFinishedStatusTask(task)
         default:
@@ -384,9 +388,10 @@ extension TUSClient: SchedulerDelegate {
     
     func didStartTask(task: Task, scheduler: Scheduler) {
         // TODO: Use logger
+        
         guard let task = task as? UploadDataTask else { return }
         guard let id = uploads[task.metaData.filePath] else {
-            assertionFailure("Somehow the filePath doesn't have an associated id")
+            assertionFailure("Somehow the filePath doesn't have an associated id, uploads are \(uploads)")
             // TODO: Log assertion?
             delegate?.didStartUpload(id: UUID(), client: self)
             return

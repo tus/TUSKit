@@ -8,7 +8,6 @@ final class FilesTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        let docsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         storageDirectory = docsDir.appendingPathComponent("TUS")
         files = Files(storageDirectory: storageDirectory)
         do {
@@ -78,10 +77,6 @@ final class FilesTests: XCTestCase {
         XCTAssertThrowsError(try files.copy(from: path, id: id))
     }
     
-    func testCantStoreEmptyFile() throws {
-        XCTFail("Implement me")
-    }
-    
     func testCantStoreEmptyData() throws {
         let data = Data()
         XCTAssertThrowsError(try files.store(data: Data(), id: UUID()))
@@ -101,9 +96,6 @@ final class FilesTests: XCTestCase {
         func writeDummyFileToCacheDir() throws -> URL {
             let cacheURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             let fileURL = cacheURL.appendingPathComponent("dummyfile.txt")
-
-            let data = Data("Hello".utf8)
-            try data.write(to: fileURL)
             return fileURL
         }
         
@@ -138,8 +130,7 @@ final class FilesTests: XCTestCase {
         let retrievedMetaData = allMetadata[0]
         XCTAssertEqual(expectedLocation, retrievedMetaData.filePath)
         
-        // Remove so it doesn't interfere with the tearDown (this test saves files in the wrong dir on purpose)
-        try FileManager.default.removeItem(at: fileLocation)
+        // Clean up metadata. Doing it here because normally cleaning up metadata also cleans up a file. But we don't have a file to clean up.
         try FileManager.default.removeItem(at: targetLocation)
     }
     

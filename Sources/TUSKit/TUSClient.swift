@@ -47,6 +47,11 @@ public struct TUSClientError: Error {
 /// Please refer to the Readme.md on how to use this type.
 public final class TUSClient {
     
+    /// The number of uploads that the TUSClient will try to complete.
+    public var remainingUploads: Int {
+        uploads.count
+    }
+    
     /// How often to try an upload if it fails. A retryCount of 2 means 3 total uploads max. (1 initial upload, and on repeated failure, 2 more retries.)
     private let retryCount = 2
     
@@ -54,7 +59,6 @@ public final class TUSClient {
     private let files: Files
     private let config: TUSConfig
     private let scheduler = Scheduler()
-    private let storageDirectory: URL
     private let api: TUSAPI
     /// Keep track of uploads and their id's
     private var uploads = [URL: UUID]()
@@ -65,29 +69,48 @@ public final class TUSClient {
         return TUSBackground(scheduler: BGTaskScheduler.shared, api: api, files: files)
     }()
     
-    public var remainingUploads: Int {
-        uploads.count
-    }
-    
     /// Initialize a TUSClient
     /// - Parameters:
     ///   - config: A config
     ///   - sessionIdentifier: An identifier to know which TUSClient calls delegate methods, also used for URLSession configurations.
-    ///   - storageDirectory: A directory to save files to, if it isn't passed the documents directory will be used. Prefer to use reverse DNS notation, such as io.tus, so that you have a unique folder for your app
+    ///   - storageDirectory: A directory to store local files for uploading and continuing uploads. Leave nil to use the documents dir. Pass a relative path (e.g. "TUS" or "/TUS" or "/Uploads/TUS") for a relative directory inside the documents directory.
+    ///   You can also pass an absolute path, e.g. "file://uploads/TUS"
     ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
-    public convenience init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL, session: URLSession = URLSession.shared) {
+    public convenience init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL?, session: URLSession = URLSession.shared) {
         self.init(config: config, sessionIdentifier: sessionIdentifier, storageDirectory: storageDirectory, network: URLSession.shared)
     }
     
     /// Internal initializer to gain access to the Network protocol. To allow for mocking yet keeping the protocol shielded from public API.
-    init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL, network: Network) {
+    init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL?, network: Network) {
         self.config = config
         self.sessionIdentifier = sessionIdentifier
-        self.storageDirectory = storageDirectory
         self.api = TUSAPI(uploadURL: config.server, network: network)
         self.files = Files(storageDirectory: storageDirectory)
         
-        start()
+        scheduler.delegate = self
+        removeFinishedUploads()
+    }
+    
+    // MARK: - Starting and stopping
+    
+    /// Kick off the client to start uploading any locally stored files.
+    public func start() {
+        scheduleStoredTasks()
+    }
+    
+    /// Stops the ongoing sessions, keeps the cache intact so you can continue uploading at a later stage.
+    /// - Important: This method is `not` destructive. If you want to stop everything (as a reset), please use `stopAndCancelAllUploads`.
+    public func stop() {
+        scheduler.cancelAll()
+    }
+    
+    /// This will cancel all running uploads and clear the local cache.
+    /// Expect errors passed to the delegate for canceled tasks.
+    /// - Warning: This method is destructive and will remove any stored cache.
+    /// - Throws: File related errors
+    public func stopAndCancelAllUploads() throws {
+        scheduler.cancelAll()
+        try clearAllCache()
     }
     
     // MARK: - Upload single file
@@ -153,16 +176,6 @@ public final class TUSClient {
         return ids
     }
     
-    // MARK: - Cancellation
-    
-    /// This will cancel all running uploads and clear the local cache.
-    /// Can pass errors to delegate for running tasks.
-    /// - Throws: File related errors
-    public func stopAndCancelAllUploads() throws {
-        scheduler.cancelAll()
-        try clearAllCache()
-    }
-    
     // MARK: - Cache
     
     /// Throw away all files.
@@ -178,7 +191,7 @@ public final class TUSClient {
     }
     
     /// Remove a cache related to an id
-    /// - Important:Don't call this while the client is active. Only between uploading sessions.
+    /// - Important:Don't call this while the client is active. Only between uploading sessions.  Or you get undefined behavior.
     /// - Parameter id: The id of a (scheduled) upload that you wish to delete.
     /// - Returns: A bool whether or not the upload was found and deleted.
     /// - Throws: TUSClientError if a file is found but couldn't be deleted. Or if files couldn't be loaded.
@@ -205,6 +218,7 @@ public final class TUSClient {
     /// - Parameter id: The id of an upload. Received when starting an upload, or via the `TUSClientDelegate`.
     /// - Returns: True if the id is found. False if it's not found
     /// - Throws: `TUSClientError.couldNotRetryUpload` if it can't load an the file. Or file related errors.
+    @discardableResult
     public func retry(id: UUID) throws -> Bool {
         do {
             let metaData = try files.loadAllMetadata().first(where: { metaData in
@@ -233,15 +247,19 @@ public final class TUSClient {
         backgroundClient.scheduleBackgroundTasks()
     }
     
-    // MARK: - Private
-    
-    /// Kick off the client to configure itself and upload any remaining files.
-    private func start() {
-        scheduler.delegate = self
-        
-        removeFinishedUploads()
-        scheduleStoredTasks()
+    /// Return the id's all failed uploads. Good to check after launch or after background processing for example, to handle them at a later stage.
+    /// - Returns: An id's array of erronous uploads.
+    public func failedUploadIds() throws -> [UUID] {
+        try files.loadAllMetadata().compactMap { metaData in
+            if metaData.errorCount > retryCount {
+                return metaData.id
+            } else {
+                return nil
+            }
+        }
     }
+    
+    // MARK: - Private
     
     /// Ceck for any uploads that are finished and remove them from the cache.
     private func removeFinishedUploads() {

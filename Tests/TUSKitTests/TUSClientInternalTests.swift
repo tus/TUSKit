@@ -80,5 +80,9 @@ final class TUSClientInternalTests: XCTestCase {
         // Do we want delegate to report it all?
     }
     
+    func testFailedUploads() {
+        XCTFail("Implement me")
+    }
+    
     
 }

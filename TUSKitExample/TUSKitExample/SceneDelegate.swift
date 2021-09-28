@@ -18,13 +18,26 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     @State var isPresented = false
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-
-        // Create the SwiftUI view that provides the window contents.
-        tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "TUS")!)
+        
+        
+        tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "/TUS")!)
         tusClient.delegate = self
+        tusClient.start()
+        
+        do {
+            // When starting, you can retrieve the locally stored uploads that are marked as failure, and handle those.
+            // E.g. Maybe some uploads failed from a last session, or a background upload.
+            let ids = try tusClient.failedUploadIds()
+            for id in ids {
+                // You can either retry a failed upload...
+                try tusClient.retry(id: id)
+                // ...alternatively, you can delete them too
+                // tusClient.removeCacheFor(id: id)
+            }
+        } catch {
+            
+        }
+        
         let photoPicker = PhotoPicker(tusClient: tusClient)
         
         let contentView = ContentView(photoPicker: photoPicker)

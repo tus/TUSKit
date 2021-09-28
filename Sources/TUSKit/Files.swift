@@ -12,6 +12,7 @@ import MobileCoreServices
 
 enum FilesError: Error {
     case relatedFileNotFound
+    case dataIsEmpty
 }
 
 /// This type handles files, it stores, and copies.
@@ -19,15 +20,32 @@ enum FilesError: Error {
 /// Uses FileManager.default underwater, hence why methods work statically
 final class Files {
     
-    private let storageDirectory: URL
+    let storageDirectory: URL
     
-    init(storageDirectory: URL = targetDirectory) {
-        self.storageDirectory = storageDirectory
-    }
-    
-    static var targetDirectory: URL {
-        // TODO: Consider using cache dir? Or mac only?
-        return documentsDirectory.appendingPathComponent("TUS")
+    /// Pass a directory to store the local cache in.
+    /// - Parameter storageDirectory: Leave nil for the documents dir. Pass a relative path for a dir inside the documents dir. Pass an absolute path for storing files there.
+    init(storageDirectory: URL?) {
+        
+        guard let storageDirectory = storageDirectory else {
+            self.storageDirectory = type(of: self).documentsDirectory.appendingPathComponent("TUS")
+            return
+        }
+        
+        func removeLeadingSlash(url: URL) -> String {
+            if url.absoluteString.first == "/" {
+                return String(url.absoluteString.dropFirst())
+            } else {
+                return url.absoluteString
+            }
+        }
+        
+        let isRelativePath = storageDirectory.relativePath == storageDirectory.absoluteString
+        if isRelativePath {
+            let path = removeLeadingSlash(url: storageDirectory) // Avoid a path with double slash like /Documents//TUS
+            self.storageDirectory = type(of: self).documentsDirectory.appendingPathComponent(path)
+        } else {
+            self.storageDirectory = storageDirectory
+        }
     }
     
     static private var documentsDirectory: URL {
@@ -54,7 +72,7 @@ final class Files {
                 let metaData = try? decoder.decode(UploadMetadata.self, from: data)
                         
                 // The documentsDirectory can change between restarts (at least during testing). So we update the filePath to match the existing plist again. To avoid getting an out of sync situation where the filePath still points to a dir in a different directory than the plist.
-                // (The plist and image to upload should always be in the same dir together).
+                // (The plist and file to upload should always be in the same dir together).
                 metaData?.filePath = url.deletingPathExtension()
                 
                 return metaData
@@ -92,6 +110,7 @@ final class Files {
     /// - Returns: The URL of the stored file
     @discardableResult
     func store(data: Data, id: UUID) throws -> URL {
+        guard !data.isEmpty else { throw FilesError.dataIsEmpty }
         try makeDirectoryIfNeeded()
         let fileName = id.uuidString
         

@@ -113,9 +113,9 @@ private extension Array {
     /// You have to pass a `transform` closure. Whatever non-nil you return, will be returned from the method.
     /// - Parameter transform: An element to transform to. If it returns a new value, that value will be returned from this method.
     /// - Returns:An option new value.
-    func firstMap<TransformedElement>(where transform: (Element) -> TransformedElement?) -> TransformedElement? {
+    func firstMap<TransformedElement>(where transform: (Element) throws -> TransformedElement?) rethrows -> TransformedElement? {
         for element in self {
-            if let otherElement = transform(element) {
+            if let otherElement = try transform(element) {
                 return otherElement
             }
         }

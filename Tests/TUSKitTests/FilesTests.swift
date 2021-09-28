@@ -49,15 +49,21 @@ final class FilesTests: XCTestCase {
         
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let values = [
+            (URL(string: "ABC/ZXC")!, documentsDirectory.appendingPathComponent("ABC/ZXC")),
+            (URL(string: "/QUIOP/ZXC")!, URL(string: "/QUIOP/ZXC")!),
             (URL(string: "ABC")!, documentsDirectory.appendingPathComponent("ABC")),
-            (URL(string: "/DEF")!, documentsDirectory.appendingPathComponent("DEF")),
+            (URL(string: "/DEF")!, URL(string: "/DEF")!),
+            (URL(string: "/nested/path/")!, URL(string: "/nested/path/")!),
+            (URL(string: "/nested/path")!, URL(string: "/nested/path")!),
             (nil, documentsDirectory.appendingPathComponent("TUS")),
-            (URL(string: "file://DEF")!, URL(string: "file://DEF")!)
+            (URL(string: "file://DEF")!, URL(string: "file://DEF")!),
+            (URL(string: "file://DEF/")!, URL(string: "file://DEF/")!),
+            (URL(string: "file://DEF/GHI")!, URL(string: "file://DEF/GHI")!),
             ]
         
         for (url, expectedPath) in values {
             let files = Files(storageDirectory: url)
-            XCTAssertEqual(expectedPath, files.storageDirectory, "expected \(String(describing: url)) to resolve into \(expectedPath)")
+            XCTAssertEqual(expectedPath, files.storageDirectory)
         }
     }
     

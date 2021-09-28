@@ -31,19 +31,11 @@ final class Files {
             return
         }
         
-        func removeLeadingSlash(url: URL) -> String {
-            if url.absoluteString.first == "/" {
-                return String(url.absoluteString.dropFirst())
-            } else {
-                return url.absoluteString
-            }
-        }
-        
-        let isRelativePath = storageDirectory.relativePath == storageDirectory.absoluteString
+        // If a path is relative, e.g. blabla/mypath. Then it's a folder for the documentsdir
+        let isRelativePath = storageDirectory.absoluteString == storageDirectory.relativePath && storageDirectory.absoluteString.first != "/"
+
         if isRelativePath {
-            let path = removeLeadingSlash(url: storageDirectory) // Avoid a path with double slash like /Documents//TUS
-            
-            self.storageDirectory = type(of: self).documentsDirectory.appendingPathComponent(path)
+            self.storageDirectory = type(of: self).documentsDirectory.appendingPathComponent(storageDirectory.absoluteString)
         } else {
             self.storageDirectory = storageDirectory
         }

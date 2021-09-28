@@ -4,12 +4,10 @@ import XCTest
 final class FilesTests: XCTestCase {
 
     var files: Files!
-    var storageDirectory: URL!
     override func setUp() {
         super.setUp()
         
-        storageDirectory = docsDir.appendingPathComponent("TUS")
-        files = Files(storageDirectory: storageDirectory)
+        files = Files(storageDirectory: URL(string: "TUS")!)
         do {
             try files.clearCacheInStorageDirectory()
         } catch {
@@ -37,6 +35,30 @@ final class FilesTests: XCTestCase {
             try FileManager.default.removeItem(atPath: cacheDirectory.appendingPathComponent(file).path)
         }
 
+    }
+    
+    func testInitializers() {
+        func removeLeadingSlash(url: URL) -> String {
+            if url.absoluteString.first == "/" {
+                return String(url.absoluteString.dropFirst())
+            } else {
+                return url.absoluteString
+            }
+        }
+        
+        
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let values = [
+            (URL(string: "ABC")!, documentsDirectory.appendingPathComponent("ABC")),
+            (URL(string: "/DEF")!, documentsDirectory.appendingPathComponent("DEF")),
+            (nil, documentsDirectory.appendingPathComponent("TUS")),
+            (URL(string: "file://DEF")!, URL(string: "file://DEF")!)
+            ]
+        
+        for (url, expectedPath) in values {
+            let files = Files(storageDirectory: url)
+            XCTAssertEqual(expectedPath, files.storageDirectory, "expected \(String(describing: url)) to resolve into \(expectedPath)")
+        }
     }
     
     func testCopyingFileFromURL() throws {
@@ -68,7 +90,6 @@ final class FilesTests: XCTestCase {
     }
     
     func testCantSaveMultipleFilesWithSameId() throws {
-        XCTFail("Implement me")
         let id = UUID()
         
         let path = try Fixtures.makeFilePath()
@@ -78,7 +99,6 @@ final class FilesTests: XCTestCase {
     }
     
     func testCantStoreEmptyData() throws {
-        let data = Data()
         XCTAssertThrowsError(try files.store(data: Data(), id: UUID()))
     }
     
@@ -106,7 +126,7 @@ final class FilesTests: XCTestCase {
             
             let metaData = UploadMetadata(id: UUID(), filePath: filePath, size: 5)
             
-            let targetLocation = storageDirectory.appendingPathComponent(filePath.lastPathComponent).appendingPathExtension("plist")
+            let targetLocation = files.storageDirectory.appendingPathComponent(filePath.lastPathComponent).appendingPathExtension("plist")
             
             let encoder = PropertyListEncoder()
             let encodedData = try encoder.encode(metaData)
@@ -134,13 +154,12 @@ final class FilesTests: XCTestCase {
         try FileManager.default.removeItem(at: targetLocation)
     }
     
-    func testMakeSureMetadataWithTooManyErrorsArentLoaded() {
-        XCTFail("Implement me")
-    }
-    
-    func testMakeSureFileIdIsSameAsStoredId() {
+    func testMakeSureFileIdIsSameAsStoredName() throws {
 //         A file is stored under a UUID, this must be the same as the metadata's id
-        XCTFail("Implement me")
+        let id = UUID()
+        let url = try files.store(data: Data("abc".utf8), id: id)
+        XCTAssertEqual(id.uuidString, url.lastPathComponent)
+        XCTAssert(FileManager.default.fileExists(atPath: url.path))
     }
    
 }

@@ -93,6 +93,11 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(contents.isEmpty, "Expected the client to delete the file")
     }
     
+    func testMakeSureMetadataWithTooManyErrorsArentLoaded() {
+        XCTFail("Implement me")
+    }
+    
+    
 }
 
 private func makeDirectoryIfNeeded(url: URL) throws {

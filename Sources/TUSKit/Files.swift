@@ -42,6 +42,7 @@ final class Files {
         let isRelativePath = storageDirectory.relativePath == storageDirectory.absoluteString
         if isRelativePath {
             let path = removeLeadingSlash(url: storageDirectory) // Avoid a path with double slash like /Documents//TUS
+            
             self.storageDirectory = type(of: self).documentsDirectory.appendingPathComponent(path)
         } else {
             self.storageDirectory = storageDirectory

@@ -3,6 +3,7 @@ import TUSKit // ⚠️ No testable import. Make sure we test the public api her
 final class TUSClientTests: XCTestCase {
     
     var client: TUSClient!
+    var otherClient: TUSClient!
     var tusDelegate: TUSMockDelegate!
     var relativeStoragePath: URL!
     var fullStoragePath: URL!
@@ -55,9 +56,47 @@ final class TUSClientTests: XCTestCase {
         try XCTAssertThrowsError(client.upload(data: data))
     }
     
-    func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() {
+    func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {
         // Make multiple instances, they shouldn't interfere with each other's files.
-        XCTFail("Implement me")
+        
+        // Second instance
+        let url = URL(string: "TUSTWO")!
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+        otherClient = TUSClient(config: TUSConfig(server: URL(string: "www.tus.io")!), sessionIdentifier: "TEST", storageDirectory: url, session: URLSession.init(configuration: configuration))
+        
+        // Prerequisites
+        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(contents.isEmpty)
+
+        let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let otherLocation = documentsDir.appendingPathComponent("TUSTWO")
+        try? FileManager.default.removeItem(atPath: otherLocation.path)
+        
+        XCTAssertFalse(FileManager.default.fileExists(atPath: otherLocation.path, isDirectory: nil), "Prerequite failed, dir shouldn't exist yet in this test")
+
+        for _ in 0..<6 {
+            try client.upload(data: Data("abcdef".utf8))
+            try otherClient.upload(data: Data("abcdef".utf8))
+        }
+
+        var otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
+        XCTAssert(!otherClientContents.isEmpty)
+        
+        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(!contents.isEmpty)
+
+        otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
+        XCTAssert(!otherClientContents.isEmpty)
+
+        // Now clear cache of first client, second should be unaffected
+        try client.clearAllCache()
+
+        contents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
+        XCTAssert(!contents.isEmpty)
+
+        otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
+        XCTAssert(!otherClientContents.isEmpty)
     }
     
     func testIdsAreGivenAndReturnedWhenFinished() {
@@ -81,12 +120,12 @@ final class TUSClientTests: XCTestCase {
         }
         
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(!contents.isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
+        XCTAssert(!contents.isEmpty)
         
         try client.clearAllCache()
         
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
+        XCTAssert(contents.isEmpty)
     }
     
     func testDeleteSingleFile() throws {

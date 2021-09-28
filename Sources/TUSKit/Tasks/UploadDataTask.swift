@@ -15,7 +15,7 @@ final class UploadDataTask: Task {
     let metaData: UploadMetadata
     let files: Files
     let range: Range<Int>?
-    weak var networkTask: NetworkTask?
+    weak var sessionTask: URLSessionUploadTask?
     
     /// Specify range, or upload
     /// - Parameters:
@@ -78,7 +78,7 @@ final class UploadDataTask: Task {
             return
         }
        
-        networkTask = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] result in
+        sessionTask = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] result in
             do {
                 let offset = try result.get()
                 metaData.uploadedRange = 0..<offset
@@ -110,6 +110,6 @@ final class UploadDataTask: Task {
     }
     
     func cancel() {
-        networkTask?.cancel()
+        sessionTask?.cancel()
     }
 }

@@ -1,9 +1,9 @@
 import XCTest
-import TUSKit // ⚠️ No testable import. Make sure we test the public api here.
-
+import TUSKit // ⚠️ No testable import. Make sure we test the public api here, and not against internals. If you want to test internals, see `TUSClientInternalTests`
 final class TUSClientTests: XCTestCase {
     
     var client: TUSClient!
+    var tusDelegate: TUSMockDelegate!
     var relativeStoragePath: URL!
     var fullStoragePath: URL!
     
@@ -14,7 +14,14 @@ final class TUSClientTests: XCTestCase {
         relativeStoragePath = URL(string: "TUSTEST")!
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
-        client = TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: relativeStoragePath)
+        clearDirectory(dir: fullStoragePath)
+        
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+        client = TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: relativeStoragePath, session: URLSession.init(configuration: configuration))
+        
+        tusDelegate = TUSMockDelegate()
+        client.delegate = tusDelegate
     }
     
     override func tearDown() {
@@ -50,7 +57,6 @@ final class TUSClientTests: XCTestCase {
     
     func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() {
         // Make multiple instances, they shouldn't interfere with each other's files.
-        // Already know to remove the Files. singleton dir
         XCTFail("Implement me")
     }
     
@@ -64,20 +70,23 @@ final class TUSClientTests: XCTestCase {
         // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
     }
     
-    func testDeletingAllFiles() throws {
+    func testClearingCache() throws {
+        
         try makeDirectoryIfNeeded(url: fullStoragePath)
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty, "Prerequisite for tests fails")
+        XCTAssert(contents.isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
         
-        let data = Data("abc".utf8)
-        try data.write(to: fullStoragePath.appendingPathComponent("abc.txt"))
+        for _ in 0..<6 {
+            try client.upload(data: Data("abcdef".utf8))
+        }
         
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssertFalse(contents.isEmpty)
+        XCTAssert(!contents.isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
+        
         try client.clearAllCache()
         
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty)
+        XCTAssert(contents.isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
     }
     
     func testDeleteSingleFile() throws {
@@ -97,7 +106,6 @@ final class TUSClientTests: XCTestCase {
         XCTFail("Implement me")
     }
     
-    
 }
 
 private func makeDirectoryIfNeeded(url: URL) throws {
@@ -105,5 +113,18 @@ private func makeDirectoryIfNeeded(url: URL) throws {
     
     if !doesExist {
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    }
+}
+
+private func clearDirectory(dir: URL) {
+    do {
+        let names = try FileManager.default.contentsOfDirectory(atPath: dir.path)
+        for name in names
+        {
+            let path = "\(dir.path)/\(name)"
+            try FileManager.default.removeItem(atPath: path)
+        }
+    } catch {
+        print(error.localizedDescription)
     }
 }

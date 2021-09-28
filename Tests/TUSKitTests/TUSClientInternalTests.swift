@@ -84,5 +84,4 @@ final class TUSClientInternalTests: XCTestCase {
         XCTFail("Implement me")
     }
     
-    
 }

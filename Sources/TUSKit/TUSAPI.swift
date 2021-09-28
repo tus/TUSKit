@@ -24,9 +24,6 @@ struct Status {
 /// The Uploader's responsibility is to perform work related to uploading.
 /// This includes: Making requests, handling requests, handling errors.
 final class TUSAPI {
-    
-    let network: Network
-    
     enum HTTPMethod: CustomStringConvertible {
         case head
         case post
@@ -50,10 +47,12 @@ final class TUSAPI {
         }
     }
     
+    let session: URLSession
     let uploadURL: URL
     
-    init(uploadURL: URL, network: Network) {
-        self.network = network
+    
+    init(session: URLSession, uploadURL: URL) {
+        self.session = session
         self.uploadURL = uploadURL
     }
     
@@ -62,9 +61,9 @@ final class TUSAPI {
     /// - Parameters:
     ///   - remoteDestination: A URL to retrieve the status from (received from the create call)
     ///   - completion: A completion giving us the `Status` of an upload.
-    func status(remoteDestination: URL, completion: @escaping (Result<Status, TUSAPIError>) -> Void) -> NetworkTask {
+    func status(remoteDestination: URL, completion: @escaping (Result<Status, TUSAPIError>) -> Void) -> URLSessionDataTask {
         let request = makeRequest(url: remoteDestination, method: .head, headers: [:])
-        let task = network.dataTask(request: request) { result in
+        let task = session.dataTask(request: request) { result in
             processResult(completion: completion) {
                 let (_, response) =  try result.get()
                 // Improvement: Make length optional
@@ -90,9 +89,9 @@ final class TUSAPI {
     ///   - metaData: The file metadata.
     ///   - completion: Completes with a result that gives a URL to upload to.
     @discardableResult
-    func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) -> NetworkTask {
+    func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) -> URLSessionDataTask {
         let request = makeCreateRequest(metaData: metaData)
-        let task = network.dataTask(request: request) { (result: Result<(Data?, HTTPURLResponse), Error>) in
+        let task = session.dataTask(request: request) { (result: Result<(Data?, HTTPURLResponse), Error>) in
             processResult(completion: completion) {
                 let (_, response) = try result.get()
 
@@ -146,7 +145,7 @@ final class TUSAPI {
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
     @discardableResult
-    func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> NetworkTask {
+    func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
         let offset: Int
         let length: Int
         if let range = range {
@@ -166,7 +165,7 @@ final class TUSAPI {
         
         let request = makeRequest(url: location, method: .patch, headers: headers)
         
-        let task = network.uploadTask(request: request, data: data) { result in
+        let task = session.uploadTask(request: request, data: data) { result in
             processResult(completion: completion) {
                 let (_, response) = try result.get()
                 guard let offsetStr = response.allHeaderFields["Upload-Offset"] as? String,

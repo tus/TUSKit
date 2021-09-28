@@ -13,22 +13,32 @@ import XCTest
 final class TUSAPITests: XCTestCase {
 
     var api: TUSAPI!
-    var mockNetwork: MockNetwork!
+    var uploadURL: URL!
     
     override func setUp() {
         super.setUp()
-        mockNetwork = MockNetwork()
-        api = TUSAPI(uploadURL: URL(string: "www.tus.io")!, network: mockNetwork)
+        
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession.init(configuration: configuration)
+        uploadURL = URL(string: "www.tus.io")!
+        api = TUSAPI(session: session, uploadURL: uploadURL)
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+        MockURLProtocol.receivedRequests = []
     }
     
     func testCreation() throws {
+        // TODO: Set proper response in mock 
         let size = 300
         let expectation = expectation(description: "Call api.create()")
         let metaData = UploadMetadata(id: UUID(), filePath: URL(string: "file://whatever/")!, size: size)
         api.create(metaData: metaData) { [unowned self] result in
             do {
                 let url = try result.get()
-                XCTAssertEqual(url, self.mockNetwork.uploadURL)
+                XCTAssertEqual(url, self.uploadURL)
                 expectation.fulfill()
             } catch {
                 XCTFail("Expected to retrieve a URL for this test")
@@ -37,7 +47,7 @@ final class TUSAPITests: XCTestCase {
         
         waitForExpectations(timeout: 3, handler: nil)
         
-        let headerFields = try XCTUnwrap(mockNetwork.receivedRequests.first?.allHTTPHeaderFields)
+        let headerFields = try XCTUnwrap(MockURLProtocol.receivedRequests.first?.allHTTPHeaderFields)
         let expectedFileName = metaData.filePath.lastPathComponent.toBase64()
         let expectedHeaders: [String: String] =
             [
@@ -57,14 +67,14 @@ final class TUSAPITests: XCTestCase {
         let range = offset..<length
         let expectation = expectation(description: "Call api.upload()")
     
-        api.upload(data: Data(), range: range, location: mockNetwork.uploadURL) { result in
+        api.upload(data: Data(), range: range, location: uploadURL) { result in
 
             expectation.fulfill()
         }
         
         waitForExpectations(timeout: 3, handler: nil)
         
-        let headerFields = try XCTUnwrap(mockNetwork.receivedRequests.first?.allHTTPHeaderFields)
+        let headerFields = try XCTUnwrap(MockURLProtocol.receivedRequests.first?.allHTTPHeaderFields)
         let expectedHeaders: [String: String] =
             [
                 "TUS-Resumable": "1.0.0",

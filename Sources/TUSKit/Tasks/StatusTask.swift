@@ -14,7 +14,7 @@ final class StatusTask: Task {
     let files: Files
     let remoteDestination: URL
     let metaData: UploadMetadata
-    weak var networkTask: NetworkTask?
+    weak var sessionTask: URLSessionDataTask?
     
     init(api: TUSAPI, remoteDestination: URL, metaData: UploadMetadata, files: Files) {
         self.api = api
@@ -25,7 +25,7 @@ final class StatusTask: Task {
     
     func run(completed: @escaping TaskCompletion) {
         // Improvement: On failure, try uploading from the start. Create creationtask.
-        networkTask = api.status(remoteDestination: remoteDestination) { [unowned self] result in
+        sessionTask = api.status(remoteDestination: remoteDestination) { [unowned self] result in
             do {
                 let status = try result.get()
                 let length = status.length
@@ -58,7 +58,7 @@ final class StatusTask: Task {
     }
     
     func cancel() {
-        networkTask?.cancel()
+        sessionTask?.cancel()
     }
 }
 

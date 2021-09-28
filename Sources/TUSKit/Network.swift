@@ -4,35 +4,23 @@
 //
 //  Created by Tjeerd in ‘t Veen on 16/09/2021.
 //
-
+//
 import Foundation
 
 enum NetworkError: Error {
     case noHTTPURLResponse
 }
 
-protocol NetworkTask: AnyObject {
-    func resume()
-    func cancel()
-}
+import Foundation
 
-/// Network represents the network we can make requests to. Can be a real URLSession or mock or something else.
-/// The reason we mock this, is to avoid network calls in testing. We don't want to mock out TUSAPI, however, so we can properly test its functionality.
-protocol Network {
-    func dataTask(request: URLRequest, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> NetworkTask
-    func uploadTask(request: URLRequest, data: Data, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> NetworkTask
-}
-
-extension URLSessionTask: NetworkTask {}
-
-extension URLSession: Network {
+// Result support for URLSession
+extension URLSession {
     
-    func dataTask(request: URLRequest, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> NetworkTask {
+    func dataTask(request: URLRequest, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> URLSessionDataTask {
         return dataTask(with: request, completionHandler: makeCompletion(completion: completion))
     }
     
-    func uploadTask(request: URLRequest, data: Data, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> NetworkTask {
-        
+    func uploadTask(request: URLRequest, data: Data, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> URLSessionUploadTask {
         return uploadTask(with: request, from: data, completionHandler: makeCompletion(completion: completion))
     }
     

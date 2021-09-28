@@ -64,10 +64,12 @@ public final class TUSClient {
     private var uploads = [URL: UUID]()
     public weak var delegate: TUSClientDelegate?
     
+#if os(iOS)
     @available(iOS 13.0, *)
     private lazy var backgroundClient: TUSBackground = {
         return TUSBackground(scheduler: BGTaskScheduler.shared, api: api, files: files)
     }()
+#endif
     
     /// Initialize a TUSClient
     /// - Parameters:
@@ -76,15 +78,10 @@ public final class TUSClient {
     ///   - storageDirectory: A directory to store local files for uploading and continuing uploads. Leave nil to use the documents dir. Pass a relative path (e.g. "TUS" or "/TUS" or "/Uploads/TUS") for a relative directory inside the documents directory.
     ///   You can also pass an absolute path, e.g. "file://uploads/TUS"
     ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
-    public convenience init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL?, session: URLSession = URLSession.shared) {
-        self.init(config: config, sessionIdentifier: sessionIdentifier, storageDirectory: storageDirectory, network: URLSession.shared)
-    }
-    
-    /// Internal initializer to gain access to the Network protocol. To allow for mocking yet keeping the protocol shielded from public API.
-    init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL?, network: Network) {
+    public init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL?, session: URLSession = URLSession.shared) {
         self.config = config
         self.sessionIdentifier = sessionIdentifier
-        self.api = TUSAPI(uploadURL: config.server, network: network)
+        self.api = TUSAPI(session: session, uploadURL: config.server)
         self.files = Files(storageDirectory: storageDirectory)
         
         scheduler.delegate = self
@@ -242,10 +239,12 @@ public final class TUSClient {
     /// When your app moves to the background, you can call this method to schedule background tasks to perform.
     /// This will signal the OS to upload files when appropriate (e.g. when a phone is on a charger and on Wifi).
     /// Note that the OS decided when uploading begins.
+#if os(iOS)
     @available(iOS 13.0, *)
     public func scheduleBackgroundTasks() {
         backgroundClient.scheduleBackgroundTasks()
     }
+#endif
     
     /// Return the id's all failed uploads. Good to check after launch or after background processing for example, to handle them at a later stage.
     /// - Returns: An id's array of erronous uploads.

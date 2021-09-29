@@ -20,12 +20,11 @@ final class TUSClientTests: XCTestCase {
         
         client = makeClient(storagePath: relativeStoragePath)
         
-        tusDelegate = TUSMockDelegate()
-        client.delegate = tusDelegate
     }
     
     override func tearDown() {
         super.tearDown()
+        clearDirectory(dir: fullStoragePath)
     }
     
     private func makeClient(storagePath: URL) -> TUSClient {
@@ -34,13 +33,18 @@ final class TUSClientTests: XCTestCase {
         // We don't use a live URLSession, we mock it out.
         let configuration = URLSessionConfiguration.default
         configuration.protocolClasses = [MockURLProtocol.self]
-        return TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: relativeStoragePath, session: URLSession.init(configuration: configuration))
+        let client = TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: relativeStoragePath, session: URLSession.init(configuration: configuration))
+        tusDelegate = TUSMockDelegate()
+        client.delegate = tusDelegate
+        return client
     }
     
     private func prepareNetworkForSuccesfulUploads(data: Data) {
+        MockURLProtocol.receivedRequests = []
         MockURLProtocol.prepareResponse(for: "POST") {
             MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
         }
+        
         
         MockURLProtocol.prepareResponse(for: "PATCH") {
             MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
@@ -48,10 +52,34 @@ final class TUSClientTests: XCTestCase {
         
     }
     
+    private func prepareNetworkForFaultyUpload() {
+        MockURLProtocol.prepareResponse(for: "POST") {
+            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
+        }
+    }
+    
+    /// Upload data, a certain amount of times.
+    private func upload(data: Data, amount: Int = 1) throws -> [UUID] {
+        let ids = try (0..<amount).map { _ -> UUID in
+            return try client.upload(data: data)
+        }
+        
+        waitForUploadsToFinish(amount)
+
+        return ids
+    }
+    
     private func waitForUploadsToFinish(_ amount: Int = 1) {
         let expectation = expectation(description: "Waiting for upload to finished")
         expectation.expectedFulfillmentCount = amount
         tusDelegate.finishUploadExpectation = expectation
+        waitForExpectations(timeout: 3, handler: nil)
+    }
+    
+    private func waitForUploadsToFail(_ amount: Int = 1) {
+        let expectation = expectation(description: "Waiting for upload to fail")
+        expectation.expectedFulfillmentCount = amount
+        tusDelegate.uploadFailedExpectation = expectation
         waitForExpectations(timeout: 3, handler: nil)
     }
     
@@ -235,6 +263,7 @@ final class TUSClientTests: XCTestCase {
     // MARK: - Support custom headers
     
     func testUploadingWithCustomHeaders() throws {
+        // TODO: Only works in isolation. Check static receivedRequests
         // Make sure client adds custom headers
         
         let data = Data("abcdef".utf8)
@@ -244,7 +273,6 @@ final class TUSClientTests: XCTestCase {
         let key = "TUSKit"
         let value = "TransloaditKit"
         let customHeaders = [key: value]
-        
         
         // Store file
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
@@ -312,34 +340,33 @@ final class TUSClientTests: XCTestCase {
     
     func testUploadIdsArePreservedBetweenSessions() throws {
         // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
+        prepareNetworkForFaultyUpload()
         
-        MockURLProtocol.prepareResponse(for: "POST") {
-            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
-        }
-                                            
-        XCTAssert(tusDelegate.failedUploads.isEmpty)
+        let data = Data("hello".utf8)
         
-        let uploadCount = 5
-        for _ in 0..<uploadCount {
-            try client.upload(data: Data("hello".utf8))
+        let amount = 5
+        let ids = try (0..<amount).map { _ -> UUID in
+            try client.upload(data: data)
         }
         
-        let expectation = expectation(description: "Waiting for upload to fail")
-        expectation.expectedFulfillmentCount = uploadCount
-        tusDelegate.uploadFailedExpectation = expectation
-        waitForExpectations(timeout: 3, handler: nil)
+        waitForUploadsToFail(ids.count)
+
         XCTAssert(tusDelegate.finishedUploads.isEmpty)
+        XCTAssertEqual(ids.count, tusDelegate.failedUploads.count)
         
-        XCTAssertEqual(uploadCount, tusDelegate.failedUploads.count)
-        
-        // Reload client, and see what happ
+        // Reload client
         client = makeClient(storagePath: relativeStoragePath)
-        
-        client.start()
         XCTAssert(tusDelegate.startedUploads.isEmpty)
-        
-        
-        XCTFail("Implement me")
+
+        prepareNetworkForSuccesfulUploads(data: data)
+
+        for id in ids {
+            try client.retry(id: id)
+        }
+
+        waitForUploadsToFinish(ids.count)
+
+        XCTAssertEqual(ids.count, tusDelegate.finishedUploads.count, "Delegate has \(tusDelegate.activityCount) items")
     }
     
     // MARK: - Multiple instances

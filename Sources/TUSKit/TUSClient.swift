@@ -325,7 +325,6 @@ public final class TUSClient {
             })
             
             for metaData in metaDataItems {
-                uploads[metaData.filePath] = metaData.id
                 try scheduleTask(for: metaData)
             }
         } catch {
@@ -339,6 +338,7 @@ public final class TUSClient {
         guard let task = try taskFor(metaData: metaData, api: api, files: files) else {
             throw TUSClientError.uploadIsAlreadyFinished
         }
+        uploads[metaData.filePath] = metaData.id
         scheduler.addTask(task: task)
     }
     

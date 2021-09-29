@@ -11,8 +11,8 @@ import XCTest
 
 /// TUSClientDelegate to support testing
 final class TUSMockDelegate: TUSClientDelegate {
-    var finishedUploads = [(UUID, URL)]()
     var startedUploads = [UUID]()
+    var finishedUploads = [(UUID, URL)]()
     var failedUploads = [(UUID, Error)]()
     var fileErrors = [TUSClientError]()
     

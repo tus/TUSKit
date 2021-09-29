@@ -1,5 +1,5 @@
 import XCTest
-import TUSKit // ⚠️ No testable import. Make sure we test the public api here, and not against internals. If you want to test internals, see `TUSClientInternalTests`
+import TUSKit // ⚠️ No testable import. Make sure we test the public api here, and not against internals.
 final class TUSClientTests: XCTestCase {
     
     var client: TUSClient!
@@ -70,6 +70,13 @@ final class TUSClientTests: XCTestCase {
     func testUploadsCanBeChunked() throws {
         // TODO: Be sure to trigger multiple uploads (e.g. small chunk to upload, first offset is half of data, then complete)
         // TODO: Support MockURLProtocol to update the offset during uploads
+        XCTFail("Implement me")
+    }
+    
+    // MARK: - File handling
+    
+    func testClientCanHandleDirectoryStartingWithOrWithoutForwardSlash() {
+        // Initialize tusclient with either "TUS" or "/TUS" and it should work
         XCTFail("Implement me")
     }
     
@@ -159,6 +166,50 @@ final class TUSClientTests: XCTestCase {
         
         XCTAssert(contents.isEmpty, "Expected the client to delete the file")
     }
+
+    func testClientDeletesFilesOnCompletion() {
+        // If a file is done uploading (as said by status), but not yet deleted.
+        // Then the file can be deleted right after fetching the status.
+        XCTFail("Implement me")
+    }
+    
+    func testDeleteUploadedFilesOnStartup() {
+       XCTFail("Implement me")
+    }
+    
+    // MARK: - Retry mechanics
+   
+    func testRetryMechanic() {
+        XCTFail("Implement me")
+    }
+    
+    func testMakeSureErronousUploadsFollowRetryLimitAndAreUploadedAgain() {
+        // Only for x amount of errors
+        XCTFail("Implement me")
+    }
+    
+    func testMakeSureErronousUploadsAreRetriedXTimes() {
+        // Only retry error upload x times
+        XCTFail("Implement me")
+    }
+    
+    func testClientDoesNotScheduleFilesThatArentFinished() {
+        XCTFail("Implement me")
+    }
+    
+    // MARK: - Support custom headers
+    
+    func testUploadingWithCustomHeaders() {
+        // Make sure client adds custom headers
+        XCTFail("Implement me")
+    }
+
+    // MARK: - Stopping and canceling
+    
+    func funcStopAndCancel() {
+        XCTFail("Implement me")
+        // Do we want delegate to report it all?
+    }
     
     // MARK: - Testing new client sessions
     
@@ -190,8 +241,35 @@ final class TUSClientTests: XCTestCase {
     }
     
     func testUploadIdsArePreservedBetweenSessions() {
-        XCTFail("Implement me")
         // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
+        
+        MockURLProtocol.prepareResponse(for: "POST") {
+            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
+        }
+                                            
+        XCTAssert(tusDelegate.failedUploads.isEmpty)
+        
+        let uploadCount = 5
+        for _ in 0..<uploadCount {
+            try client.upload(data: Data("hello".utf8))
+        }
+        
+        let expectation = expectation(description: "Waiting for upload to fail")
+        expectation.expectedFulfillmentCount = uploadCount
+        tusDelegate.uploadFailedExpectation = expectation
+        waitForExpectations(timeout: 3, handler: nil)
+        XCTAssert(tusDelegate.finishedUploads.isEmpty)
+        
+        XCTAssertEqual(uploadCount, tusDelegate.failedUploads.count)
+        
+        // Reload client, and see what happ
+        client = makeClient(storagePath: relativeStoragePath)
+        
+        client.start()
+        XCTAssert(tusDelegate.startedUploads.isEmpty)
+        
+        
+        XCTFail("Implement me")
     }
     
     // MARK: - Multiple instances

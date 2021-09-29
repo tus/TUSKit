@@ -36,7 +36,17 @@ final class TUSClientTests: XCTestCase {
         configuration.protocolClasses = [MockURLProtocol.self]
         return TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: relativeStoragePath, session: URLSession.init(configuration: configuration))
     }
-
+    
+    private func prepareNetworkForSuccesfulUploads(data: Data) {
+        MockURLProtocol.prepareResponse(for: "POST") {
+            MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
+        }
+        
+        MockURLProtocol.prepareResponse(for: "PATCH") {
+            MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
+        }
+        
+    }
     
     // MARK: - Adding files and data to upload
     
@@ -67,12 +77,6 @@ final class TUSClientTests: XCTestCase {
         try XCTAssertThrowsError(client.upload(data: data))
     }
     
-    func testUploadsCanBeChunked() throws {
-        // TODO: Be sure to trigger multiple uploads (e.g. small chunk to upload, first offset is half of data, then complete)
-        // TODO: Support MockURLProtocol to update the offset during uploads
-        XCTFail("Implement me")
-    }
-    
     // MARK: - File handling
     
     func testClientCanHandleDirectoryStartingWithOrWithoutForwardSlash() {
@@ -86,14 +90,7 @@ final class TUSClientTests: XCTestCase {
         
         let data = Data("hello".utf8)
         
-        MockURLProtocol.prepareResponse(for: "POST") {
-            MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
-        }
-        
-        MockURLProtocol.prepareResponse(for: "PATCH") {
-            MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
-        }
-        
+        prepareNetworkForSuccesfulUploads(data: data)
         // Make sure id's that are given when uploading, are returned when uploads are finished
         let expectedId = try client.upload(data: data)
         
@@ -167,10 +164,41 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(contents.isEmpty, "Expected the client to delete the file")
     }
 
-    func testClientDeletesFilesOnCompletion() {
+    func testClientDeletesFilesOnCompletion() throws {
         // If a file is done uploading (as said by status), but not yet deleted.
         // Then the file can be deleted right after fetching the status.
-        XCTFail("Implement me")
+        
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            let data = Data("abcdef".utf8)
+        // Store file in cache
+        func storeFileInCache() throws -> URL {
+            let targetLocation = cacheDir.appendingPathComponent("myfile.txt")
+            try data.write(to: targetLocation)
+            return targetLocation
+        }
+        
+        prepareNetworkForSuccesfulUploads(data: data)
+        
+        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(contents.isEmpty)
+        
+        let uploadCount = 5
+        for _ in 0..<uploadCount {
+            let url = try storeFileInCache()
+            try client.uploadFileAt(filePath: url)
+        }
+        
+        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssertEqual(uploadCount * 2, contents.count) // Every upload has a metadata file
+        
+        let expectation = expectation(description: "Waiting for upload to finished")
+        expectation.expectedFulfillmentCount = uploadCount
+        tusDelegate.finishUploadExpectation = expectation
+        waitForExpectations(timeout: 3, handler: nil)
+        XCTAssertEqual(5, tusDelegate.finishedUploads.count)
+        
+        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(contents.isEmpty)
     }
     
     func testDeleteUploadedFilesOnStartup() {
@@ -315,6 +343,14 @@ final class TUSClientTests: XCTestCase {
 
         otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
         XCTAssert(!otherClientContents.isEmpty)
+    }
+    
+    // MARK: - Large files
+    
+    func testUploadsCanBeChunked() throws {
+        // TODO: Be sure to trigger multiple uploads (e.g. small chunk to upload, first offset is half of data, then complete)
+        // TODO: Support MockURLProtocol to update the offset during uploads
+        XCTFail("Implement me")
     }
     
 }

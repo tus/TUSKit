@@ -89,20 +89,18 @@ final class MockURLProtocol: URLProtocol {
         // This is where you create the mock response as per your test case and send it to the URLProtocolClient.
         guard let client = client else { return }
         
-        DispatchQueue.main.async { // Next runloop to mimic network
-            guard let preparedResponse = type(of: self).currentResponse else {
-                assertionFailure("No response found")
-                return
-            }
-            
-            let url = URL(string: "https://tusd.tusdemo.net/files")!
-            let response = HTTPURLResponse(url: url, statusCode: preparedResponse.status, httpVersion: nil, headerFields: preparedResponse.headers)!
-            client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            if let data = preparedResponse.data {
-                client.urlProtocol(self, didLoad: data)
-            }
-            client.urlProtocolDidFinishLoading(self)
+        guard let preparedResponse = type(of: self).currentResponse else {
+            assertionFailure("No response found")
+            return
         }
+        
+        let url = URL(string: "https://tusd.tusdemo.net/files")!
+        let response = HTTPURLResponse(url: url, statusCode: preparedResponse.status, httpVersion: nil, headerFields: preparedResponse.headers)!
+        client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        if let data = preparedResponse.data {
+            client.urlProtocol(self, didLoad: data)
+        }
+        client.urlProtocolDidFinishLoading(self)
     }
     
     override func stopLoading() {

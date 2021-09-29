@@ -7,6 +7,7 @@ final class TUSClientTests: XCTestCase {
     var tusDelegate: TUSMockDelegate!
     var relativeStoragePath: URL!
     var fullStoragePath: URL!
+    var data: Data!
     
     override func setUp() {
         super.setUp()
@@ -17,6 +18,9 @@ final class TUSClientTests: XCTestCase {
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
         
         clearDirectory(dir: fullStoragePath)
+        
+        data = Data("abcdef".utf8)
+        prepareNetworkForSuccesfulUploads(data: data)
         
         client = makeClient(storagePath: relativeStoragePath)
         
@@ -41,6 +45,8 @@ final class TUSClientTests: XCTestCase {
     
     private func prepareNetworkForSuccesfulUploads(data: Data) {
         MockURLProtocol.receivedRequests = []
+        MockURLProtocol.currentResponse = nil
+        MockURLProtocol.responses = [:]
         MockURLProtocol.prepareResponse(for: "POST") {
             MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
         }
@@ -123,9 +129,6 @@ final class TUSClientTests: XCTestCase {
     
     func testIdsAreGivenAndReturnedWhenFinished() throws {
         
-        let data = Data("hello".utf8)
-        
-        prepareNetworkForSuccesfulUploads(data: data)
         // Make sure id's that are given when uploading, are returned when uploads are finished
         let expectedId = try client.upload(data: data)
         
@@ -169,7 +172,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(contents.isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
         
         for _ in 0..<6 {
-            try client.upload(data: Data("abcdef".utf8))
+            try client.upload(data: data)
         }
         
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
@@ -187,7 +190,6 @@ final class TUSClientTests: XCTestCase {
     }
     
     func testDeleteSingleFile() throws {
-        let data = Data("abc".utf8)
         let id = try client.upload(data: data)
         
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
@@ -204,15 +206,12 @@ final class TUSClientTests: XCTestCase {
         // Then the file can be deleted right after fetching the status.
         
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            let data = Data("abcdef".utf8)
         // Store file in cache
         func storeFileInCache() throws -> URL {
             let targetLocation = cacheDir.appendingPathComponent("myfile.txt")
             try data.write(to: targetLocation)
             return targetLocation
         }
-        
-        prepareNetworkForSuccesfulUploads(data: data)
         
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssert(contents.isEmpty)
@@ -243,6 +242,9 @@ final class TUSClientTests: XCTestCase {
     // MARK: - Retry mechanics
    
     func testRetryMechanic() {
+        // Count requests, see if you see returning ones on failure.
+        // Count requests, see if you see one request on success.
+        // Count requests, see if request if halfway a request succeeds (Before retry limit).
         XCTFail("Implement me")
     }
     
@@ -266,9 +268,6 @@ final class TUSClientTests: XCTestCase {
         // TODO: Only works in isolation. Check static receivedRequests
         // Make sure client adds custom headers
         
-        let data = Data("abcdef".utf8)
-        prepareNetworkForSuccesfulUploads(data: data)
-        
         // Expected values
         let key = "TUSKit"
         let value = "TransloaditKit"
@@ -285,6 +284,8 @@ final class TUSClientTests: XCTestCase {
         
         let location = try storeFileInCache()
         
+        let aCount = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }.count
+        print("Count is \(aCount)")
         // Upload
         try client.upload(data: data, customHeaders: customHeaders)
         try client.uploadFileAt(filePath: location, customHeaders: customHeaders)
@@ -292,6 +293,7 @@ final class TUSClientTests: XCTestCase {
         waitForUploadsToFinish(2)
         
         // Validate
+        // TODO: Possible create retry?
         let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
         XCTAssertEqual(2, createRequests.count)
         let allSatisfied = createRequests.allSatisfy { request in

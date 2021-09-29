@@ -106,11 +106,19 @@ final class TUSClientTests: XCTestCase {
     }
     
     func testIdsAreGivenAndReturnedWhenFinished() throws {
-        // Make sure id's that are given when uploading, are returned when uploads are finished
-        let data = Data("hello".utf8)
-        let expectedId = try client.upload(data: data)
         
-        MockURLProtocol.uploadDataSize = data.count
+        let data = Data("hello".utf8)
+        
+        MockURLProtocol.prepareResponse(for: "POST") {
+            MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
+        }
+        
+        MockURLProtocol.prepareResponse(for: "PATCH") {
+            MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
+        }
+        
+        // Make sure id's that are given when uploading, are returned when uploads are finished
+        let expectedId = try client.upload(data: data)
         
         XCTAssert(tusDelegate.finishedUploads.isEmpty)
         
@@ -125,12 +133,18 @@ final class TUSClientTests: XCTestCase {
     }
     
     func testCorrectIdsAreGivenOnFailure() throws {
+        MockURLProtocol.prepareResponse(for: "POST") {
+            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
+        }
+                                            
         let expectedId = try client.upload(data: Data("hello".utf8))
         
         XCTAssert(tusDelegate.failedUploads.isEmpty)
         
+        
         tusDelegate.uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
         waitForExpectations(timeout: 3, handler: nil)
+        XCTAssert(tusDelegate.finishedUploads.isEmpty)
         
         XCTAssertEqual(1, tusDelegate.failedUploads.count)
         for (id, _) in tusDelegate.failedUploads {

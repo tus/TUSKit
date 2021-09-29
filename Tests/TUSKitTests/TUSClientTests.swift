@@ -48,6 +48,13 @@ final class TUSClientTests: XCTestCase {
         
     }
     
+    private func waitForUploadsToFinish(_ amount: Int = 1) {
+        let expectation = expectation(description: "Waiting for upload to finished")
+        expectation.expectedFulfillmentCount = amount
+        tusDelegate.finishUploadExpectation = expectation
+        waitForExpectations(timeout: 3, handler: nil)
+    }
+    
     // MARK: - Adding files and data to upload
     
     func testUploadingNonExistentFileShouldThrow() {
@@ -227,9 +234,44 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - Support custom headers
     
-    func testUploadingWithCustomHeaders() {
+    func testUploadingWithCustomHeaders() throws {
         // Make sure client adds custom headers
-        XCTFail("Implement me")
+        
+        let data = Data("abcdef".utf8)
+        prepareNetworkForSuccesfulUploads(data: data)
+        
+        // Expected values
+        let key = "TUSKit"
+        let value = "TransloaditKit"
+        let customHeaders = [key: value]
+        
+        
+        // Store file
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        // Store file in cache
+        func storeFileInCache() throws -> URL {
+            let targetLocation = cacheDir.appendingPathComponent("myfile.txt")
+            try data.write(to: targetLocation)
+            return targetLocation
+        }
+        
+        let location = try storeFileInCache()
+        
+        // Upload
+        try client.upload(data: data, customHeaders: customHeaders)
+        try client.uploadFileAt(filePath: location, customHeaders: customHeaders)
+        
+        waitForUploadsToFinish(2)
+        
+        // Validate
+        let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
+        XCTAssertEqual(2, createRequests.count)
+        let allSatisfied = createRequests.allSatisfy { request in
+            guard let headers = request.allHTTPHeaderFields else { return false }
+            return headers[key] == value
+        }
+        
+        XCTAssert(allSatisfied)
     }
 
     // MARK: - Stopping and canceling

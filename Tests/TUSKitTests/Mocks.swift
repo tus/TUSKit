@@ -16,7 +16,7 @@ final class TUSMockDelegate: TUSClientDelegate {
     var failedUploads = [(UUID, Error)]()
     var fileErrors = [TUSClientError]()
     
-    var activityCount = { finishedUploads.count + startedUploads.count + failedUploads.count + fileErrors.count }
+    var activityCount: Int { finishedUploads.count + startedUploads.count + failedUploads.count + fileErrors.count }
     
     var finishUploadExpectation: XCTestExpectation?
     var startUploadExpectation: XCTestExpectation?

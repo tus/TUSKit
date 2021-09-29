@@ -240,7 +240,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(tusDelegate.startedUploads.isEmpty)
     }
     
-    func testUploadIdsArePreservedBetweenSessions() {
+    func testUploadIdsArePreservedBetweenSessions() throws {
         // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
         
         MockURLProtocol.prepareResponse(for: "POST") {

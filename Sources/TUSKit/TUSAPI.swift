@@ -61,6 +61,7 @@ final class TUSAPI {
     /// - Parameters:
     ///   - remoteDestination: A URL to retrieve the status from (received from the create call)
     ///   - completion: A completion giving us the `Status` of an upload.
+    @discardableResult
     func status(remoteDestination: URL, completion: @escaping (Result<Status, TUSAPIError>) -> Void) -> URLSessionDataTask {
         let request = makeRequest(url: remoteDestination, method: .head, headers: [:])
         let task = session.dataTask(request: request) { result in

@@ -30,15 +30,42 @@ final class TUSAPITests: XCTestCase {
         MockURLProtocol.receivedRequests = []
     }
     
+    func testStatus() throws {
+        let length = 3000
+        let offset = 20
+        MockURLProtocol.prepareResponse(for: "HEAD") {
+            MockURLProtocol.Response(status: 200, headers: ["Upload-Length": String(length), "Upload-Offset": String(offset)], data: nil)
+        }
+        
+        let expectation = expectation(description: "Call api.status()")
+        let remoteFileURL = URL(string: "tus.io/myfile")!
+        api.status(remoteDestination: remoteFileURL, completion: { result in
+            do {
+                let values = try result.get()
+                XCTAssertEqual(length, values.length)
+                XCTAssertEqual(offset, values.offset)
+                expectation.fulfill()
+            } catch {
+                XCTFail("Expected this call to succeed")
+            }
+        })
+        
+        waitForExpectations(timeout: 3, handler: nil)
+    }
+    
     func testCreation() throws {
-        // TODO: Set proper response in mock 
+        let remoteFileURL = URL(string: "tus.io/myfile")!
+        MockURLProtocol.prepareResponse(for: "POST") {
+            MockURLProtocol.Response(status: 200, headers: ["Location": remoteFileURL.absoluteString], data: nil)
+        }
+        
         let size = 300
         let expectation = expectation(description: "Call api.create()")
         let metaData = UploadMetadata(id: UUID(), filePath: URL(string: "file://whatever/")!, size: size)
-        api.create(metaData: metaData) { [unowned self] result in
+        api.create(metaData: metaData) { result in
             do {
                 let url = try result.get()
-                XCTAssertEqual(url, self.uploadURL)
+                XCTAssertEqual(url, remoteFileURL)
                 expectation.fulfill()
             } catch {
                 XCTFail("Expected to retrieve a URL for this test")
@@ -62,9 +89,14 @@ final class TUSAPITests: XCTestCase {
     }
     
     func testUpload() throws {
+        let data = Data("Hello how are you".utf8)
+        MockURLProtocol.prepareResponse(for: "PATCH") {
+            MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
+        }
+        
         let offset = 2
-        let length = 10
-        let range = offset..<length
+        let length = data.count
+        let range = offset..<data.count
         let expectation = expectation(description: "Call api.upload()")
     
         api.upload(data: Data(), range: range, location: uploadURL) { result in

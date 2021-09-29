@@ -11,15 +11,14 @@ final class TUSClientTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        let liveDemoPath = URL(string: "https://tusd.tusdemo.net/files")!
         relativeStoragePath = URL(string: "TUSTEST")!
+        
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
+        
         clearDirectory(dir: fullStoragePath)
         
-        let configuration = URLSessionConfiguration.default
-        configuration.protocolClasses = [MockURLProtocol.self]
-        client = TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: relativeStoragePath, session: URLSession.init(configuration: configuration))
+        client = makeClient(storagePath: relativeStoragePath)
         
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
@@ -28,7 +27,19 @@ final class TUSClientTests: XCTestCase {
     override func tearDown() {
         super.tearDown()
     }
+    
+    private func makeClient(storagePath: URL) -> TUSClient {
+        let liveDemoPath = URL(string: "https://tusd.tusdemo.net/files")!
+        
+        // We don't use a live URLSession, we mock it out.
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+        return TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: relativeStoragePath, session: URLSession.init(configuration: configuration))
+    }
 
+    
+    // MARK: - Adding files and data to upload
+    
     func testUploadingNonExistentFileShouldThrow() {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("thisfiledoesntexist.jpg")
         XCTAssertThrowsError(try client.uploadFileAt(filePath: fileURL), "If a file doesn't exist, the client should throw a message right when an uploadTask is triggered")
@@ -55,6 +66,135 @@ final class TUSClientTests: XCTestCase {
         let data = Data()
         try XCTAssertThrowsError(client.upload(data: data))
     }
+    
+    func testUploadsCanBeChunked() throws {
+        // TODO: Be sure to trigger multiple uploads (e.g. small chunk to upload, first offset is half of data, then complete)
+        // TODO: Support MockURLProtocol to update the offset during uploads
+        XCTFail("Implement me")
+    }
+    
+    // MARK: - Id handling
+    
+    func testIdsAreGivenAndReturnedWhenFinished() throws {
+        
+        let data = Data("hello".utf8)
+        
+        MockURLProtocol.prepareResponse(for: "POST") {
+            MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
+        }
+        
+        MockURLProtocol.prepareResponse(for: "PATCH") {
+            MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
+        }
+        
+        // Make sure id's that are given when uploading, are returned when uploads are finished
+        let expectedId = try client.upload(data: data)
+        
+        XCTAssert(tusDelegate.finishedUploads.isEmpty)
+        
+        tusDelegate.finishUploadExpectation = expectation(description: "Waiting for upload to fail")
+        waitForExpectations(timeout: 3, handler: nil)
+        
+        XCTAssert(tusDelegate.failedUploads.isEmpty, "Found a failed uploads, should have been empty. Something went wrong with uploading.")
+        XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Upload didn't finish.")
+        for (id, _) in tusDelegate.finishedUploads {
+            XCTAssertEqual(id, expectedId)
+        }
+    }
+    
+    func testCorrectIdsAreGivenOnFailure() throws {
+        MockURLProtocol.prepareResponse(for: "POST") {
+            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
+        }
+                                            
+        let expectedId = try client.upload(data: Data("hello".utf8))
+        
+        XCTAssert(tusDelegate.failedUploads.isEmpty)
+        
+        tusDelegate.uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
+        waitForExpectations(timeout: 3, handler: nil)
+        XCTAssert(tusDelegate.finishedUploads.isEmpty)
+        
+        XCTAssertEqual(1, tusDelegate.failedUploads.count)
+        for (id, _) in tusDelegate.failedUploads {
+            XCTAssertEqual(id, expectedId)
+        }
+    }
+    
+    // MARK: - Deletions / clearing cache
+    
+    func testClearingCache() throws {
+        
+        try makeDirectoryIfNeeded(url: fullStoragePath)
+        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(contents.isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
+        
+        for _ in 0..<6 {
+            try client.upload(data: Data("abcdef".utf8))
+        }
+        
+        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(!contents.isEmpty)
+        
+        try client.clearAllCache()
+        
+        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(contents.isEmpty)
+    }
+    
+    func testClearingEverythingAndStartingNewUploads (){
+        // TODO: Make sure uploads are renewed. No lingering uploads.
+        XCTFail("Implement me")
+    }
+    
+    func testDeleteSingleFile() throws {
+        let data = Data("abc".utf8)
+        let id = try client.upload(data: data)
+        
+        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssertEqual(2, contents.count, "Prerequisite for tests fails, expected 2 files to exist, the file to upload and metadata")
+        
+        try client.removeCacheFor(id: id)
+        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        
+        XCTAssert(contents.isEmpty, "Expected the client to delete the file")
+    }
+    
+    // MARK: - Testing new client sessions
+    
+    func testMakeSureMetadataWithTooManyErrorsArentLoadedOnStart() throws {
+        MockURLProtocol.prepareResponse(for: "POST") {
+            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
+        }
+                                            
+        XCTAssert(tusDelegate.failedUploads.isEmpty)
+        
+        let uploadCount = 5
+        for _ in 0..<uploadCount {
+            try client.upload(data: Data("hello".utf8))
+        }
+        
+        let expectation = expectation(description: "Waiting for upload to fail")
+        expectation.expectedFulfillmentCount = uploadCount
+        tusDelegate.uploadFailedExpectation = expectation
+        waitForExpectations(timeout: 3, handler: nil)
+        XCTAssert(tusDelegate.finishedUploads.isEmpty)
+        
+        XCTAssertEqual(uploadCount, tusDelegate.failedUploads.count)
+        
+        // Reload client, and see what happ
+        client = makeClient(storagePath: relativeStoragePath)
+        
+        client.start()
+        XCTAssert(tusDelegate.startedUploads.isEmpty)
+    }
+    
+    func testUploadIdsArePreservedBetweenSessions() {
+        XCTFail("Implement me")
+        // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
+    }
+    
+    // MARK: - Multiple instances
     
     func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {
         // Make multiple instances, they shouldn't interfere with each other's files.
@@ -97,105 +237,6 @@ final class TUSClientTests: XCTestCase {
 
         otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
         XCTAssert(!otherClientContents.isEmpty)
-    }
-    
-    func testUploadsCanBeChunked() throws {
-        // TODO: Be sure to trigger multiple uploads (e.g. small chunk to upload, first offset is half of data, then complete)
-        // TODO: Support MockURLProtocol to update the offset during uploads
-        XCTFail("Implement me")
-    }
-    
-    func testIdsAreGivenAndReturnedWhenFinished() throws {
-        
-        let data = Data("hello".utf8)
-        
-        MockURLProtocol.prepareResponse(for: "POST") {
-            MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
-        }
-        
-        MockURLProtocol.prepareResponse(for: "PATCH") {
-            MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
-        }
-        
-        // Make sure id's that are given when uploading, are returned when uploads are finished
-        let expectedId = try client.upload(data: data)
-        
-        XCTAssert(tusDelegate.finishedUploads.isEmpty)
-        
-        tusDelegate.finishUploadExpectation = expectation(description: "Waiting for upload to fail")
-        waitForExpectations(timeout: 3, handler: nil)
-        
-        XCTAssert(tusDelegate.failedUploads.isEmpty, "Found a failed uploads, should have been empty. Something went wrong with uploading.")
-        XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Upload didn't finish.")
-        for (id, _) in tusDelegate.finishedUploads {
-            XCTAssertEqual(id, expectedId)
-        }
-    }
-    
-    func testCorrectIdsAreGivenOnFailure() throws {
-        MockURLProtocol.prepareResponse(for: "POST") {
-            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
-        }
-                                            
-        let expectedId = try client.upload(data: Data("hello".utf8))
-        
-        XCTAssert(tusDelegate.failedUploads.isEmpty)
-        
-        
-        tusDelegate.uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
-        waitForExpectations(timeout: 3, handler: nil)
-        XCTAssert(tusDelegate.finishedUploads.isEmpty)
-        
-        XCTAssertEqual(1, tusDelegate.failedUploads.count)
-        for (id, _) in tusDelegate.failedUploads {
-            XCTAssertEqual(id, expectedId)
-        }
-    }
-    
-    func testUploadIdsArePreservedBetweenSessions() {
-        XCTFail("Implement me")
-        // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
-    }
-    
-    func testClearingEverythingAndStartingNewUploads (){
-        // TODO: Make sure uploads are renewed. No lingering uploads.
-        XCTFail("Implement me")
-    }
-    
-    func testClearingCache() throws {
-        
-        try makeDirectoryIfNeeded(url: fullStoragePath)
-        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
-        
-        for _ in 0..<6 {
-            try client.upload(data: Data("abcdef".utf8))
-        }
-        
-        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(!contents.isEmpty)
-        
-        try client.clearAllCache()
-        
-        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty)
-    }
-    
-    func testDeleteSingleFile() throws {
-        let data = Data("abc".utf8)
-        let id = try client.upload(data: data)
-        
-        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssertEqual(2, contents.count, "Prerequisite for tests fails, expected 2 files to exist, the file to upload and metadata")
-        
-        try client.removeCacheFor(id: id)
-        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        
-        XCTAssert(contents.isEmpty, "Expected the client to delete the file")
-    }
-    
-    func testMakeSureMetadataWithTooManyErrorsArentLoaded() {
-        XCTFail("Implement me")
     }
     
 }

@@ -23,7 +23,6 @@ final class TUSMockDelegate: TUSClientDelegate {
     
     func didFinishUpload(id: UUID, url: URL, client: TUSClient) {
         finishedUploads.append((id, url))
-        
         finishUploadExpectation?.fulfill()
     }
     
@@ -72,7 +71,11 @@ final class MockURLProtocol: URLProtocol {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest {
         // Here you return the canonical version of the request but most of the time you pass the orignal one.
         if let method = request.httpMethod {
-            currentResponse = responses[method]
+            if let res = responses[method] {
+                currentResponse = res
+            } else {
+                assertionFailure("No response found for \(method)")
+            }
         } else {
             assertionFailure("No http method found for request")
         }

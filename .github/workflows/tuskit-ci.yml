@@ -9,6 +9,8 @@ jobs:
         swift: ["5.2", "5.3"]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Extract Branch Name
+        run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV    
       - uses: fwal/setup-swift@d43a564349d1341cd990cfbd70d94d63b8899475
         with:
           swift-version: ${{ matrix.swift }}
@@ -17,3 +19,9 @@ jobs:
         run: swift build
       - name: Run tests
         run: swift test
+      - uses: 8398a7/action-slack@v3
+        if: failure() && env.BRANCH == 'master'
+        with:
+          status: failure
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

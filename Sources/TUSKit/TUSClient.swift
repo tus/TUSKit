@@ -423,8 +423,9 @@ extension TUSClient: SchedulerDelegate {
             delegate?.fileError(error: TUSClientError.couldNotStoreFileMetadata, client: self)
         }
         
-        if metaData.errorCount <= retryCount {
-            scheduler.addTask(task: task) // Let's retry
+        let canRetry = metaData.errorCount <= retryCount
+        if canRetry {
+            scheduler.addTask(task: task)
         } else { // Exhausted all retries, reporting back as failure.
             delegate?.uploadFailed(id: id, error: error, client: self)
         }

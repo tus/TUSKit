@@ -80,8 +80,10 @@ final class TUSClientTests: XCTestCase {
         }
         
         if shouldSucceed {
+            prepareNetworkForSuccesfulUploads(data: data)
             waitForUploadsToFinish(amount)
         } else {
+            prepareNetworkForErronousResponses()
             waitForUploadsToFail(amount)
         }
 
@@ -424,6 +426,8 @@ final class TUSClientTests: XCTestCase {
         waitForUploadsToFinish(ids.count)
 
         XCTAssertEqual(ids.count, tusDelegate.finishedUploads.count, "Delegate has \(tusDelegate.activityCount) items")
+        
+        print(MockURLProtocol.receivedRequests)
     }
     
     // MARK: - Multiple instances
@@ -472,10 +476,22 @@ final class TUSClientTests: XCTestCase {
     }
     
     // MARK: - Large files
+    func testSmallUploadsArentChunked() throws {
+        let ids = try upload(data: Data("helloaaa".utf8))
+        XCTAssertEqual(1, ids.count)
+        XCTAssertEqual(2, MockURLProtocol.receivedRequests.count)
+    }
     
-    func testUploadsCanBeChunked() throws {
-        // TODO: Be sure to trigger multiple uploads (e.g. small chunk to upload, first offset is half of data, then complete)
-        // TODO: Support MockURLProtocol to update the offset during uploads
+    func testLargeUploadsWillBeChunked() throws {
+        XCTFail("Implement me")
+        // Above 1000 will be chunked
+        let data = Data(repeatElement(1, count: 2000))
+        let ids = try upload(data: data)
+        XCTAssertEqual(1, ids.count)
+        XCTAssertEqual(4, MockURLProtocol.receivedRequests.count)
+    }
+    
+    func testLargeUploadsWillBeChunkedAfterFetchingStatus() throws {
         XCTFail("Implement me")
     }
     

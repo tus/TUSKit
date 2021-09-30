@@ -81,6 +81,11 @@ final class UploadDataTask: Task {
         sessionTask = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] result in
             do {
                 let offset = try result.get()
+                
+                if offset == metaData.uploadedRange?.count {
+                    assertionFailure("Server returned a new uploaded offset, but it's already the existing offset that's uploaded. Either the metaData has already been updated, or the server is returning a wrong value offset.")
+                }
+                
                 metaData.uploadedRange = 0..<offset
                 try files.encodeAndStore(metaData: metaData)
                 

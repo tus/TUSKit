@@ -20,7 +20,7 @@ jobs:
       - name: Run tests
         run: swift test
       - uses: 8398a7/action-slack@v3
-        if: failure() # && env.BRANCH == 'master'
+        if: failure() && env.BRANCH == 'master'
         with:
           status: failure
         env:

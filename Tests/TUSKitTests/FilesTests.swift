@@ -38,27 +38,16 @@ final class FilesTests: XCTestCase {
     }
     
     func testInitializers() {
-        func removeLeadingSlash(url: URL) -> String {
-            if url.absoluteString.first == "/" {
-                return String(url.absoluteString.dropFirst())
-            } else {
-                return url.absoluteString
-            }
-        }
-        
-        
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let cacheDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        
         let values = [
-            (URL(string: "ABC/ZXC")!, documentsDirectory.appendingPathComponent("ABC/ZXC")),
-            (URL(string: "/QUIOP/ZXC")!, URL(string: "/QUIOP/ZXC")!),
             (URL(string: "ABC")!, documentsDirectory.appendingPathComponent("ABC")),
-            (URL(string: "/DEF")!, URL(string: "/DEF")!),
-            (URL(string: "/nested/path/")!, URL(string: "/nested/path/")!),
-            (URL(string: "/nested/path")!, URL(string: "/nested/path")!),
+            (URL(string: "/ABC")!, documentsDirectory.appendingPathComponent("ABC")),
+            (URL(string: "ABC/ZXC")!, documentsDirectory.appendingPathComponent("ABC/ZXC")),
+            (URL(string: "/ABC/ZXC")!, documentsDirectory.appendingPathComponent("ABC/ZXC")),
             (nil, documentsDirectory.appendingPathComponent("TUS")),
-            (URL(string: "file://DEF")!, URL(string: "file://DEF")!),
-            (URL(string: "file://DEF/")!, URL(string: "file://DEF/")!),
-            (URL(string: "file://DEF/GHI")!, URL(string: "file://DEF/GHI")!),
+            (cacheDirectory.appendingPathComponent("TEST"), cacheDirectory.appendingPathComponent("TEST"))
             ]
         
         for (url, expectedPath) in values {

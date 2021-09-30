@@ -25,19 +25,46 @@ final class Files {
     /// Pass a directory to store the local cache in.
     /// - Parameter storageDirectory: Leave nil for the documents dir. Pass a relative path for a dir inside the documents dir. Pass an absolute path for storing files there.
     init(storageDirectory: URL?) {
+        func removeLeadingSlash(url: URL) -> String {
+            if url.absoluteString.first == "/" {
+                return String(url.absoluteString.dropFirst())
+            } else {
+                return url.absoluteString
+            }
+        }
+        
+        func removeTrailingSlash(url: URL) -> String {
+            if url.absoluteString.last == "/" {
+                return String(url.absoluteString.dropLast())
+            } else {
+                return url.absoluteString
+            }
+        }
         
         guard let storageDirectory = storageDirectory else {
             self.storageDirectory = type(of: self).documentsDirectory.appendingPathComponent("TUS")
             return
         }
         
-        // If a path is relative, e.g. blabla/mypath. Then it's a folder for the documentsdir
-        let isRelativePath = storageDirectory.absoluteString == storageDirectory.relativePath && storageDirectory.absoluteString.first != "/"
+        // If a path is relative, e.g. blabla/mypath or /blabla/mypath. Then it's a folder for the documentsdir
+        let isRelativePath = removeTrailingSlash(url: storageDirectory) == storageDirectory.relativePath || storageDirectory.absoluteString.first == "/"
+        
+        let dir = removeLeadingSlash(url: storageDirectory)
 
         if isRelativePath {
-            self.storageDirectory = type(of: self).documentsDirectory.appendingPathComponent(storageDirectory.absoluteString)
+            self.storageDirectory = type(of: self).documentsDirectory.appendingPathComponent(dir)
         } else {
-            self.storageDirectory = storageDirectory
+            if let url = URL(string: dir) {
+                self.storageDirectory = url
+            } else {
+                assertionFailure("Can't recreate URL")
+                self.storageDirectory = type(of: self).documentsDirectory.appendingPathComponent("TUS")
+            }
+        }
+        do {
+            try makeDirectoryIfNeeded()
+        } catch {
+            assertionFailure("Couldn't create dir \(storageDirectory). In other methods this class will try as well.")
         }
     }
     

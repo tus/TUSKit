@@ -54,8 +54,12 @@ final class MockURLProtocol: URLProtocol {
     }
     
     static var responses = [String: Response]()
-    static var currentResponse: Response?
     static var receivedRequests = [URLRequest]()
+    
+    static func reset() {
+        responses = [:]
+        receivedRequests = []
+    }
     
     /// Define a response to be used for a method
     /// - Parameters:
@@ -72,35 +76,32 @@ final class MockURLProtocol: URLProtocol {
     
     override class func canonicalRequest(for request: URLRequest) -> URLRequest {
         // Here you return the canonical version of the request but most of the time you pass the orignal one.
-        if let method = request.httpMethod {
-            if let res = responses[method] {
-                currentResponse = res
-            } else {
-                assertionFailure("No response found for \(method)")
-            }
-        } else {
-            assertionFailure("No http method found for request")
-        }
-        receivedRequests.append(request)
         return request
     }
     
     override func startLoading() {
         // This is where you create the mock response as per your test case and send it to the URLProtocolClient.
+        
         guard let client = client else { return }
         
-        guard let preparedResponse = type(of: self).currentResponse else {
-            assertionFailure("No response found")
+        guard let method = request.httpMethod, let preparedResponse = type(of: self).responses[method] else {
+//            assertionFailure("No response found for \(String(describing: request.httpMethod)) prepared \(type(of: self).responses)")
             return
         }
         
+        type(of: self).receivedRequests.append(request)
+        
         let url = URL(string: "https://tusd.tusdemo.net/files")!
         let response = HTTPURLResponse(url: url, statusCode: preparedResponse.status, httpVersion: nil, headerFields: preparedResponse.headers)!
-        client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        if let data = preparedResponse.data {
-            client.urlProtocol(self, didLoad: data)
+        
+        DispatchQueue.main.async { // Make sure completion happens in next runloop, otherwise network is completed instantly which gives unrealistic results.
+            client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            
+            if let data = preparedResponse.data {
+                client.urlProtocol(self, didLoad: data)
+            }
+            client.urlProtocolDidFinishLoading(self)
         }
-        client.urlProtocolDidFinishLoading(self)
     }
     
     override func stopLoading() {

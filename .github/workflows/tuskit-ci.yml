@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         os: ["macOS-11"]
-        swift: ["5.3.0"]
+        swift: ["5.5.0"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Extract Branch Name

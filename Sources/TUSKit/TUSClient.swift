@@ -40,7 +40,7 @@ public struct TUSClientError: Error {
     public static let uploadIsAlreadyFinished = TUSClientError(code: 11)
     public static let couldNotRetryUpload = TUSClientError(code: 12)
     public static let couldnotRemoveFinishedUploads = TUSClientError(code: 13)
- 
+    public static let receivedUnexpectedOffset = TUSClientError(code: 14)
 }
 
 /// The TUSKit client.
@@ -51,6 +51,8 @@ public final class TUSClient {
     public var remainingUploads: Int {
         uploads.count
     }
+    
+    static let chunkSize: Int = 500 * 1024
     
     /// How often to try an upload if it fails. A retryCount of 2 means 3 total uploads max. (1 initial upload, and on repeated failure, 2 more retries.)
     private let retryCount = 2
@@ -300,7 +302,7 @@ public final class TUSClient {
         
         uploads[filePath] = id
 
-        let task = try CreationTask(metaData: metaData, api: api, files: files)
+        let task = try CreationTask(metaData: metaData, api: api, files: files, chunkSize: type(of: self).chunkSize)
         scheduler.addTask(task: task)
     }
     
@@ -348,9 +350,7 @@ extension TUSClient: SchedulerDelegate {
     func didFinishTask(task: Task, scheduler: Scheduler) {
         switch task {
         case let task as UploadDataTask:
-            if task.metaData.isFinished {
-                handleFinishedUploadTask(task)
-            }
+            handleFinishedUploadTask(task)
         case let task as StatusTask:
             handleFinishedStatusTask(task)
         default:
@@ -365,6 +365,8 @@ extension TUSClient: SchedulerDelegate {
     }
     
     func handleFinishedUploadTask(_ uploadTask: UploadDataTask) {
+        guard uploadTask.metaData.isFinished else { return }
+        
         do {
             try files.removeFileAndMetadata(uploadTask.metaData)
         } catch {
@@ -377,7 +379,7 @@ extension TUSClient: SchedulerDelegate {
         }
         
         guard let id = uploads[uploadTask.metaData.filePath] else {
-            assertionFailure("Somehow task \(uploadTask) did not have an id")
+            assertionFailure("Somehow task \(uploadTask) did not have an id for filePath \(uploadTask.metaData.filePath)")
             delegate?.didFinishUpload(id: UUID(), url: url, client: self)
             return
         }
@@ -391,7 +393,7 @@ extension TUSClient: SchedulerDelegate {
         
         guard let task = task as? UploadDataTask else { return }
         guard let id = uploads[task.metaData.filePath] else {
-            assertionFailure("Somehow the filePath doesn't have an associated id, uploads are \(uploads)")
+            assertionFailure("Starting task \(task) Somehow the filePath doesn't have an associated id, uploads are \(uploads)")
             // TODO: Log assertion?
             delegate?.didStartUpload(id: UUID(), client: self)
             return
@@ -453,7 +455,7 @@ func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files) throws -> Task
     }
     
     if let remoteDestination = metaData.remoteDestination {
-        return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData, files: files)
+        return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData, files: files, chunkSize: TUSClient.chunkSize)
     } else {
         return try CreationTask(metaData: metaData, api: api, files: files)
     }

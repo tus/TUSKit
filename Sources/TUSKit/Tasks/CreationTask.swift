@@ -34,7 +34,8 @@ final class CreationTask: Task {
                 try files.encodeAndStore(metaData: metaData)
                 let task: UploadDataTask
                 if let chunkSize = chunkSize {
-                    task = try UploadDataTask(api: api, metaData: metaData, files: files, range: 0..<chunkSize)
+                    let newRange = 0..<min(chunkSize, metaData.size)
+                    task = try UploadDataTask(api: api, metaData: metaData, files: files, range: newRange)
                 } else {
                     task = try UploadDataTask(api: api, metaData: metaData, files: files)
                 }

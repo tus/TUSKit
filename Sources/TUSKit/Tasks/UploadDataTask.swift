@@ -37,7 +37,7 @@ final class UploadDataTask: Task {
         
         if (range?.count ?? 0) > metaData.size {
             // Improve: Enrich error
-            assertionFailure("The range to upload is larger than the size")
+            assertionFailure("The range \(range?.count) to upload is larger than the size \(metaData.size)")
             throw TUSClientError.couldNotUploadFile
         }
         
@@ -81,19 +81,22 @@ final class UploadDataTask: Task {
         sessionTask = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] result in
             do {
                 let offset = try result.get()
+                let currentOffset = metaData.uploadedRange?.upperBound ?? 0
                 
-                if offset == metaData.uploadedRange?.count {
-                    assertionFailure("Server returned a new uploaded offset, but it's already the existing offset that's uploaded. Either the metaData has already been updated, or the server is returning a wrong value offset.")
+                let hasFinishedUploading = offset == metaData.size
+                if hasFinishedUploading {
+                    metaData.uploadedRange = 0..<offset
+                    try files.encodeAndStore(metaData: metaData)
+                    completed(.success([]))
+                    return
+                } else if offset == currentOffset {
+                    throw TUSClientError.receivedUnexpectedOffset
+                    // TODO: Error logger
+                    print("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
                 }
                 
                 metaData.uploadedRange = 0..<offset
                 try files.encodeAndStore(metaData: metaData)
-                
-                let hasFinishedUploading = offset == metaData.size
-                if hasFinishedUploading {
-                    completed(.success([]))
-                    return
-                }
                 
                 let task: UploadDataTask
                 if let range = range {

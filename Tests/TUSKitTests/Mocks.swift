@@ -47,13 +47,15 @@ final class TUSMockDelegate: TUSClientDelegate {
 /// MockURLProtocol to support mocking the network
 final class MockURLProtocol: URLProtocol {
     
+    typealias Headers = [String: String]?
+    
     struct Response {
         let status: Int
         let headers: [String: String]
         let data: Data?
     }
     
-    static var responses = [String: Response]()
+    static var responses = [String: (Headers) -> Response]()
     static var receivedRequests = [URLRequest]()
     
     static func reset() {
@@ -65,8 +67,8 @@ final class MockURLProtocol: URLProtocol {
     /// - Parameters:
     ///   - method: The http method (POST PATCH etc)
     ///   - makeResponse: A closure that returns a Response
-    static func prepareResponse(for method: String, makeResponse: () -> Response) {
-        responses[method] = makeResponse()
+    static func prepareResponse(for method: String, makeResponse: @escaping (Headers) -> Response) {
+        responses[method] = makeResponse
     }
     
     override class func canInit(with request: URLRequest) -> Bool {
@@ -84,24 +86,24 @@ final class MockURLProtocol: URLProtocol {
         
         guard let client = client else { return }
         
-        guard let method = request.httpMethod, let preparedResponse = type(of: self).responses[method] else {
+        guard let method = request.httpMethod, let preparedResponseClosure = type(of: self).responses[method] else {
 //            assertionFailure("No response found for \(String(describing: request.httpMethod)) prepared \(type(of: self).responses)")
             return
         }
+        
+        let preparedResponse = preparedResponseClosure(request.allHTTPHeaderFields)
         
         type(of: self).receivedRequests.append(request)
         
         let url = URL(string: "https://tusd.tusdemo.net/files")!
         let response = HTTPURLResponse(url: url, statusCode: preparedResponse.status, httpVersion: nil, headerFields: preparedResponse.headers)!
         
-        DispatchQueue.main.async { // Make sure completion happens in next runloop, otherwise network is completed instantly which gives unrealistic results.
-            client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            
-            if let data = preparedResponse.data {
-                client.urlProtocol(self, didLoad: data)
-            }
-            client.urlProtocolDidFinishLoading(self)
+        client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        
+        if let data = preparedResponse.data {
+            client.urlProtocol(self, didLoad: data)
         }
+        client.urlProtocolDidFinishLoading(self)
     }
     
     override func stopLoading() {

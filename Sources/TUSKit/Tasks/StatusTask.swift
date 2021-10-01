@@ -14,13 +14,15 @@ final class StatusTask: Task {
     let files: Files
     let remoteDestination: URL
     let metaData: UploadMetadata
+    let chunkSize: Int
     weak var sessionTask: URLSessionDataTask?
     
-    init(api: TUSAPI, remoteDestination: URL, metaData: UploadMetadata, files: Files) {
+    init(api: TUSAPI, remoteDestination: URL, metaData: UploadMetadata, files: Files, chunkSize: Int) {
         self.api = api
         self.remoteDestination = remoteDestination
         self.metaData = metaData
         self.files = files
+        self.chunkSize = chunkSize
     }
     
     func run(completed: @escaping TaskCompletion) {
@@ -45,7 +47,11 @@ final class StatusTask: Task {
                 if offset == metaData.size {
                     completed(.success([]))
                 } else {
-                    let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: offset..<metaData.size)
+                    let range = offset..<metaData.size
+                    let chunkSize = range.count
+                    let nextRange = offset..<min((offset + chunkSize), metaData.size)
+                    
+                    let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
                     completed(.success([task]))
                 }
             } catch let error as TUSClientError {

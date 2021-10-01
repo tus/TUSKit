@@ -33,7 +33,7 @@ final class TUSAPITests: XCTestCase {
     func testStatus() throws {
         let length = 3000
         let offset = 20
-        MockURLProtocol.prepareResponse(for: "HEAD") {
+        MockURLProtocol.prepareResponse(for: "HEAD") { _ in
             MockURLProtocol.Response(status: 200, headers: ["Upload-Length": String(length), "Upload-Offset": String(offset)], data: nil)
         }
         
@@ -55,7 +55,7 @@ final class TUSAPITests: XCTestCase {
     
     func testCreation() throws {
         let remoteFileURL = URL(string: "tus.io/myfile")!
-        MockURLProtocol.prepareResponse(for: "POST") {
+        MockURLProtocol.prepareResponse(for: "POST") { _ in
             MockURLProtocol.Response(status: 200, headers: ["Location": remoteFileURL.absoluteString], data: nil)
         }
         
@@ -90,7 +90,7 @@ final class TUSAPITests: XCTestCase {
     
     func testUpload() throws {
         let data = Data("Hello how are you".utf8)
-        MockURLProtocol.prepareResponse(for: "PATCH") {
+        MockURLProtocol.prepareResponse(for: "PATCH") { _ in
             MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
         }
         

@@ -2,6 +2,8 @@ import XCTest
 import TUSKit // ⚠️ No testable import. Make sure we test the public api here, and not against internals.
 final class TUSClientTests: XCTestCase {
     
+    let chunkSize: Int = 500 * 1024
+    
     var client: TUSClient!
     var otherClient: TUSClient!
     var tusDelegate: TUSMockDelegate!
@@ -32,8 +34,14 @@ final class TUSClientTests: XCTestCase {
         super.tearDown()
         MockURLProtocol.reset()
         clearDirectory(dir: fullStoragePath)
-        try! client.stopAndCancelAllUploads()
-        try! client.clearAllCache()
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        clearDirectory(dir: cacheDir)
+        do {
+            try client.stopAndCancelAllUploads()
+            try client.clearAllCache()
+        } catch {
+            //
+        }
     }
     
     private func makeClient(storagePath: URL?) -> TUSClient {
@@ -48,31 +56,70 @@ final class TUSClientTests: XCTestCase {
         return client
     }
     
-    private func prepareNetworkForSuccesfulUploads(data: Data) {
-        MockURLProtocol.prepareResponse(for: "POST") {
+    /// Server gives inappropriorate offsets
+    /// - Parameter data: Data to upload
+    private func prepareNetworkForWrongOffset(data: Data) {
+        MockURLProtocol.prepareResponse(for: "POST") { _ in
             MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
         }
         
+        // Mimick chunk uploading with offsets
+        MockURLProtocol.prepareResponse(for: "PATCH") { headers in
+            
+            guard let headers = headers,
+                  let strOffset = headers["Upload-Offset"],
+                  let offset = Int(strOffset),
+                  let strContentLength = headers["Content-Length"],
+                  let contentLength = Int(strContentLength) else {
+                      let error = "Did not receive expected Upload-Offset and Content-Length in headers"
+                      XCTFail(error)
+                      fatalError(error)
+                  }
+                  
+            let newOffset = offset + contentLength - 1 // 1 offset too low. Trying to trigger potential inifnite upload loop. Which the client should handle, of course.
+            print("total size is \(data.count) new offset is \(newOffset)")
+            return MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(newOffset)], data: nil)
+        }
+    }
+    
+    private func prepareNetworkForSuccesfulUploads(data: Data) {
+        MockURLProtocol.prepareResponse(for: "POST") { _ in
+            MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
+        }
         
-        MockURLProtocol.prepareResponse(for: "PATCH") {
-            MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
+        // Mimick chunk uploading with offsets
+        MockURLProtocol.prepareResponse(for: "PATCH") { headers in
+            
+            guard let headers = headers,
+                  let strOffset = headers["Upload-Offset"],
+                  let offset = Int(strOffset),
+                  let strContentLength = headers["Content-Length"],
+                  let contentLength = Int(strContentLength) else {
+                      let error = "Did not receive expected Upload-Offset and Content-Length in headers"
+                      XCTFail(error)
+                      fatalError(error)
+                  }
+                  
+            let newOffset = offset + contentLength
+            return MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(newOffset)], data: nil)
         }
         
     }
     
     private func prepareNetworkForErronousResponses() {
-        MockURLProtocol.prepareResponse(for: "POST") {
+        MockURLProtocol.prepareResponse(for: "POST") { _ in
             MockURLProtocol.Response(status: 401, headers: [:], data: nil)
         }
-        MockURLProtocol.prepareResponse(for: "PATCH") {
+        MockURLProtocol.prepareResponse(for: "PATCH") { _ in
             MockURLProtocol.Response(status: 401, headers: [:], data: nil)
         }
-        MockURLProtocol.prepareResponse(for: "HEAD") {
+        MockURLProtocol.prepareResponse(for: "HEAD") { _ in
             MockURLProtocol.Response(status: 401, headers: [:], data: nil)
         }
     }
     
-    /// Upload data, a certain amount of times.
+    /// Upload data, a certain amount of times, and wait for it to be done.
+    /// Can optionally prepare a failing upload too.
     @discardableResult
     private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) throws -> [UUID] {
         let ids = try (0..<amount).map { _ -> UUID in
@@ -80,10 +127,8 @@ final class TUSClientTests: XCTestCase {
         }
         
         if shouldSucceed {
-            prepareNetworkForSuccesfulUploads(data: data)
             waitForUploadsToFinish(amount)
         } else {
-            prepareNetworkForErronousResponses()
             waitForUploadsToFail(amount)
         }
 
@@ -94,14 +139,14 @@ final class TUSClientTests: XCTestCase {
         let expectation = expectation(description: "Waiting for upload to finished")
         expectation.expectedFulfillmentCount = amount
         tusDelegate.finishUploadExpectation = expectation
-        waitForExpectations(timeout: 3, handler: nil)
+        waitForExpectations(timeout: 6, handler: nil)
     }
     
     private func waitForUploadsToFail(_ amount: Int = 1) {
         let expectation = expectation(description: "Waiting for upload to fail")
         expectation.expectedFulfillmentCount = amount
         tusDelegate.uploadFailedExpectation = expectation
-        waitForExpectations(timeout: 3, handler: nil)
+        waitForExpectations(timeout: 6, handler: nil)
     }
     
     // MARK: - Adding files and data to upload
@@ -201,9 +246,7 @@ final class TUSClientTests: XCTestCase {
     }
     
     func testCorrectIdsAreGivenOnFailure() throws {
-        MockURLProtocol.prepareResponse(for: "POST") {
-            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
-        }
+        prepareNetworkForErronousResponses()
                                             
         let expectedId = try client.upload(data: Data("hello".utf8))
         
@@ -243,7 +286,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(contents.isEmpty)
     }
     
-    func testClearingEverythingAndStartingNewUploads (){
+    func testClearingEverythingAndStartingNewUploads () throws {
         // TODO: Make sure uploads are renewed. No lingering uploads.
         XCTFail("Implement me")
     }
@@ -426,8 +469,6 @@ final class TUSClientTests: XCTestCase {
         waitForUploadsToFinish(ids.count)
 
         XCTAssertEqual(ids.count, tusDelegate.finishedUploads.count, "Delegate has \(tusDelegate.activityCount) items")
-        
-        print(MockURLProtocol.receivedRequests)
     }
     
     // MARK: - Multiple instances
@@ -466,29 +507,61 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(!otherClientContents.isEmpty)
 
         // Now clear cache of first client, second should be unaffected
-        try client.clearAllCache()
+        do {
+            try client.clearAllCache()
+        } catch {
+            //
+        }
 
         contents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
         XCTAssert(!contents.isEmpty)
 
         otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
         XCTAssert(!otherClientContents.isEmpty)
+        
+        do {
+            try otherClient.clearAllCache()
+            try otherClient.stopAndCancelAllUploads()
+        } catch {
+            //
+        }
     }
     
     // MARK: - Large files
+    
     func testSmallUploadsArentChunked() throws {
-        let ids = try upload(data: Data("helloaaa".utf8))
+        let ids = try upload(data: Data("012345678".utf8))
         XCTAssertEqual(1, ids.count)
         XCTAssertEqual(2, MockURLProtocol.receivedRequests.count)
     }
     
-    func testLargeUploadsWillBeChunked() throws {
+    func testClientContinuesPartialUploads() throws {
+        // If server gives a content length lower than the data size, meaning a file isn't fully uploaded.
+        // The client must continue uploading from that point on.
+        // Even if the client attempted to upload the file in its entirety.
+        // For instance, a connection could've been interrupted, so a file has to continue where it left off.
         XCTFail("Implement me")
-        // Above 1000 will be chunked
-        let data = Data(repeatElement(1, count: 2000))
+    }
+    
+    func testLargeUploadsWillBeChunked() throws {
+        // Above 500kb will be chunked
+
+        let data = Data(repeatElement(1, count: chunkSize + 1))
+        XCTAssert(data.count > chunkSize, "prerequisite failed")
         let ids = try upload(data: data)
         XCTAssertEqual(1, ids.count)
-        XCTAssertEqual(4, MockURLProtocol.receivedRequests.count)
+        XCTAssertEqual(3, MockURLProtocol.receivedRequests.count)
+    }
+    
+    func testErrorsOnWrongOffset() throws {
+        // Make sure that if a server gives a "wrong" offset, the uploader errors and doesn't end up in an infinite uploading loop.
+        prepareNetworkForWrongOffset(data: data)
+        try upload(data: data, shouldSucceed: false)
+        XCTAssertEqual(1, tusDelegate.failedUploads.count)
+    }
+    
+    func testMakeSureStartIsCalledOnceWhenUploadingInChunks() throws {
+        XCTFail("Implement me")
     }
     
     func testLargeUploadsWillBeChunkedAfterFetchingStatus() throws {

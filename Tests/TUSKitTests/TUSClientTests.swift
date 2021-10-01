@@ -23,7 +23,6 @@ final class TUSClientTests: XCTestCase {
         
         data = Data("abcdef".utf8)
         
-        
         client = makeClient(storagePath: relativeStoragePath)
         
         MockURLProtocol.reset()
@@ -266,6 +265,11 @@ final class TUSClientTests: XCTestCase {
     
     func testClearingCache() throws {
         
+        // Create isolated dir for this test, in case of parallelism issues.
+        let storagePath = URL(string: "CLEAR_CACHE_ELETE_ME")!
+        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fullStoragePath = docDir.appendingPathComponent(storagePath.absoluteString)
+
         try makeDirectoryIfNeeded(url: fullStoragePath)
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssert(contents.isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
@@ -306,6 +310,13 @@ final class TUSClientTests: XCTestCase {
     func testClientDeletesFilesOnCompletion() throws {
         // If a file is done uploading (as said by status), but not yet deleted.
         // Then the file can be deleted right after fetching the status.
+        
+        // Create isolated dir for this test, in case of parallelism issues.
+        let storagePath = URL(string: "DELETE_ME")!
+        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fullStoragePath = docDir.appendingPathComponent(storagePath.absoluteString)
+
+        client = makeClient(storagePath: storagePath)
         
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         // Store file in cache

@@ -20,12 +20,11 @@ protocol SchedulerDelegate: AnyObject {
 /// Keeps track of related tasks and their errors.
 final class Scheduler {
 
-    private var tasks = [[Task]]()
+    private var pendingTasks = [Task]()
     private var runningTasks = [Task]()
     weak var delegate: SchedulerDelegate?
     
     var allTasks: [Task] { runningTasks + pendingTasks }
-    var pendingTasks: [Task] { tasks.flatMap { $0 } }
     
     // Tasks are processed in background
     let queue = DispatchQueue(label: "com.TUSKit.Scheduler")
@@ -36,45 +35,34 @@ final class Scheduler {
     
     init() {}
     
-    /// A grouped task counts as a single unit that will succeed or fail as a whole.
-    /// Adding these Tasks as a group, means that they all have to succeed together.
-    /// - Parameter Tasks: An array of `Task` elements.
-    func addGroupedTasks(tasks: [Task]) {
-        queue.async {
-            self.tasks.append(tasks)
-        }
-
-        checkProcessNextTask()
-    }
-    
     /// Add multiple tasks. Note that these are independent tasks. If you want multiple tasks that are related in one way or another, use addGroupedTasks
     /// - Parameter tasks: The tasks to add
     func addTasks(tasks: [Task]) {
         guard !tasks.isEmpty else { return }
         queue.async {
-            self.tasks.append(tasks)
+            self.pendingTasks.append(contentsOf: tasks)
         }
         checkProcessNextTask()
     }
         
     func addTask(task: Task) {
         queue.async {
-            self.tasks.append([task])
+            self.pendingTasks.append(task)
         }
         checkProcessNextTask()
     }
     
     func cancelAll() {
-        self.tasks = [[]]
+        self.pendingTasks = []
         self.runningTasks.forEach { $0.cancel() }
     }
 
     private func checkProcessNextTask() {
         queue.async { [unowned self] in
-            guard !tasks.isEmpty else { return }
+            guard !pendingTasks.isEmpty else { return }
             
             guard let task = extractFirstTask() else {
-                assertionFailure("Could not get a new task, despite tasks being filled \(tasks)")
+                assertionFailure("Could not get a new task, despite tasks being filled \(pendingTasks)")
                 return
             }
             
@@ -96,7 +84,7 @@ final class Scheduler {
                     switch result {
                     case .success(let newTasks):
                         if !newTasks.isEmpty {
-                            self.tasks = [newTasks] + self.tasks // If there are new tasks, perform them first. E.g. After creation of a file, start uploading.
+                            self.pendingTasks = newTasks + self.pendingTasks // If there are new tasks, perform them first. E.g. After creation of a file, start uploading.
                         }
                         delegate?.didFinishTask(task: task, scheduler: self)
                     case .failure(let error):
@@ -113,15 +101,8 @@ final class Scheduler {
     /// Get first available task, removes it from current tasks
     /// - Returns: First next task, or nil if tasks are empty
     private func extractFirstTask() -> Task? {
-        guard let task = tasks.firstNested else {
-            return nil
-        }
-        
-        self.tasks = self.tasks.filterNested { element in
-            task === element
-        }
-        
-        return task
+        guard !pendingTasks.isEmpty else { return nil }
+        return pendingTasks.removeFirst()
     }
     
 }

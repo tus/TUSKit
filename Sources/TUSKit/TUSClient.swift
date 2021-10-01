@@ -202,6 +202,7 @@ public final class TUSClient {
             let metaData = try files.loadAllMetadata().first(where: { metaData in
                 metaData.id == id
             })
+            
             guard let metaData = metaData else {
                 return false
             }

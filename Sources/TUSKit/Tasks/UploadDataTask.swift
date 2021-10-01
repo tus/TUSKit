@@ -37,7 +37,7 @@ final class UploadDataTask: Task {
         
         if (range?.count ?? 0) > metaData.size {
             // Improve: Enrich error
-            assertionFailure("The range \(range?.count) to upload is larger than the size \(metaData.size)")
+            assertionFailure("The range \(String(describing: range?.count)) to upload is larger than the size \(metaData.size)")
             throw TUSClientError.couldNotUploadFile
         }
         
@@ -90,9 +90,9 @@ final class UploadDataTask: Task {
                     completed(.success([]))
                     return
                 } else if offset == currentOffset {
-                    throw TUSClientError.receivedUnexpectedOffset
                     // TODO: Error logger
                     print("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
+                    throw TUSClientError.receivedUnexpectedOffset
                 }
                 
                 metaData.uploadedRange = 0..<offset

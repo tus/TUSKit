@@ -76,7 +76,6 @@ final class TUSClientTests: XCTestCase {
                   }
                   
             let newOffset = offset + contentLength - 1 // 1 offset too low. Trying to trigger potential inifnite upload loop. Which the client should handle, of course.
-            print("total size is \(data.count) new offset is \(newOffset)")
             return MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(newOffset)], data: nil)
         }
     }

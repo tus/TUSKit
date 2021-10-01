@@ -47,8 +47,6 @@ final class StatusTask: Task {
                 if offset == metaData.size {
                     completed(.success([]))
                 } else {
-                    let range = offset..<metaData.size
-                    let chunkSize = range.count
                     let nextRange = offset..<min((offset + chunkSize), metaData.size)
                     
                     let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)

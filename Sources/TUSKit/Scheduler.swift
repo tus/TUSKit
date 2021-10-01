@@ -58,11 +58,12 @@ final class Scheduler {
     }
 
     private func checkProcessNextTask() {
-        queue.async { [unowned self] in
-            guard !pendingTasks.isEmpty else { return }
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            guard !self.pendingTasks.isEmpty else { return }
             
-            guard let task = extractFirstTask() else {
-                assertionFailure("Could not get a new task, despite tasks being filled \(pendingTasks)")
+            guard let task = self.extractFirstTask() else {
+                assertionFailure("Could not get a new task, despite tasks being filled \(self.pendingTasks)")
                 return
             }
             
@@ -74,7 +75,7 @@ final class Scheduler {
             task.run { [unowned self] result in
                 self.semaphore.signal()
                 // // Make sure tasks are updated atomically
-                queue.async {
+                self.queue.async {
                     if let index = self.runningTasks.firstIndex(where: { $0 === task }) {
                         self.runningTasks.remove(at: index)
                     } else {
@@ -86,9 +87,9 @@ final class Scheduler {
                         if !newTasks.isEmpty {
                             self.pendingTasks = newTasks + self.pendingTasks // If there are new tasks, perform them first. E.g. After creation of a file, start uploading.
                         }
-                        delegate?.didFinishTask(task: task, scheduler: self)
+                        self.delegate?.didFinishTask(task: task, scheduler: self)
                     case .failure(let error):
-                        delegate?.onError(error: error, task: task, scheduler: self)
+                        self.delegate?.onError(error: error, task: task, scheduler: self)
                     }
                     self.checkProcessNextTask()
                 }

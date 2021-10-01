@@ -458,7 +458,7 @@ func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files) throws -> Task
     if let remoteDestination = metaData.remoteDestination {
         return StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData, files: files, chunkSize: TUSClient.chunkSize)
     } else {
-        return try CreationTask(metaData: metaData, api: api, files: files)
+        return try CreationTask(metaData: metaData, api: api, files: files, chunkSize: TUSClient.chunkSize)
     }
 }
 

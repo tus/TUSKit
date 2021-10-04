@@ -21,8 +21,8 @@ final class MyClass {
   let tusClient: TUSClient
   
   init() {
-        tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "TUS")!)
-        tusClient.delegate = self
+      tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "TUS")!)
+      tusClient.delegate = self
   }
 }
 ```

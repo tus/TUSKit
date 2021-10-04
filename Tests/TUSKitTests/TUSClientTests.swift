@@ -273,30 +273,23 @@ final class TUSClientTests: XCTestCase {
     // MARK: - Deletions / clearing cache
     
     func testClearingCache() throws {
+        func getContents() throws -> [URL] {
+            return try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        }
         
-        // Create isolated dir for this test, in case of parallelism issues.
-        let storagePath = URL(string: "CLEAR_CACHE_ELETE_ME")!
-        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let fullStoragePath = docDir.appendingPathComponent(storagePath.absoluteString)
-
-        try makeDirectoryIfNeeded(url: fullStoragePath)
-        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
+        XCTAssert(try getContents().isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
         
-        let amount = 6
+        let amount = 2
         for _ in 0..<amount {
             try client.upload(data: data)
         }
         
-        waitForUploadsToFinish(amount)
-        
-        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty, "Contents expected to be empty. Instead got \(contents.count)")
+        XCTAssertFalse(try getContents().isEmpty, "Contents expected NOT to be empty.")
+       
+        waitForUploadsToFinish(2)
 
         try client.clearAllCache()
-
-        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty)
+        XCTAssert(try getContents().isEmpty, "Expected clearing cache to empty the folder")
     }
     
     func testClearingUploadsAndStartingNewUploads () throws {

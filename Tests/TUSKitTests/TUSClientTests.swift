@@ -151,9 +151,9 @@ final class TUSClientTests: XCTestCase {
     }
     
     private func waitForUploadsToFail(_ amount: Int = 1) {
-        let expectation = expectation(description: "Waiting for upload to fail")
-        expectation.expectedFulfillmentCount = amount
-        tusDelegate.uploadFailedExpectation = expectation
+        let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
+        uploadFailedExpectation.expectedFulfillmentCount = amount
+        tusDelegate.uploadFailedExpectation = uploadFailedExpectation
         waitForExpectations(timeout: 6, handler: nil)
     }
     
@@ -222,8 +222,8 @@ final class TUSClientTests: XCTestCase {
             var contents = try FileManager.default.contentsOfDirectory(at: expectedPath, includingPropertiesForKeys: nil)
             XCTAssertFalse(contents.isEmpty)
             
-            let expectation = expectation(description: "Waiting for upload to finished")
-            delegate.finishUploadExpectation = expectation
+            let uploadFinishedExpectation = expectation(description: "Waiting for upload to finished")
+            delegate.finishUploadExpectation = uploadFinishedExpectation
             waitForExpectations(timeout: 3, handler: nil)
             
             contents = try FileManager.default.contentsOfDirectory(at: expectedPath, includingPropertiesForKeys: nil)
@@ -374,9 +374,9 @@ final class TUSClientTests: XCTestCase {
             try client.upload(data: Data("hello".utf8))
         }
         
-        let expectation = expectation(description: "Waiting for upload to fail")
-        expectation.expectedFulfillmentCount = uploadCount
-        tusDelegate.uploadFailedExpectation = expectation
+        let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
+        uploadFailedExpectation.expectedFulfillmentCount = uploadCount
+        tusDelegate.uploadFailedExpectation = uploadFailedExpectation
         waitForExpectations(timeout: 3, handler: nil)
         
         XCTAssert(tusDelegate.finishedUploads.isEmpty)

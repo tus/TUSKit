@@ -72,7 +72,8 @@ final class Scheduler {
             self.runningTasks.append(task)
             self.delegate?.didStartTask(task: task, scheduler: self)
             
-            task.run { [unowned self] result in
+            task.run { [weak self] result in
+                guard let self = self else { return }
                 self.semaphore.signal()
                 // // Make sure tasks are updated atomically
                 self.queue.async {

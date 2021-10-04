@@ -51,6 +51,7 @@ final class TUSClientInternalTests: XCTestCase {
         }
     }
     
+    @discardableResult
     private func storeFiles() throws -> UploadMetadata {
         let id = UUID()
         let path = try files.store(data: data, id: id)

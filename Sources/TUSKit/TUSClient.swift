@@ -199,11 +199,7 @@ public final class TUSClient {
     @discardableResult
     public func removeCacheFor(id: UUID) throws -> Bool {
         do {
-            let metaData = try files.loadAllMetadata().first(where: { metaData in
-                metaData.id == id
-            })
-            
-            guard let metaData = metaData else {
+            guard let metaData = try findMetadata(id: id) else {
                 return false
             }
             
@@ -223,10 +219,7 @@ public final class TUSClient {
     @discardableResult
     public func retry(id: UUID) throws -> Bool {
         do {
-            let metaData = try files.loadAllMetadata().first(where: { metaData in
-                metaData.id == id
-            })
-            guard let metaData = metaData else {
+            guard let metaData = try findMetadata(id: id) else {
                 return false
             }
             
@@ -243,7 +236,7 @@ public final class TUSClient {
     
     /// When your app moves to the background, you can call this method to schedule background tasks to perform.
     /// This will signal the OS to upload files when appropriate (e.g. when a phone is on a charger and on Wifi).
-    /// Note that the OS decided when uploading begins.
+    /// Note that the OS decides when uploading begins.
 #if os(iOS)
     @available(iOS 13.0, *)
     public func scheduleBackgroundTasks() {
@@ -264,6 +257,15 @@ public final class TUSClient {
     }
     
     // MARK: - Private
+    
+    /// Load metadata from store and find matching one by id
+    /// - Parameter id: Id to find metadata
+    /// - Returns: optional `UploadMetadata` type
+    private func findMetadata(id: UUID) throws -> UploadMetadata? {
+        return try files.loadAllMetadata().first(where: { metaData in
+            metaData.id == id
+        })
+    }
     
     /// Ceck for any uploads that are finished and remove them from the cache.
     private func removeFinishedUploads() {

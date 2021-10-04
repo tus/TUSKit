@@ -38,6 +38,14 @@ final class FilesTests: XCTestCase {
     }
     
     func testInitializers() {
+        func removeTrailingSlash(url: URL) -> String {
+            if url.absoluteString.last == "/" {
+                return String(url.absoluteString.dropLast())
+            } else {
+                return url.absoluteString
+            }
+        }
+            
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let cacheDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         
@@ -52,7 +60,12 @@ final class FilesTests: XCTestCase {
         
         for (url, expectedPath) in values {
             let files = Files(storageDirectory: url)
-            XCTAssertEqual(expectedPath, files.storageDirectory)
+            
+            // Depending on the OS, there might be trailing slashes at the end of the path, that's okay.
+            let trimmedExpectedPath = removeTrailingSlash(url: expectedPath)
+            let trimmedPath = removeTrailingSlash(url: files.storageDirectory)
+            
+            XCTAssertEqual(trimmedPath, trimmedExpectedPath)
         }
     }
     

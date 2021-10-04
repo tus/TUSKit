@@ -37,14 +37,14 @@ final class TUSAPITests: XCTestCase {
             MockURLProtocol.Response(status: 200, headers: ["Upload-Length": String(length), "Upload-Offset": String(offset)], data: nil)
         }
         
-        let expectation = expectation(description: "Call api.status()")
+        let statusExpectation = expectation(description: "Call api.status()")
         let remoteFileURL = URL(string: "tus.io/myfile")!
         api.status(remoteDestination: remoteFileURL, completion: { result in
             do {
                 let values = try result.get()
                 XCTAssertEqual(length, values.length)
                 XCTAssertEqual(offset, values.offset)
-                expectation.fulfill()
+                statusExpectation.fulfill()
             } catch {
                 XCTFail("Expected this call to succeed")
             }
@@ -60,13 +60,13 @@ final class TUSAPITests: XCTestCase {
         }
         
         let size = 300
-        let expectation = expectation(description: "Call api.create()")
+        let creationExpectation = expectation(description: "Call api.create()")
         let metaData = UploadMetadata(id: UUID(), filePath: URL(string: "file://whatever/")!, size: size)
         api.create(metaData: metaData) { result in
             do {
                 let url = try result.get()
                 XCTAssertEqual(url, remoteFileURL)
-                expectation.fulfill()
+                creationExpectation.fulfill()
             } catch {
                 XCTFail("Expected to retrieve a URL for this test")
             }
@@ -97,11 +97,10 @@ final class TUSAPITests: XCTestCase {
         let offset = 2
         let length = data.count
         let range = offset..<data.count
-        let expectation = expectation(description: "Call api.upload()")
+        let uploadExpectation = expectation(description: "Call api.upload()")
     
-        api.upload(data: Data(), range: range, location: uploadURL) { result in
-
-            expectation.fulfill()
+        api.upload(data: Data(), range: range, location: uploadURL) { _ in
+            uploadExpectation.fulfill()
         }
         
         waitForExpectations(timeout: 3, handler: nil)

@@ -172,6 +172,15 @@ final class Files {
         return targetLocation
     }
     
+    /// Load metadata from store and find matching one by id
+    /// - Parameter id: Id to find metadata
+    /// - Returns: optional `UploadMetadata` type
+    func findMetadata(id: UUID) throws -> UploadMetadata? {
+        return try loadAllMetadata().first(where: { metaData in
+            metaData.id == id
+        })
+    }
+    
     func makeDirectoryIfNeeded() throws {
         let doesExist = FileManager.default.fileExists(atPath: storageDirectory.path, isDirectory: nil)
         

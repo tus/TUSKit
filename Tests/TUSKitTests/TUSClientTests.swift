@@ -144,9 +144,9 @@ final class TUSClientTests: XCTestCase {
     }
     
     private func waitForUploadsToFinish(_ amount: Int = 1) {
-        let expectation = expectation(description: "Waiting for upload to finished")
-        expectation.expectedFulfillmentCount = amount
-        tusDelegate.finishUploadExpectation = expectation
+        let uploadExpectation = expectation(description: "Waiting for upload to finished")
+        uploadExpectation.expectedFulfillmentCount = amount
+        tusDelegate.finishUploadExpectation = uploadExpectation
         waitForExpectations(timeout: 6, handler: nil)
     }
     

@@ -50,7 +50,7 @@ final class TUSClientInternalTests: XCTestCase {
             // Some dirs may not exist, that's fine. We can ignore the error.
         }
     }
-    
+  
     @discardableResult
     private func storeFiles() throws -> UploadMetadata {
         let id = UUID()

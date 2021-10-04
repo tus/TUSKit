@@ -199,7 +199,7 @@ public final class TUSClient {
     @discardableResult
     public func removeCacheFor(id: UUID) throws -> Bool {
         do {
-            guard let metaData = try findMetadata(id: id) else {
+            guard let metaData = try files.findMetadata(id: id) else {
                 return false
             }
             
@@ -219,7 +219,7 @@ public final class TUSClient {
     @discardableResult
     public func retry(id: UUID) throws -> Bool {
         do {
-            guard let metaData = try findMetadata(id: id) else {
+            guard let metaData = try files.findMetadata(id: id) else {
                 return false
             }
             
@@ -257,15 +257,6 @@ public final class TUSClient {
     }
     
     // MARK: - Private
-    
-    /// Load metadata from store and find matching one by id
-    /// - Parameter id: Id to find metadata
-    /// - Returns: optional `UploadMetadata` type
-    private func findMetadata(id: UUID) throws -> UploadMetadata? {
-        return try files.loadAllMetadata().first(where: { metaData in
-            metaData.id == id
-        })
-    }
     
     /// Ceck for any uploads that are finished and remove them from the cache.
     private func removeFinishedUploads() {

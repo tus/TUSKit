@@ -21,6 +21,5 @@ extension Data {
         }
         return chunks
     }
-    
 }
 

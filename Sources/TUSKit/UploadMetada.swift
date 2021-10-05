@@ -17,6 +17,7 @@ final class UploadMetadata: Codable {
     }
     
     let id: UUID
+    let uploadURL: URL
     var filePath: URL
     var remoteDestination: URL?
     let version: Int
@@ -28,9 +29,10 @@ final class UploadMetadata: Codable {
     let size: Int
     var errorCount: Int
     
-    init(id: UUID, filePath: URL, size: Int, customHeaders: [String: String]? = nil, mimeType: String? = nil) {
+    init(id: UUID, filePath: URL, uploadURL: URL, size: Int, customHeaders: [String: String]? = nil, mimeType: String? = nil) {
         self.id = id
         self.filePath = filePath
+        self.uploadURL = uploadURL
         self.size = size
         self.customHeaders = customHeaders
         self.mimeType = mimeType

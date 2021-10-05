@@ -112,7 +112,7 @@ final class FilesTests: XCTestCase {
     
     func testCheckMetadataHasWrongFilepath() throws {
         // TODO: Changing file url, and then storing it, and retrieving it, should have same fileurl as the metadata path again. E.g. if doc dir changed
-        let metaData = UploadMetadata(id: UUID(), filePath: URL(string: "www.not-a-file-path.com")!, size: 300)
+        let metaData = UploadMetadata(id: UUID(), filePath: URL(string: "abc")!, uploadURL: URL(string: "www.not-a-file-path.com")!, size: 300)
         XCTAssertThrowsError(try files.encodeAndStore(metaData: metaData), "Expected Files to catch unknown file")
     }
     
@@ -132,7 +132,7 @@ final class FilesTests: XCTestCase {
             // We are intentionally storing a file to cache dir (which is not expected).
             // But we store the metadata in the files' storagedirectory
             
-            let metaData = UploadMetadata(id: UUID(), filePath: filePath, size: 5)
+            let metaData = UploadMetadata(id: UUID(), filePath: filePath, uploadURL: URL(string: "www.tus.io")!, size: 5)
             
             let targetLocation = files.storageDirectory.appendingPathComponent(filePath.lastPathComponent).appendingPathExtension("plist")
             

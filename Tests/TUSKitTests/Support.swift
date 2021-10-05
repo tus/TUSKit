@@ -38,3 +38,41 @@ func makeClient(storagePath: URL?) -> TUSClient {
     let client = TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: storagePath, session: URLSession.init(configuration: configuration))
     return client
 }
+
+/// Base 64 extensions
+extension String {
+
+    func fromBase64() -> String? {
+        guard let data = Data(base64Encoded: self) else {
+            return nil
+        }
+
+        return String(data: data, encoding: .utf8)
+    }
+
+    func toBase64() -> String {
+        return Data(self.utf8).base64EncodedString()
+    }
+
+}
+
+extension Dictionary {
+    
+    /// Case insenstiive subscripting. Only for string keys.
+    /// We downcast to string to support AnyHashable keys.
+    public subscript(caseInsensitive key: Key) -> Value? {
+        guard let someKey = key as? String else {
+            return nil
+        }
+        
+        let lcKey = someKey.lowercased()
+        for k in keys {
+            if let aKey = k as? String {
+                if lcKey == aKey.lowercased() {
+                    return self[k]
+                }
+            }
+        }
+        return nil
+    }
+}

@@ -75,9 +75,15 @@ final class TUSClientTests: XCTestCase {
         }
     }
     
-    private func prepareNetworkForSuccesfulUploads(data: Data) {
+    private func prepareNetworkForSuccesfulUploads(data: Data, lowerCasedKeysInResponses: Bool = false) {
         MockURLProtocol.prepareResponse(for: "POST") { _ in
-            MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
+            let key: String
+            if lowerCasedKeysInResponses {
+                key = "location"
+            } else {
+                key = "Location"
+            }
+            return MockURLProtocol.Response(status: 200, headers: [key: "www.somefakelocation.com"], data: nil)
         }
         
         // Mimick chunk uploading with offsets
@@ -94,7 +100,14 @@ final class TUSClientTests: XCTestCase {
                   }
                   
             let newOffset = offset + contentLength
-            return MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(newOffset)], data: nil)
+            
+            let key: String
+            if lowerCasedKeysInResponses {
+                key = "upload-offset"
+            } else {
+                key = "Upload-Offset"
+            }
+            return MockURLProtocol.Response(status: 200, headers: [key: String(newOffset)], data: nil)
         }
         
     }
@@ -156,6 +169,7 @@ final class TUSClientTests: XCTestCase {
         tusDelegate.uploadFailedExpectation = uploadFailedExpectation
         waitForExpectations(timeout: 6, handler: nil)
     }
+    
     
     // MARK: - Adding files and data to upload
     
@@ -398,12 +412,15 @@ final class TUSClientTests: XCTestCase {
         // Validate
         let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
         XCTAssertEqual(ids.count, createRequests.count)
-        let allSatisfied = createRequests.allSatisfy { request in
-            guard let headers = request.allHTTPHeaderFields else { return false }
-            return headers[key] == value
-        }
         
-        XCTAssert(allSatisfied)
+        for request in createRequests {
+            let headers = try XCTUnwrap(request.allHTTPHeaderFields)
+            let metaDataString = try XCTUnwrap(headers["Upload-Metadata"])
+            for (key, value) in customHeaders {
+                XCTAssert(metaDataString.contains(key), "Expected \(metaDataString) to contain \(key)")
+                XCTAssert(metaDataString.contains(value.toBase64()), "Expected \(metaDataString) to contain base 64 value for \(value)")
+            }
+        }
     }
     
     func testUploadingWithCustomHeadersForFiles() throws {
@@ -430,13 +447,15 @@ final class TUSClientTests: XCTestCase {
         
         // Validate
         let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
-        XCTAssertEqual(1, createRequests.count)
-        let allSatisfied = createRequests.allSatisfy { request in
-            guard let headers = request.allHTTPHeaderFields else { return false }
-            return headers[key] == value
-        }
         
-        XCTAssert(allSatisfied)
+        for request in createRequests {
+            let headers = try XCTUnwrap(request.allHTTPHeaderFields)
+            let metaDataString = try XCTUnwrap(headers["Upload-Metadata"])
+            for (key, value) in customHeaders {
+                XCTAssert(metaDataString.contains(key), "Expected \(metaDataString) to contain \(key)")
+                XCTAssert(metaDataString.contains(value.toBase64()), "Expected \(metaDataString) to contain base 64 value for \(value)")
+            }
+        }
     }
 
     // MARK: - Stopping and canceling
@@ -649,4 +668,42 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(1, statusReqests.count)
         XCTAssertEqual(2, uploadRequests.count)
     }
+    
+    // MARK: - Delegate start calls
+    
+    func testStartedUploadIsCalledOnceForLargeFile() throws {
+        let data = Fixtures.makeLargeData()
+        
+        try upload(data: data)
+        
+        XCTAssertEqual(1, tusDelegate.startedUploads.count, "Expected start to be only called once for a chunked upload")
+    }
+    
+    func testStartedUploadIsCalledOnceForLargeFileWhenUploadFails() throws {
+        prepareNetworkForFailingUploads()
+        // Even when retrying, start should only be called once.
+        let data = Fixtures.makeLargeData()
+        
+        try upload(data: data, shouldSucceed: false)
+        
+        XCTAssertEqual(1, tusDelegate.startedUploads.count, "Expected start to be only called once for a chunked upload with errors")
+    }
+    
+    // MARK: - Custom URLs
+    
+    func testUploadingToCustomURL() throws {
+        let url = URL(string: "www.custom-url")!
+        try client.upload(data: data, uploadURL: url)
+        waitForUploadsToFinish(1)
+        let uploadRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
+        XCTAssertEqual(url, uploadRequests.first?.url)
+    }
+    
+    // MARK: - Responses
+    
+    func testMakeSureClientCanHandleLowerCaseKeysInResponses() throws {
+        prepareNetworkForSuccesfulUploads(data: data, lowerCasedKeysInResponses: true)
+        try upload(data: data)
+    }
+    
 }

@@ -22,7 +22,7 @@ final class TUSAPITests: XCTestCase {
         configuration.protocolClasses = [MockURLProtocol.self]
         let session = URLSession.init(configuration: configuration)
         uploadURL = URL(string: "www.tus.io")!
-        api = TUSAPI(session: session, uploadURL: uploadURL)
+        api = TUSAPI(session: session)
     }
     
     override func tearDown() {
@@ -61,7 +61,10 @@ final class TUSAPITests: XCTestCase {
         
         let size = 300
         let creationExpectation = expectation(description: "Call api.create()")
-        let metaData = UploadMetadata(id: UUID(), filePath: URL(string: "file://whatever/")!, size: size)
+        let metaData = UploadMetadata(id: UUID(),
+                                      filePath: URL(string: "file://whatever/abc")!,
+                                      uploadURL: URL(string: "io.tus")!,
+                                      size: size)
         api.create(metaData: metaData) { result in
             do {
                 let url = try result.get()
@@ -81,11 +84,10 @@ final class TUSAPITests: XCTestCase {
                 "TUS-Resumable": "1.0.0",
                 "Upload-Extension": "creation",
                 "Upload-Length": String(size),
-                "Upload-Metadata": "fileName \(expectedFileName)"
+                "Upload-Metadata": "filename \(expectedFileName)"
             ]
         
-        
-        XCTAssertEqual(headerFields, expectedHeaders)
+        XCTAssertEqual(expectedHeaders, headerFields)
     }
     
     func testUpload() throws {

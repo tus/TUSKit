@@ -55,7 +55,7 @@ final class TUSClientInternalTests: XCTestCase {
     private func storeFiles() throws -> UploadMetadata {
         let id = UUID()
         let path = try files.store(data: data, id: id)
-        return UploadMetadata(id: id, filePath: path, size: data.count, customHeaders: [:], mimeType: nil)
+        return UploadMetadata(id: id, filePath: path, uploadURL: URL(string: "io.tus")!, size: data.count, customHeaders: [:], mimeType: nil)
     }
         
     

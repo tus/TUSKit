@@ -23,5 +23,3 @@ extension String {
     }
 
 }
-
-/// Little helper function that will transform all errors to a TUSAPIError.

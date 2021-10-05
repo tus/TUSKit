@@ -48,12 +48,9 @@ final class TUSAPI {
     }
     
     let session: URLSession
-    let uploadURL: URL
     
-    
-    init(session: URLSession, uploadURL: URL) {
+    init(session: URLSession) {
         self.session = session
-        self.uploadURL = uploadURL
     }
     
     /// Fetch the status of an upload if an upload is not finished (e.g. interrupted).
@@ -67,13 +64,13 @@ final class TUSAPI {
         let task = session.dataTask(request: request) { result in
             processResult(completion: completion) {
                 let (_, response) =  try result.get()
-                // Improvement: Make length optional
-                guard let lengthStr = response.allHeaderFields["Upload-Length"] as? String,
+                
+                guard let lengthStr = response.allHeaderFields[caseInsensitive: "upload-Length"] as? String,
                       let length = Int(lengthStr),
-                      let offsetStr = response.allHeaderFields["Upload-Offset"] as? String,
+                      let offsetStr = response.allHeaderFields[caseInsensitive: "upload-Offset"] as? String,
                       let offset = Int(offsetStr) else {
-                    throw TUSAPIError.couldNotFetchStatus
-                }
+                          throw TUSAPIError.couldNotFetchStatus
+                      }
 
                 return Status(length: length, offset: offset)
             }
@@ -96,7 +93,7 @@ final class TUSAPI {
             processResult(completion: completion) {
                 let (_, response) = try result.get()
 
-                guard let location = response.allHeaderFields["Location"] as? String,
+                guard let location = response.allHeaderFields[caseInsensitive: "location"] as? String,
                       let locationURL = URL(string: location) else {
                     throw TUSAPIError.couldNotRetrieveLocation
                 }
@@ -110,33 +107,50 @@ final class TUSAPI {
     }
     
     func makeCreateRequest(metaData: UploadMetadata) -> URLRequest {
-        /// Add extra mimetype parameters headers
-        func makeEncodedMetaDataHeaders(name: String, mimeType: String?) -> [String: String] {
-            switch (name.isEmpty, mimeType) {
-            case (false, let type?):
-                // Both fileName and fileType can be given. FileName goes first.
-                return ["Upload-Metadata": "fileName \(name.toBase64()), filetype \(type.toBase64())"]
-            case (true, let type?):
-                // Only type is known.
-                return ["Upload-Metadata": "filetype \(type.toBase64())"]
-            case (false, nil):
-                // Only name is known.
-                return ["Upload-Metadata": "fileName \(name.toBase64())"]
-            default:
-                return [:]
+        func makeMetadataHeaders() -> [String: String] {
+            let fileName = metaData.filePath.lastPathComponent
+            
+            var metaDataHeaders = metaData.customHeaders ?? [:]
+            if !fileName.isEmpty && fileName != "/" { // A filename can be invalid, e.g. "/"
+                metaDataHeaders["filename"] = fileName
             }
+            
+            if let mimeType = metaData.mimeType, !mimeType.isEmpty {
+                metaDataHeaders["filetype"] = mimeType
+            }
+            return metaDataHeaders
+        }
+       
+        /// Turn dict into a comma separated base64 string
+        func encode(headers: [String: String]) -> String? {
+            guard !headers.isEmpty else { return nil }
+            var str = ""
+            for (key, value) in headers {
+                let appendingStr: String
+                if !str.isEmpty {
+                    str += ", "
+                }
+                appendingStr = "\(key) \(value.toBase64())"
+                str = str + appendingStr
+            }
+            return str
         }
         
         var headers = ["Upload-Extension": "creation",
                        "Upload-Length": String(metaData.size)]
         
-        let fileName = metaData.filePath.lastPathComponent
-        headers.merge(makeEncodedMetaDataHeaders(name: fileName, mimeType: metaData.mimeType)) { lhs, _ in lhs }
-        if let customHeaders = metaData.customHeaders {
-            headers.merge(customHeaders) { _, rhs in rhs }
+        let defaultHeaders = makeMetadataHeaders()
+        let allMetaDataHeaders = defaultHeaders.merging(metaData.customHeaders ?? [:]) { _, rhs in
+            rhs
         }
-
-        return makeRequest(url: uploadURL, method: .post, headers: headers)
+        
+        let encoded = encode(headers: allMetaDataHeaders)
+        
+        if let encodedMetadata = encoded  {
+            headers["Upload-Metadata"] = encodedMetadata
+        }
+        
+        return makeRequest(url: metaData.uploadURL, method: .post, headers: headers)
     }
     
     /// Uploads data
@@ -169,11 +183,13 @@ final class TUSAPI {
         let task = session.uploadTask(request: request, data: data) { result in
             processResult(completion: completion) {
                 let (_, response) = try result.get()
-                guard let offsetStr = response.allHeaderFields["Upload-Offset"] as? String,
+                
+                guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
                       let offset = Int(offsetStr) else {
                     throw TUSAPIError.couldNotRetrieveOffset
                 }
                 return offset
+                
             }
         }
         task.resume()
@@ -230,5 +246,26 @@ private func processResult<T>(completion: (Result<T, TUSAPIError>) -> Void, perf
         completion(Result.failure(error))
     } catch {
         completion(Result.failure(TUSAPIError.underlyingError(error)))
+    }
+}
+
+extension Dictionary {
+    
+    /// Case insenstiive subscripting. Only for string keys.
+    /// We downcast to string to support AnyHashable keys.
+    public subscript(caseInsensitive key: Key) -> Value? {
+        guard let someKey = key as? String else {
+            return nil
+        }
+        
+        let lcKey = someKey.lowercased()
+        for k in keys {
+            if let aKey = k as? String {
+                if lcKey == aKey.lowercased() {
+                    return self[k]
+                }
+            }
+        }
+        return nil
     }
 }

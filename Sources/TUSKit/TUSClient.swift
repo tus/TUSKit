@@ -83,7 +83,7 @@ public final class TUSClient {
     public init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL?, session: URLSession = URLSession.shared) {
         self.config = config
         self.sessionIdentifier = sessionIdentifier
-        self.api = TUSAPI(session: session, uploadURL: config.server)
+        self.api = TUSAPI(session: session)
         self.files = Files(storageDirectory: storageDirectory)
         
         scheduler.delegate = self
@@ -118,14 +118,18 @@ public final class TUSClient {
     
     /// Upload data located at a url.  This file will be copied to a TUS directory for processing..
     /// If data can not be found at a location, it will attempt to locate the data by prefixing the path with file://
-    /// - Parameter filePath: The path to a file on a local filesystem.
+    /// - Parameters:
+    ///   - filePath: The path to a file on a local filesystem
+    ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url from the config. Will call the `create` on this custom url to get the definitive upload url.
+    ///   - customHeaders: Any headers you want to add to an upload
+    /// - Returns: ANn id
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadFileAt(filePath: URL, customHeaders: [String: String] = [:]) throws -> UUID {
+    public func uploadFileAt(filePath: URL, uploadURL: URL? = nil, customHeaders: [String: String] = [:]) throws -> UUID {
         do {
             let id = UUID()
             let destinationFilePath = try files.copy(from: filePath, id: id)
-            try scheduleCreationTask(for: destinationFilePath, id: id, customHeaders: customHeaders)
+            try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders)
             return id
         } catch let error as TUSClientError {
             throw error
@@ -135,14 +139,18 @@ public final class TUSClient {
     }
     
     /// Upload data
-    /// - Parameter data: The data to be uploaded.
+    /// - Parameters:
+    ///   - data: The data to be upload
+    ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url from the config. Will call the `create` on this custom url to get the definitive upload url.
+    ///   - customHeaders: The headers to upload.
+    /// - Returns: An id
     /// - Throws: TUSClientError
     @discardableResult
-    public func upload(data: Data, customHeaders: [String: String] = [:]) throws -> UUID {
+    public func upload(data: Data, uploadURL: URL? = nil, customHeaders: [String: String] = [:]) throws -> UUID {
         do {
             let id = UUID()
             let filePath = try files.store(data: data, id: id)
-            try scheduleCreationTask(for: filePath, id: id, customHeaders: customHeaders)
+            try scheduleTask(for: filePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders)
             return id
         } catch let error as TUSClientError {
             throw error
@@ -153,26 +161,36 @@ public final class TUSClient {
     
     // MARK: - Upload multiple files
     
-    /// Upload multiple files by giving their url
-    /// - Parameter filePaths: An array of filepaths, represented by URLs
+    /// Upload multiple files by giving their url.
+    /// If you want a different uploadURL for each file, then please use `uploadFileAt(:)` individually.
+    /// - Parameters:
+    ///   - filePaths: An array of filepaths, represented by URLs
+    ///   - uploadURL: The URL to upload to. Leave nil for the default URL.
+    ///   - customHeaders: Any headers you want to add to the upload
+    /// - Returns: An array of ids
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadFiles(filePaths: [URL], customHeaders: [String: String] = [:]) throws -> [UUID] {
+    public func uploadFiles(filePaths: [URL], uploadURL:URL? = nil, customHeaders: [String: String] = [:]) throws -> [UUID] {
         var ids = [UUID]()
         for filePath in filePaths {
-            try ids.append(uploadFileAt(filePath: filePath, customHeaders: customHeaders))
+            try ids.append(uploadFileAt(filePath: filePath, uploadURL: uploadURL, customHeaders: customHeaders))
         }
         return ids
     }
     
-    /// Upload multiple data files
-    /// - Parameter data: The data to be uploaded.
+    /// Upload multiple files by giving their url.
+    /// If you want a different uploadURL for each file, then please use `upload(data:)` individually.
+    /// - Parameters:
+    ///   - dataFiles: An array of data to be uploaded.
+    ///   - uploadURL: The URL to upload to. Leave nil for the default URL.
+    ///   - customHeaders: Any headers you want to add to the upload
+    /// - Returns: An array of ids
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadMultiple(dataFiles: [Data], customHeaders: [String: String] = [:]) throws -> [UUID] {
+    public func uploadMultiple(dataFiles: [Data], uploadURL: URL? = nil, customHeaders: [String: String] = [:]) throws -> [UUID] {
         var ids = [UUID]()
         for data in dataFiles {
-            try ids.append(upload(data: data, customHeaders: customHeaders))
+            try ids.append(upload(data: data, uploadURL: uploadURL, customHeaders: customHeaders))
         }
         return ids
     }
@@ -276,7 +294,7 @@ public final class TUSClient {
     
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
-    private func scheduleCreationTask(for storedFilePath: URL, id: UUID, customHeaders: [String: String]) throws {
+    private func scheduleTask(for storedFilePath: URL, id: UUID, uploadURL: URL?, customHeaders: [String: String]) throws {
         let filePath = storedFilePath
         
         func getSize() throws -> Int {
@@ -289,14 +307,26 @@ public final class TUSClient {
             return size
         }
         
-        let size = try getSize()
+        func makeMetadata() throws -> UploadMetadata {
+            let size = try getSize()
+            let url = uploadURL ?? config.server
+            return UploadMetadata(id: id, filePath: filePath, uploadURL: url, size: size, customHeaders: customHeaders, mimeType: filePath.mimeType.nonEmpty)
+        }
         
-        let metaData = UploadMetadata(id: id, filePath: filePath, size: size, customHeaders: customHeaders, mimeType: filePath.mimeType.nonEmpty)
+        func trackUpload() {
+            uploads[filePath] = id
+        }
+        
+        let metaData = try makeMetadata()
+        
+        guard let task = try taskFor(metaData: metaData, api: api, files: files) else {
+            assertionFailure("Could not find a task for metaData \(metaData)")
+            return
+        }
+        
         try store(metaData: metaData)
+        trackUpload()
         
-        uploads[filePath] = id
-
-        let task = try CreationTask(metaData: metaData, api: api, files: files, chunkSize: type(of: self).chunkSize)
         scheduler.addTask(task: task)
     }
     
@@ -347,18 +377,26 @@ extension TUSClient: SchedulerDelegate {
             handleFinishedUploadTask(task)
         case let task as StatusTask:
             handleFinishedStatusTask(task)
+        case let task as CreationTask:
+            handleCreationTask(task)
         default:
             break
         }
     }
     
+    func handleCreationTask(_ creationTask: CreationTask) {
+        creationTask.metaData.errorCount = 0
+    }
+    
     func handleFinishedStatusTask(_ statusTask: StatusTask) {
+        statusTask.metaData.errorCount = 0 // We reset errorcounts after a succesful action.
         if statusTask.metaData.isFinished {
             _ = try? files.removeFileAndMetadata(statusTask.metaData) // If removing the file fails here, then it will be attempted again at next startup.
         }
     }
     
     func handleFinishedUploadTask(_ uploadTask: UploadDataTask) {
+        uploadTask.metaData.errorCount = 0 // We reset errorcounts after a succesful action.
         guard uploadTask.metaData.isFinished else { return }
         
         do {
@@ -383,7 +421,6 @@ extension TUSClient: SchedulerDelegate {
     }
     
     func didStartTask(task: Task, scheduler: Scheduler) {
-        // TODO: Use logger
         
         guard let task = task as? UploadDataTask else { return }
         guard let id = uploads[task.metaData.filePath] else {
@@ -392,7 +429,10 @@ extension TUSClient: SchedulerDelegate {
             delegate?.didStartUpload(id: UUID(), client: self)
             return
         }
-        delegate?.didStartUpload(id: id, client: self)
+        
+        if task.metaData.uploadedRange == nil && task.metaData.errorCount == 0 {
+            delegate?.didStartUpload(id: id, client: self)
+        }
     }
     
     func onError(error: Error, task: Task, scheduler: Scheduler) {

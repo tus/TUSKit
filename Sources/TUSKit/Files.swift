@@ -98,7 +98,7 @@ final class Files {
                 return metaData
             }
             
-            // TODO: Handle error when it can't be decoded?
+            // Improvement: Handle error when it can't be decoded?
             return nil
         }
     }
@@ -111,8 +111,6 @@ final class Files {
     @discardableResult
     func copy(from location: URL, id: UUID) throws -> URL {
         try makeDirectoryIfNeeded()
-        
-        // TODO: Prefix with file:// if location can't be found
         
         // We don't use lastPathComponent (filename) because then you can't add the same file file.
         // With a unique name, you can upload the same file twice if you want.

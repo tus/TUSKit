@@ -10,6 +10,7 @@ import Foundation
 /// A `StatusTask` fetches the status of an upload. It fetches the offset from we can continue uploading, and then makes a possible uploadtask.
 final class StatusTask: Task {
     
+    weak var progressDelegate: ProgressDelegate?
     let api: TUSAPI
     let files: Files
     let remoteDestination: URL
@@ -50,6 +51,7 @@ final class StatusTask: Task {
                     let nextRange = offset..<min((offset + chunkSize), metaData.size)
                     
                     let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
+                    task.progressDelegate = progressDelegate
                     completed(.success([task]))
                 }
             } catch let error as TUSClientError {

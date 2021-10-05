@@ -15,6 +15,8 @@ final class TUSMockDelegate: TUSClientDelegate {
     var finishedUploads = [(UUID, URL)]()
     var failedUploads = [(UUID, Error)]()
     var fileErrors = [TUSClientError]()
+    var progressPerId = [UUID: Float]()
+    var totalProgressReceived = [Float]()
     
     var activityCount: Int { finishedUploads.count + startedUploads.count + failedUploads.count + fileErrors.count }
     
@@ -41,6 +43,14 @@ final class TUSMockDelegate: TUSClientDelegate {
     func uploadFailed(id: UUID, error: Error, client: TUSClient) {
         failedUploads.append((id, error))
         uploadFailedExpectation?.fulfill()
+    }
+    
+    func progressFor(id: UUID, progress: Float, client: TUSClient) {
+        progressPerId[id] = progress
+    }
+    
+    func totalProgress(progress: Float, client: TUSClient) {
+        totalProgressReceived.append(progress)
     }
 }
 

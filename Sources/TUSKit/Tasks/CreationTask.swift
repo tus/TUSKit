@@ -10,11 +10,14 @@ import Foundation
 /// `CreationTask` Prepares the server for a file upload.
 /// The server will return a path to upload to.
 final class CreationTask: Task {
+    
+    weak var progressDelegate: ProgressDelegate?
     var metaData: UploadMetadata
-    let api: TUSAPI
-    let files: Files
-    let chunkSize: Int?
-    weak var sessionTask: URLSessionDataTask?
+    
+    private let api: TUSAPI
+    private let files: Files
+    private let chunkSize: Int?
+    private weak var sessionTask: URLSessionDataTask?
 
     init(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int? = nil) throws {
         self.metaData = metaData
@@ -39,6 +42,7 @@ final class CreationTask: Task {
                 } else {
                     task = try UploadDataTask(api: api, metaData: metaData, files: files)
                 }
+                task.progressDelegate = progressDelegate
                 completed(.success([task]))
             } catch let error as TUSClientError {
                 completed(.failure(error))

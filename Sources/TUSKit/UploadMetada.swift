@@ -22,6 +22,16 @@ final class UploadMetadata: Codable {
     var remoteDestination: URL?
     let version: Int
     
+    var progress: Float {
+        let uploadedBytes = uploadedRanges.reduce(into: 0) { partialResult, range in
+            partialResult += range.count
+        }
+        
+        return Float(uploadedBytes) / Float(size)
+    }
+    
+    var uploadedRanges = [Range<Int>]()
+    
     let mimeType: String?
     
     let customHeaders: [String: String]?

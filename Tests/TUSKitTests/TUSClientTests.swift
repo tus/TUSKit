@@ -36,8 +36,7 @@ final class TUSClientTests: XCTestCase {
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         clearDirectory(dir: cacheDir)
         do {
-            try client.stopAndCancelAllUploads()
-            try client.clearAllCache()
+            try client.reset()
         } catch {
             // Some dirs may not exist, that's fine. We can ignore the error.
         }
@@ -242,8 +241,7 @@ final class TUSClientTests: XCTestCase {
             
             contents = try FileManager.default.contentsOfDirectory(at: expectedPath, includingPropertiesForKeys: nil)
             XCTAssert(contents.isEmpty)
-            try client.stopAndCancelAllUploads()
-            try client.clearAllCache()
+            try client.reset()
             clearDirectory(dir: expectedPath)
         }
     }
@@ -310,7 +308,7 @@ final class TUSClientTests: XCTestCase {
         // We make sure that once we start uploading, and cancel that.
         // Any new uploads shouldn't be affected by old ones.
         let firstId = try client.upload(data: data)
-        try client.stopAndCancelAllUploads()
+        try client.reset()
         
         let contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssert(contents.isEmpty, "Stopping and canceling should have cleared files")
@@ -460,9 +458,18 @@ final class TUSClientTests: XCTestCase {
 
     // MARK: - Stopping and canceling
     
-    func funcStopAndCancel() {
-        XCTFail("Implement me")
-        // Do we want delegate to report it all?
+    func testFuncStopAndCancel() throws {
+        XCTAssert(tusDelegate.fileErrors.isEmpty)
+        try client.upload(data: data)
+        client.stopAndCancelAll()
+        XCTAssert(tusDelegate.failedUploads.isEmpty)
+        XCTAssert(tusDelegate.fileErrors.isEmpty)
+        
+        // Test adding new uploads, make sure they work after stopping and cancelling
+        try client.upload(data: data)
+        
+        waitForUploadsToFinish(2)
+        XCTAssertEqual(2, tusDelegate.finishedUploads.count, "Expected the previous and new upload to finish")
     }
     
     // MARK: - Testing new client sessions
@@ -544,8 +551,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(!otherClientContents.isEmpty)
         
         do {
-            try otherClient.clearAllCache()
-            try otherClient.stopAndCancelAllUploads()
+            try otherClient.reset()
         } catch {
             //
         }
@@ -704,6 +710,21 @@ final class TUSClientTests: XCTestCase {
     func testMakeSureClientCanHandleLowerCaseKeysInResponses() throws {
         prepareNetworkForSuccesfulUploads(data: data, lowerCasedKeysInResponses: true)
         try upload(data: data)
+    }
+    
+    // MARK: - Progress
+    
+    func testProgress() throws {
+        let ids = try upload(data: data, amount: 4)
+        
+        // Progress is non-deterministic. But if there is any, we check if it's correct.
+        for (id, progress) in tusDelegate.progressPerId {
+            XCTAssert(ids.contains(id))
+            XCTAssert(progress > 0)
+        }
+        
+        XCTAssert(tusDelegate.totalProgressReceived.count > 1)
+        XCTAssert(tusDelegate.totalProgressReceived.contains(1.0))
     }
     
 }

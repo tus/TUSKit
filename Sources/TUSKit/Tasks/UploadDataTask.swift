@@ -9,13 +9,16 @@ import Foundation
 
 /// The upload task will upload to data a destination.
 /// Will spawn more UploadDataTasks if an upload isn't complete.
-final class UploadDataTask: Task {
+final class UploadDataTask: NSObject, Task {
     
-    let api: TUSAPI
+    weak var progressDelegate: ProgressDelegate?
     let metaData: UploadMetadata
-    let files: Files
-    let range: Range<Int>?
-    weak var sessionTask: URLSessionUploadTask?
+    
+    private let api: TUSAPI
+    private let files: Files
+    private let range: Range<Int>?
+    private var observation: NSKeyValueObservation?
+    private weak var sessionTask: URLSessionUploadTask?
     
     /// Specify range, or upload
     /// - Parameters:
@@ -78,7 +81,7 @@ final class UploadDataTask: Task {
             return
         }
        
-        sessionTask = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] result in
+        let task = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [unowned self] result in
             do {
                 let offset = try result.get()
                 let currentOffset = metaData.uploadedRange?.upperBound ?? 0
@@ -105,8 +108,8 @@ final class UploadDataTask: Task {
                     task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
                 } else {
                     task = try UploadDataTask(api: api, metaData: metaData, files: files)
-                    
                 }
+                task.progressDelegate = progressDelegate
                 completed(.success([task]))
             } catch let error as TUSClientError {
                 completed(.failure(error))
@@ -115,9 +118,41 @@ final class UploadDataTask: Task {
             }
             
         }
+        
+        let dataSize = data.count
+        let targetRange = self.range ?? 0..<dataSize
+        sessionTask = task
+        if #available(iOS 11.0, macOS 10.13, *) {
+            observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+                guard let self = self else { return }
+                guard progress.fractionCompleted <= 1 else { return }
+                let index = self.metaData.uploadedRanges.firstIndex { $0.first == targetRange.lowerBound }
+                let uploadedOffset: Double = progress.fractionCompleted * Double(targetRange.count)
+                let newlyUploadedRange = targetRange.lowerBound..<Int(uploadedOffset) + targetRange.lowerBound
+                guard newlyUploadedRange.count > 0 else { return }
+
+                if let currentIndex = index {
+                    // Update index of existing range
+                    self.metaData.uploadedRanges[currentIndex] = newlyUploadedRange
+                } else {
+                    // Range not part of metadata yet, add it.
+                    self.metaData.uploadedRanges.append(newlyUploadedRange)
+                }
+                self.progressDelegate?.progressUpdatedFor(metaData: self.metaData)
+            }
+        }
+        
     }
     
     func cancel() {
         sessionTask?.cancel()
     }
+    
+    deinit {
+        observation?.invalidate()
+    }
+}
+
+extension UploadDataTask: URLSessionTaskDelegate {
+    
 }

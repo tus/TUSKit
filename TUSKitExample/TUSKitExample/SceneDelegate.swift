@@ -103,4 +103,13 @@ extension SceneDelegate: TUSClientDelegate {
     func fileError(error: TUSClientError, client: TUSClient) {
         print("TUSClient File error \(error)")
     }
+    
+    func progressFor(id: UUID, progress: Float, client: TUSClient) {
+        print("Progress for id \(id) is \(progress)")
+    }
+    
+    func totalProgress(progress: Float, client: TUSClient) {
+        print("Total progress \(progress)")
+    }
+    
 }

@@ -44,8 +44,7 @@ final class TUSClientInternalTests: XCTestCase {
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         clearDirectory(dir: cacheDir)
         do {
-            try client.stopAndCancelAllUploads()
-            try client.clearAllCache()
+            try client.reset()
         } catch {
             // Some dirs may not exist, that's fine. We can ignore the error.
         }

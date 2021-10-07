@@ -488,7 +488,6 @@ final class TUSClientTests: XCTestCase {
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
 
-
         XCTAssert(tusDelegate.startedUploads.isEmpty)
 
         prepareNetworkForSuccesfulUploads(data: data)
@@ -724,7 +723,7 @@ final class TUSClientTests: XCTestCase {
         }
         
         XCTAssert(tusDelegate.totalProgressReceived.count > 1)
-        XCTAssert(tusDelegate.totalProgressReceived.contains(1.0))
+        XCTAssert(tusDelegate.totalProgressReceived.contains(data.count))
     }
     
 }

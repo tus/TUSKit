@@ -11,12 +11,13 @@ import XCTest
 
 /// TUSClientDelegate to support testing
 final class TUSMockDelegate: TUSClientDelegate {
+    
     var startedUploads = [UUID]()
     var finishedUploads = [(UUID, URL)]()
     var failedUploads = [(UUID, Error)]()
     var fileErrors = [TUSClientError]()
-    var progressPerId = [UUID: Float]()
-    var totalProgressReceived = [Float]()
+    var progressPerId = [UUID: Int]()
+    var totalProgressReceived = [Int]()
     
     var activityCount: Int { finishedUploads.count + startedUploads.count + failedUploads.count + fileErrors.count }
     
@@ -45,12 +46,12 @@ final class TUSMockDelegate: TUSClientDelegate {
         uploadFailedExpectation?.fulfill()
     }
     
-    func progressFor(id: UUID, progress: Float, client: TUSClient) {
-        progressPerId[id] = progress
+    func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
+        totalProgressReceived.append(bytesUploaded)
     }
     
-    func totalProgress(progress: Float, client: TUSClient) {
-        totalProgressReceived.append(progress)
+    func progressFor(id: UUID, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
+        progressPerId[id] = bytesUploaded
     }
 }
 

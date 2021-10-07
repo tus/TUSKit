@@ -22,15 +22,16 @@ final class UploadMetadata: Codable {
     var remoteDestination: URL?
     let version: Int
     
-    var progress: Float {
+    /// The ranges of this file that are uploaded.
+    var uploadedRanges = [Range<Int>]()
+    
+    /// The sum of the bytes that are uploaded, based on `uploadedRanges`
+    var bytesUploaded: Int {
         let uploadedBytes = uploadedRanges.reduce(into: 0) { partialResult, range in
             partialResult += range.count
         }
-        
-        return Float(uploadedBytes) / Float(size)
+        return uploadedBytes
     }
-    
-    var uploadedRanges = [Range<Int>]()
     
     let mimeType: String?
     

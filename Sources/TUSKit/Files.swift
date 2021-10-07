@@ -15,9 +15,9 @@ enum FilesError: Error {
     case dataIsEmpty
 }
 
-/// This type handles files, it stores, and copies.
-/// Basically it adds convenience methods to handle file loading.
-/// Uses FileManager.default underwater, hence why methods work statically
+/// This type handles the storage for `TUSClient`
+/// It makes sure that files (that are to be uploaded) are properly stored, together with their metaData.
+/// Underwater it uses `FileManager.default`.
 final class Files {
     
     let storageDirectory: URL

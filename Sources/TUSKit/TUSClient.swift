@@ -20,17 +20,21 @@ public protocol TUSClientDelegate: AnyObject {
     /// Receive an error related to files. E.g. The `TUSClient` couldn't store a file or remove a file.
     func fileError(error: TUSClientError, client: TUSClient)
     
+    /// Get the progress of all ongoing uploads combined
+    ///
+    /// - Important: The total is based on active uploads, so it will lower once files are uploaded. This is because it's ambiguous what the total is. E.g. You can be uploading 100 bytes, after 50 bytes are uploaded, let's say you add 150 more bytes, is the total then 250 or 200? And what if the upload is done, and you add 50 more. Is the total 50 or 300? or 250?
+    ///
+    /// As a rule of thumb: The total will be highest on the start, a good starting point is to compare the progress against that number.
     @available(iOS 11.0, macOS 10.13, *)
-    /// Get the progress of all uploads combined
-    func totalProgress(progress: Float, client: TUSClient)
+    func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient)
     
     @available(iOS 11.0, macOS 10.13, *)
-    /// Get the progress of a specific upload
-    func progressFor(id: UUID, progress: Float, client: TUSClient)
+    /// Get the progress of a specific upload by id. The id is given when adding an upload and methods of this delegate.
+    func progressFor(id: UUID, bytesUploaded: Int, totalBytes: Int, client: TUSClient)
     
 }
 
-extension TUSClientDelegate {
+public extension TUSClientDelegate {
     func progressFor(id: UUID, progress: Float, client: TUSClient) {
         // Optional
     }
@@ -39,29 +43,6 @@ extension TUSClientDelegate {
 protocol ProgressDelegate: AnyObject {
     @available(iOS 11.0, macOS 10.13, *)
     func progressUpdatedFor(metaData: UploadMetadata)
-}
-
-/// The errors that are passed from TUSClient
-public struct TUSClientError: Error {
-    // Maintenance: We use static lets on a struct, instead of an enum, so that adding new cases won't break stability.
-    // Alternatively we can ask users to always use `unknown default`, but we can't guarantee that everyone will use that.
-    
-    let code: Int
-    
-    public static let couldNotCopyFile = TUSClientError(code: 1)
-    public static let couldNotStoreFile = TUSClientError(code: 2)
-    public static let fileSizeUnknown = TUSClientError(code: 3)
-    public static let couldNotLoadData = TUSClientError(code: 4)
-    public static let couldNotStoreFileMetadata = TUSClientError(code: 5)
-    public static let couldNotCreateFileOnServer = TUSClientError(code: 6)
-    public static let couldNotUploadFile = TUSClientError(code: 7)
-    public static let couldNotGetFileStatus = TUSClientError(code: 8)
-    public static let fileSizeMismatchWithServer = TUSClientError(code: 9)
-    public static let couldNotDeleteFile = TUSClientError(code: 10)
-    public static let uploadIsAlreadyFinished = TUSClientError(code: 11)
-    public static let couldNotRetryUpload = TUSClientError(code: 12)
-    public static let couldnotRemoveFinishedUploads = TUSClientError(code: 13)
-    public static let receivedUnexpectedOffset = TUSClientError(code: 14)
 }
 
 /// The TUSKit client.
@@ -515,15 +496,15 @@ extension TUSClient: ProgressDelegate {
     
     @available(iOS 11.0, macOS 10.13, *)
     func progressUpdatedFor(metaData: UploadMetadata) {
+        delegate?.progressFor(id: metaData.id, bytesUploaded: metaData.bytesUploaded, totalBytes: metaData.size, client: self)
         
-        delegate?.progressFor(id: metaData.id, progress: metaData.progress, client: self)
-        
-        let totalUploaded: Float = uploads.reduce(into: Float(0)) { partialResult, element in
-            let metaData = element.value
-            partialResult += metaData.progress
+        var totalBytesUploaded: Int = 0
+        var totalSize: Int = 0
+        for (_, metaData) in uploads {
+            totalBytesUploaded += metaData.bytesUploaded
+            totalSize += metaData.size
         }
         
-        let totalProgress: Float = Float(totalUploaded) / Float(uploads.count)
-        delegate?.totalProgress(progress: totalProgress, client: self)
+        delegate?.totalProgress(bytesUploaded: totalBytesUploaded, totalBytes: totalSize, client: self)
     }
 }

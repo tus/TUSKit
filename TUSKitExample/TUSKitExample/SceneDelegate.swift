@@ -83,6 +83,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 }
 
 extension SceneDelegate: TUSClientDelegate {
+    func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
+       print("TUSClient uploaded \(bytesUploaded) of \(totalBytes) bytes.")
+    }
+    
+    func progressFor(id: UUID, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
+       print("Upload progress \(bytesUploaded) / \(totalBytes)")
+    }
+    
     func didStartUpload(id: UUID, client: TUSClient) {
         print("TUSClient started upload, id is \(id)")
         print("TUSClient remaining is \(client.remainingUploads)")
@@ -102,14 +110,6 @@ extension SceneDelegate: TUSClientDelegate {
     
     func fileError(error: TUSClientError, client: TUSClient) {
         print("TUSClient File error \(error)")
-    }
-    
-    func progressFor(id: UUID, progress: Float, client: TUSClient) {
-        print("Progress for id \(id) is \(progress)")
-    }
-    
-    func totalProgress(progress: Float, client: TUSClient) {
-        print("Total progress \(progress)")
     }
     
 }

@@ -153,6 +153,3 @@ final class UploadDataTask: NSObject, Task {
     }
 }
 
-extension UploadDataTask: URLSessionTaskDelegate {
-    
-}

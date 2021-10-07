@@ -714,7 +714,7 @@ final class TUSClientTests: XCTestCase {
     // MARK: - Progress
     
     func testProgress() throws {
-        let ids = try upload(data: data, amount: 4)
+        let ids = try upload(data: data, amount: 2)
         
         // Progress is non-deterministic. But if there is any, we check if it's correct.
         for (id, progress) in tusDelegate.progressPerId {

@@ -26,7 +26,7 @@ extension URLSession {
     
 }
 
-/// Convenience method to turn a URLSessoin completion handler into a modern Result version. It also checks if response is a HTTPURLResponse
+/// Convenience method to turn a URLSession completion handler into a modern Result version. It also checks if response is a HTTPURLResponse
 /// - Parameter completion: A completionhandler to call
 /// - Returns: A new function that you can pass to URLSession's dataTask
 private func makeCompletion(completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> (Data?, URLResponse?, Error?) -> Void {

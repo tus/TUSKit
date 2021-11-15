@@ -12,7 +12,9 @@ With this client, you can upload regular raw `Data` or file-paths.
 
 ## Usage
 
-You can refer to the example project to see how TUSKit is implemented.
+You can refer to the example project to see how TUSKit is implemented. 
+
+As a starting point, please refer to the SceneDelegate [SceneDelegate](TUSKitExample/TUSKitExample/SceneDelegate.swift).
 
 Here is how you can instantiate a `TUSClient` instance.
 
@@ -113,6 +115,62 @@ Note that `TUSClient` will automatically retry an upload a few times, but will e
 
 *Note that calling `retry` before an upload is finished, will cause undefined behavior.*
 
+## Starting a new session 
+
+An upload can fail at any time. Even when an app is in the background.
+
+Therefore, after starting a new app session, we recommend you inspect any failed uploads that may have occurred and act accordingly.
+For instance, you can decide to do something with the failed uploads such as retrying them, deleting them, or reporting to the user.
+
+```swift
+For instance, here is how you can initialize the client and check its failed uploads. Note that we first fetch the id's, after which retry the uploads.
+  
+tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "/TUS")!)
+tusClient.delegate = self
+tusClient.start()
+        
+do {
+  // When starting, you can retrieve the locally stored uploads that are marked as failure, and handle those.
+  // E.g. Maybe some uploads failed from a last session, or failed from a background upload.
+  let ids = try tusClient.failedUploadIds()
+  for id in ids {
+    // You can either retry a failed upload...
+    try tusClient.retry(id: id)
+    // ...alternatively, you can delete them too
+    // tusClient.removeCacheFor(id: id)
+  }
+} catch {
+  // Could not fetch failed id's from disk
+}
+
+```
+
+## Background uploading
+
+Available from iOS13, you can schedule uploads to be performed in the background using the `scheduleBackgroundTasks()` method on `TUSClient`. 
+
+Scheduled tasks are handled by iOS. Which means that each device will decide when it's best to upload in the background. Such as when it has a wifi connection and late at night.
+
+As an example from the `SceneDelegate` found in the example app, you can schedule them accordingly:
+
+```swift
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+
+    // ... snip
+    
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        // Called as the scene transitions from the foreground to the background.
+        tusClient.scheduleBackgroundTasks()
+    }
+}
+```
+
+If you incorporate background-uploading, we strongly recommend you to inspect any failed uploads that may have occured in the background. Please refer to [Starting a new Session](#Starting a new Session) for more information.
+
+## Example app
+
+Please refer to the [example app](/TUSKitExample) inside this project to see how to add photos from a PHPicker, using SwiftUI. You can also use the `PHPicker` mechanic for UIKit.
+
 ## Parallelism 
 
 At the time of writing, this client does not support TUS' concatenation option. 
@@ -126,15 +184,15 @@ The `TUSClient` will try to limit to max 5 concurrent files per upload.
 
 The `TUSClient` will try to upload a file fully, and if it gets interrupted (e.g. broken connection or app is killed), it will continue where it left of.
 
-The `TUSClient` storeds files locally to upload them. It will use the `storageDirectory` path that is passed in the initializer. Or create a default directory inside the documentsdir.
+The `TUSClient` stores files locally to upload them. It will use the `storageDirectory` path that is passed in the initializer. Or create a default directory inside the documentsdir at /TUS .
 
-The `TUSClient` will automatically removed locally stored files (internally) once their upload is complete.
+The `TUSClient` will automatically removed locally stored files once their upload is complete.
 
 ## Multiple instances
 
-`TUSClient` supports multiple instances for simultaneous unrelated uploads, if you so please. 
+`TUSClient` supports multiple instances for simultaneous unrelated uploads.
 
-Warning: Multiple clients should not share the same `storageDirectory`. Give each client their own directory to work from, or bugs may ensure.
+Warning: Multiple clients should not share the same `storageDirectory`. Give each client their own directory to work from, or bugs may occur.
 
 Please note that `TUSClient` since version 3.0.0 is *not* a singleton anymore. 
 
@@ -147,8 +205,3 @@ final class MyClass {
 ```
 
 But we discourage you from doing so.
-
-## Example app
-
-Please refer to the example app inside this project to see how to add photos from a PHPicker, using SwiftUI. You can also use the `PHPicker` mechanic for UIKit.
-

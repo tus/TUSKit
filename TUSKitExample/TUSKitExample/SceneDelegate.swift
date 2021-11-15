@@ -26,7 +26,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         do {
             // When starting, you can retrieve the locally stored uploads that are marked as failure, and handle those.
-            // E.g. Maybe some uploads failed from a last session, or a background upload.
+            // E.g. Maybe some uploads failed from a last session, or failed from a background upload.
             let ids = try tusClient.failedUploadIds()
             for id in ids {
                 // You can either retry a failed upload...
@@ -35,7 +35,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 // tusClient.removeCacheFor(id: id)
             }
         } catch {
-            
+            // Could not fetch failed id's from disk
         }
         
         let photoPicker = PhotoPicker(tusClient: tusClient)

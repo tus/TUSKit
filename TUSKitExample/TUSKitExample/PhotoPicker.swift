@@ -50,7 +50,8 @@ struct PhotoPicker: UIViewControllerRepresentable {
         
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             
-            dataFrom(pickerResults: results) { [unowned tusClient] urls in
+            dataFrom(pickerResults: results) { [weak tusClient] urls in
+                guard let tusClient = tusClient else { return }
                 do {
                     try tusClient.uploadFiles(filePaths: urls)
                 } catch {

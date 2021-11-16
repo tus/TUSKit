@@ -27,8 +27,16 @@ final class CreationTask: Task {
     }
     
     func run(completed: @escaping TaskCompletion) {
-        sessionTask = api.create(metaData: metaData) { [unowned self] result in
+        sessionTask = api.create(metaData: metaData) { [weak self] result in
+            guard let self = self else { return }
             // File is created remotely. Now start first datatask.
+            
+            // Getting rid of self. in this closure
+            let metaData = self.metaData
+            let files = self.files
+            let chunkSize = self.chunkSize
+            let api = self.api
+            let progressDelegate = self.progressDelegate
 
             do {
                 

@@ -28,7 +28,15 @@ final class StatusTask: Task {
     
     func run(completed: @escaping TaskCompletion) {
         // Improvement: On failure, try uploading from the start. Create creationtask.
-        sessionTask = api.status(remoteDestination: remoteDestination) { [unowned self] result in
+        sessionTask = api.status(remoteDestination: remoteDestination) { [weak self] result in
+            guard let self = self else { return }
+            // Getting rid of self. in this closure
+            let metaData = self.metaData
+            let files = self.files
+            let chunkSize = self.chunkSize
+            let api = self.api
+            let progressDelegate = self.progressDelegate
+            
             do {
                 let status = try result.get()
                 let length = status.length

@@ -79,6 +79,9 @@ final class UploadDataTask: NSObject, Task {
                   return
               }
         
+        if isCanceled {
+            return
+        }
         let task = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [weak self] result in
             guard let self = self else { return }
             

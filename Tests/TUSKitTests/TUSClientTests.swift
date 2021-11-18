@@ -388,11 +388,19 @@ final class TUSClientTests: XCTestCase {
         
         XCTAssertEqual(uploadCount, tusDelegate.failedUploads.count)
         
-        // Reload client, and see what happ
+        // Reload client, and see what happens
         client = makeClient(storagePath: relativeStoragePath)
         
         client.start()
         XCTAssert(tusDelegate.startedUploads.isEmpty)
+    }
+    
+    // MARK: - Ids on start
+    
+    func testStartReturnsPreviouslyStoredIds() {
+        // TODO: Make sure that if you are going to upload, and then stop, and start again. That by starting the ids are properly returned.
+//        let ids = client.start()
+        XCTFail("Implement me")
     }
     
     // MARK: - Support custom headers
@@ -695,6 +703,8 @@ final class TUSClientTests: XCTestCase {
     }
     
     // MARK: - Context
+    
+    // These tests are here to make sure you get the same context back that you passed to upload.
     
     func testContextIsReturnedAfterUploading() throws {
         let expectedContext = ["I am a key" : "I am a value"]

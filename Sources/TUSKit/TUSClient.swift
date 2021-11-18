@@ -96,9 +96,12 @@ public final class TUSClient {
     // MARK: - Starting and stopping
     
     /// Kick off the client to start uploading any locally stored files.
-    public func start() {
+    /// - Returns: The pre-existing id's that are going to be uploaded.
+    @discardableResult
+    public func start() -> [UUID] {
         didStopAndCancel = false
         scheduleStoredTasks()
+        return Array(uploads.keys)
     }
     
     /// Stops the ongoing sessions, keeps the cache intact so you can continue uploading at a later stage.
@@ -125,7 +128,7 @@ public final class TUSClient {
     ///   - filePath: The path to a file on a local filesystem
     ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url from the config. Will call the `create` on this custom url to get the definitive upload url.
     ///   - customHeaders: Any headers you want to add to an upload
-    ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload.
+    ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload. Don't put sensitive information in here! Since a context will be stored to the disk.
     /// - Returns: ANn id
     /// - Throws: TUSClientError
     @discardableResult
@@ -148,7 +151,7 @@ public final class TUSClient {
     ///   - data: The data to be upload
     ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url from the config. Will call the `create` on this custom url to get the definitive upload url.
     ///   - customHeaders: The headers to upload.
-    ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload.
+    ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload. Don't put sensitive information in here! Since a context will be stored to the disk.
     /// - Returns: An id
     /// - Throws: TUSClientError
     @discardableResult
@@ -174,7 +177,7 @@ public final class TUSClient {
     ///   - filePaths: An array of filepaths, represented by URLs
     ///   - uploadURL: The URL to upload to. Leave nil for the default URL.
     ///   - customHeaders: Any headers you want to add to the upload
-    ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload.
+    ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload. Don't put sensitive information in here! Since a context will be stored to the disk.
     /// - Returns: An array of ids
     /// - Throws: TUSClientError
     @discardableResult
@@ -190,7 +193,7 @@ public final class TUSClient {
     ///   - dataFiles: An array of data to be uploaded.
     ///   - uploadURL: The URL to upload to. Leave nil for the default URL.
     ///   - customHeaders: Any headers you want to add to the upload
-    ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload.
+    ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload. Don't put sensitive information in here! Since a context will be stored to the disk.
     /// - Returns: An array of ids
     /// - Throws: TUSClientError
     @discardableResult

@@ -54,6 +54,10 @@ final class UploadDataTask: NSObject, Task {
     }
     
     func run(completed: @escaping TaskCompletion) {
+        if isCanceled {
+            return
+        }
+        
         guard !metaData.isFinished else {
             DispatchQueue.main.async {
                 completed(.failure(TUSClientError.uploadIsAlreadyFinished))
@@ -78,9 +82,6 @@ final class UploadDataTask: NSObject, Task {
         let task = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [weak self] result in
             guard let self = self else { return }
             
-            if self.isCanceled {
-                return
-            }
             
             // Getting rid of needing .self inside this closure
             let metaData = self.metaData

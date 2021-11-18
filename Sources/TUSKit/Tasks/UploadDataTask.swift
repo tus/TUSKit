@@ -14,6 +14,8 @@ final class UploadDataTask: NSObject, Task {
     weak var progressDelegate: ProgressDelegate?
     let metaData: UploadMetadata
     
+    private var isCanceled = false
+    
     private let api: TUSAPI
     private let files: Files
     private let range: Range<Int>?
@@ -75,6 +77,11 @@ final class UploadDataTask: NSObject, Task {
         
         let task = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [weak self] result in
             guard let self = self else { return }
+            
+            if self.isCanceled {
+                return
+            }
+            
             // Getting rid of needing .self inside this closure
             let metaData = self.metaData
             let files = self.files
@@ -179,6 +186,7 @@ final class UploadDataTask: NSObject, Task {
     }
     
     func cancel() {
+        isCanceled = true
         sessionTask?.cancel()
     }
     

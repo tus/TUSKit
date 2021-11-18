@@ -24,6 +24,11 @@ final class TUSClientTests: XCTestCase {
         client = makeClient(storagePath: relativeStoragePath)
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
+        do {
+            try client.reset()
+        } catch {
+            XCTFail("Could not reset \(error)")
+        }
         
         MockURLProtocol.reset()
         prepareNetworkForSuccesfulUploads(data: data)

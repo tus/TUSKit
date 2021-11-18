@@ -694,6 +694,73 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(1, tusDelegate.startedUploads.count, "Expected start to be only called once for a chunked upload with errors")
     }
     
+    // MARK: - Context
+    
+    func testContextIsReturnedAfterUploading() throws {
+        let expectedContext = ["I am a key" : "I am a value"]
+        try client.upload(data: data, context: expectedContext)
+        
+        waitForUploadsToFinish()
+        
+        // One context for start, one for failure
+        
+        XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 2)),  "Expected the context to be returned once an upload is finished")
+        
+        try XCTAssertNoThrow(client.uploadFileAt(filePath: Fixtures.makeFilePath(), context: expectedContext), "TUSClient should accept files that exist")
+        
+        waitForUploadsToFinish()
+        // Two contexts for start, two for failure
+        XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
+        
+    }
+    
+    func testContextIsReturnedAfterUploadingMultipleFiles() throws {
+        let expectedContext = ["I am a key" : "I am a value"]
+        
+        try client.uploadMultiple(dataFiles: [data, data], context: expectedContext)
+        
+        waitForUploadsToFinish(2)
+        
+        // Two contexts for start, two for failure
+        XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
+        
+        let path = try Fixtures.makeFilePath()
+        try client.uploadFiles(filePaths: [path, path], context: expectedContext)
+        waitForUploadsToFinish(2)
+        
+        // Four contexts for start, four for failure
+        XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 8)), "Expected the context to be returned once an upload is finished")
+    }
+    
+    func testContextIsGivenOnStart() throws {
+        let expectedContext = ["I am a key" : "I am a value"]
+        
+        let files: [Data] = [data, data]
+        let didStartExpectation = expectation(description: "Waiting for upload to start")
+        didStartExpectation.expectedFulfillmentCount = files.count
+        tusDelegate.startUploadExpectation = didStartExpectation
+        try client.uploadMultiple(dataFiles: files, context: expectedContext)
+        
+        waitForExpectations(timeout: 3, handler: nil)
+        XCTAssertEqual(tusDelegate.receivedContexts, [expectedContext, expectedContext], "Expected the context to be returned once an upload is finished")
+    }
+    
+    func testContextIsGivenOnFailure() throws {
+        prepareNetworkForFailingUploads()
+        
+        let expectedContext = ["I am a key" : "I am a value"]
+        
+        let files: [Data] = [data, data]
+        let didFailExpectation = expectation(description: "Waiting for upload to start")
+        didFailExpectation.expectedFulfillmentCount = files.count
+        tusDelegate.uploadFailedExpectation = didFailExpectation
+        try client.uploadMultiple(dataFiles: files, context: expectedContext)
+        
+        waitForExpectations(timeout: 3, handler: nil)
+        // Expected the context 4 times. Two files on start, two files on error.
+        XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
+    }
+    
     // MARK: - Custom URLs
     
     func testUploadingToCustomURL() throws {

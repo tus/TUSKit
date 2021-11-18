@@ -11,7 +11,6 @@ import XCTest
 
 /// TUSClientDelegate to support testing
 final class TUSMockDelegate: TUSClientDelegate {
-    
     var startedUploads = [UUID]()
     var finishedUploads = [(UUID, URL)]()
     var failedUploads = [(UUID, Error)]()
@@ -19,31 +18,43 @@ final class TUSMockDelegate: TUSClientDelegate {
     var progressPerId = [UUID: Int]()
     var totalProgressReceived = [Int]()
     
+    var receivedContexts = [[String: String]]()
+    
     var activityCount: Int { finishedUploads.count + startedUploads.count + failedUploads.count + fileErrors.count }
     
     var finishUploadExpectation: XCTestExpectation?
     var startUploadExpectation: XCTestExpectation?
     var fileErrorExpectation: XCTestExpectation?
     var uploadFailedExpectation: XCTestExpectation?
-    
-    func didFinishUpload(id: UUID, url: URL, client: TUSClient) {
-        finishedUploads.append((id, url))
-        finishUploadExpectation?.fulfill()
-    }
-    
-    func didStartUpload(id: UUID, client: TUSClient) {
+
+    func didStartUpload(id: UUID, context: [String : String]?, client: TUSClient) {
         startedUploads.append(id)
         startUploadExpectation?.fulfill()
+        if let context = context {
+            receivedContexts.append(context)
+        }
     }
+    
+    func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient) {
+        finishedUploads.append((id, url))
+        finishUploadExpectation?.fulfill()
+        if let context = context {
+            receivedContexts.append(context)
+        }
+    }
+    
     
     func fileError(error: TUSClientError, client: TUSClient) {
         fileErrors.append(error)
         fileErrorExpectation?.fulfill()
     }
     
-    func uploadFailed(id: UUID, error: Error, client: TUSClient) {
+    func uploadFailed(id: UUID, error: Error, context: [String : String]?, client: TUSClient) {
         failedUploads.append((id, error))
         uploadFailedExpectation?.fulfill()
+        if let context = context {
+            receivedContexts.append(context)
+        }
     }
     
     func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient) {

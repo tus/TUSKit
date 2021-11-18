@@ -120,7 +120,7 @@ final class UploadDataTask: NSObject, Task {
         
         sessionTask = task
         
-        if #available(iOS 11.0, *) {
+        if #available(iOS 11.0, macOS 10.13, *) {
             observation = observeTask(task: task, size: data.count)
         }
     }
@@ -162,14 +162,13 @@ final class UploadDataTask: NSObject, Task {
         do {
             // Can't use switch with #available :'(
             
-            // Has range, for newer versions
-            if let range = self.range, #available(iOS 13.0, *) {
+            if let range = self.range, #available(iOS 13.0, macOS 10.15, *) { // Has range, for newer versions
                 try fileHandle.seek(toOffset: UInt64(range.startIndex))
                 return fileHandle.readData(ofLength: range.count)
             } else if let range = self.range { // Has range, for older versions
                 fileHandle.seek(toFileOffset: UInt64(range.startIndex))
                 return fileHandle.readData(ofLength: range.count)
-            } else if #available(iOS 13.4, *) { // No range, newer versions
+            } else if #available(iOS 13.4, macOS 10.15.4, *) { // No range, newer versions
                 return try fileHandle.readToEnd()
             } else { // No range, older versions
                 return fileHandle.readDataToEndOfFile()

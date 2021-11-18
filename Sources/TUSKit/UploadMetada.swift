@@ -22,6 +22,8 @@ final class UploadMetadata: Codable {
     var remoteDestination: URL?
     let version: Int
     
+    let context: [String: String]?
+    
     /// The ranges of this file that are uploaded.
     var uploadedRanges = [Range<Int>]()
     
@@ -40,7 +42,7 @@ final class UploadMetadata: Codable {
     let size: Int
     var errorCount: Int
     
-    init(id: UUID, filePath: URL, uploadURL: URL, size: Int, customHeaders: [String: String]? = nil, mimeType: String? = nil) {
+    init(id: UUID, filePath: URL, uploadURL: URL, size: Int, customHeaders: [String: String]? = nil, mimeType: String? = nil, context: [String: String]? = nil) {
         self.id = id
         self.filePath = filePath
         self.uploadURL = uploadURL
@@ -48,7 +50,7 @@ final class UploadMetadata: Codable {
         self.customHeaders = customHeaders
         self.mimeType = mimeType
         self.version = 1 // Can't make default property because of Codable
+        self.context = context
         self.errorCount = 0
-        // TODO: Check nil size error?
     }
 }

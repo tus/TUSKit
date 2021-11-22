@@ -443,6 +443,7 @@ final class TUSClientTests: XCTestCase {
             //
         }
     }
+     */
     
     // MARK: - Chunking
     
@@ -683,7 +684,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(tusDelegate.totalProgressReceived.contains(data.count))
     }
     
-     */
     
     // MARK: - Preparing network
     

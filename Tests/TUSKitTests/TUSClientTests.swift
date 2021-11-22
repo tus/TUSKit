@@ -127,24 +127,6 @@ final class TUSClientTests: XCTestCase {
     */
     
     // MARK: - Id handling
-    
-    func testIdsAreGivenAndReturnedWhenFinished() throws {
-        
-        // Make sure id's that are given when uploading, are returned when uploads are finished
-        let expectedId = try client.upload(data: data)
-        
-        XCTAssert(tusDelegate.finishedUploads.isEmpty)
-        
-        tusDelegate.finishUploadExpectation = expectation(description: "Waiting for upload to fail")
-        waitForExpectations(timeout: 3, handler: nil)
-        
-        XCTAssert(tusDelegate.failedUploads.isEmpty, "Found a failed uploads, should have been empty. Something went wrong with uploading.")
-        XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Upload didn't finish.")
-        for (id, _) in tusDelegate.finishedUploads {
-            XCTAssertEqual(id, expectedId)
-        }
-    }
-    
     func testCorrectIdsAreGivenOnFailure() throws {
         prepareNetworkForErronousResponses()
                                             
@@ -823,7 +805,25 @@ final class TUSClientTests: XCTestCase {
             //
         }
     }
+     
+    func testIdsAreGivenAndReturnedWhenFinished() throws {
+        
+        // Make sure id's that are given when uploading, are returned when uploads are finished
+        let expectedId = try client.upload(data: data)
+        
+        XCTAssert(tusDelegate.finishedUploads.isEmpty)
+        
+        tusDelegate.finishUploadExpectation = expectation(description: "Waiting for upload to fail")
+        waitForExpectations(timeout: 3, handler: nil)
+        
+        XCTAssert(tusDelegate.failedUploads.isEmpty, "Found a failed uploads, should have been empty. Something went wrong with uploading.")
+        XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Upload didn't finish.")
+        for (id, _) in tusDelegate.finishedUploads {
+            XCTAssertEqual(id, expectedId)
+        }
+    }
     
+   
    
      */
 }

@@ -449,7 +449,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(2, MockURLProtocol.receivedRequests.count)
     }
     
-    /*
     func testClientContinuesPartialUploads() throws {
         // If server gives a content length lower than the data size, meaning a file isn't fully uploaded.
         // The client must continue uploading from that point on.
@@ -491,6 +490,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(String(firstOffset), secondRequest.allHTTPHeaderFields?["Upload-Offset"], "Even though first request wanted to upload to content length 9. We expect that on server returning \(firstOffset), that the second request continues from that. So should be \(firstOffset) here")
     }
 
+    /*
     func testLargeUploadsWillBeChunked() throws {
         // Above 500kb will be chunked
         let data = Fixtures.makeLargeData()

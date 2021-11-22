@@ -386,7 +386,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(ids.count, tusDelegate.finishedUploads.count, "Delegate has \(tusDelegate.activityCount) items")
     }
     
-    /*
     // MARK: - Multiple instances
     
     func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {
@@ -441,6 +440,7 @@ final class TUSClientTests: XCTestCase {
             //
         }
     }
+    /*
     
      */
     // MARK: - Chunking

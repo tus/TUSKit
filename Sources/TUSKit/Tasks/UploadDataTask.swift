@@ -178,9 +178,11 @@ final class UploadDataTask: NSObject, ScheduledTask {
             } else if let range = self.range { // Has range, for older versions
                 fileHandle.seek(toFileOffset: UInt64(range.startIndex))
                 return fileHandle.readData(ofLength: range.count)
-//            } else if #available(iOS 13.4, macOS 10.15, *) { // No range, newer versions.
-                // Note that compiler and api says that readToEnd is available on macOS 10.15.4 and higher, but yet github actions of 10.15.7 fails to find the member.
-//                return try fileHandle.readToEnd()
+                /*
+                 } else if #available(iOS 13.4, macOS 10.15, *) { // No range, newer versions.
+                 Note that compiler and api says that readToEnd is available on macOS 10.15.4 and higher, but yet github actions of 10.15.7 fails to find the member.
+                return try fileHandle.readToEnd()
+                 */
             } else { // No range, older versions
                 return fileHandle.readDataToEndOfFile()
             }
@@ -191,6 +193,7 @@ final class UploadDataTask: NSObject, ScheduledTask {
     
     func cancel() {
         isCanceled = true
+        observation?.invalidate()
         sessionTask?.cancel()
     }
     

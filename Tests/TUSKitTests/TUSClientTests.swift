@@ -568,6 +568,8 @@ final class TUSClientTests: XCTestCase {
     }
     
      */
+        /*
+
     // MARK: - Delegate start calls
     
     func testStartedUploadIsCalledOnceForLargeFile() throws {
@@ -591,7 +593,6 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - Context
     
-    /*
     // These tests are here to make sure you get the same context back that you passed to upload.
     
     func testContextIsReturnedAfterUploading() throws {
@@ -662,6 +663,7 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - Custom URLs
     
+    /*
     func testUploadingToCustomURL() throws {
         let url = URL(string: "www.custom-url")!
         try client.upload(data: data, uploadURL: url)
@@ -691,6 +693,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(tusDelegate.totalProgressReceived.count > 1)
         XCTAssert(tusDelegate.totalProgressReceived.contains(data.count))
     }
+     */
     
     // MARK: - Preparing network
     

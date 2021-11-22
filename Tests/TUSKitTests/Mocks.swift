@@ -69,6 +69,8 @@ final class TUSMockDelegate: TUSClientDelegate {
 /// MockURLProtocol to support mocking the network
 final class MockURLProtocol: URLProtocol {
     
+    let queue = DispatchQueue.global()
+    
     typealias Headers = [String: String]?
     
     struct Response {
@@ -81,8 +83,8 @@ final class MockURLProtocol: URLProtocol {
     static var receivedRequests = [URLRequest]()
     
     static func reset() {
-        responses = [:]
-        receivedRequests = []
+        self.responses = [:]
+        self.receivedRequests = []
     }
     
     /// Define a response to be used for a method
@@ -104,28 +106,30 @@ final class MockURLProtocol: URLProtocol {
     }
     
     override func startLoading() {
-        // This is where you create the mock response as per your test case and send it to the URLProtocolClient.
-        
-        guard let client = client else { return }
-        
-        guard let method = request.httpMethod, let preparedResponseClosure = type(of: self).responses[method] else {
-//            assertionFailure("No response found for \(String(describing: request.httpMethod)) prepared \(type(of: self).responses)")
-            return
+        queue.async {
+            // This is where you create the mock response as per your test case and send it to the URLProtocolClient.
+            
+            guard let client = self.client else { return }
+            
+            guard let method = self.request.httpMethod, let preparedResponseClosure = type(of: self).responses[method] else {
+                //            assertionFailure("No response found for \(String(describing: request.httpMethod)) prepared \(type(of: self).responses)")
+                return
+            }
+            
+            let preparedResponse = preparedResponseClosure(self.request.allHTTPHeaderFields)
+            
+            type(of: self).receivedRequests.append(self.request)
+            
+            let url = URL(string: "https://tusd.tusdemo.net/files")!
+            let response = HTTPURLResponse(url: url, statusCode: preparedResponse.status, httpVersion: nil, headerFields: preparedResponse.headers)!
+            
+            client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            
+            if let data = preparedResponse.data {
+                client.urlProtocol(self, didLoad: data)
+            }
+            client.urlProtocolDidFinishLoading(self)
         }
-        
-        let preparedResponse = preparedResponseClosure(request.allHTTPHeaderFields)
-        
-        type(of: self).receivedRequests.append(request)
-        
-        let url = URL(string: "https://tusd.tusdemo.net/files")!
-        let response = HTTPURLResponse(url: url, statusCode: preparedResponse.status, httpVersion: nil, headerFields: preparedResponse.headers)!
-        
-        client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        
-        if let data = preparedResponse.data {
-            client.urlProtocol(self, didLoad: data)
-        }
-        client.urlProtocolDidFinishLoading(self)
     }
     
     override func stopLoading() {

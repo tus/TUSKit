@@ -453,6 +453,7 @@ final class TUSClientTests: XCTestCase {
     }
     
 
+    /*
     func testLargeUploadsWillBeChunked() throws {
         // Above 500kb will be chunked
         let data = Fixtures.makeLargeData()
@@ -466,6 +467,7 @@ final class TUSClientTests: XCTestCase {
         }
         XCTAssertEqual(1, createRequests.count, "The POST method (create) should have been called only once")
     }
+     */
     
     /*
     func testClientThrowsErrorsWhenReceivingWrongOffset() throws {

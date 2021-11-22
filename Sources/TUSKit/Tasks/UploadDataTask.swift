@@ -54,10 +54,6 @@ final class UploadDataTask: NSObject, Task {
     }
     
     func run(completed: @escaping TaskCompletion) {
-        if isCanceled {
-            return
-        }
-        
         guard !metaData.isFinished else {
             DispatchQueue.main.async {
                 completed(.failure(TUSClientError.uploadIsAlreadyFinished))
@@ -79,9 +75,11 @@ final class UploadDataTask: NSObject, Task {
                   return
               }
         
+        // This check is right before the task is created. In case another thread calls cancel during this loop. Optimization: Add synchronization point (e.g. serial queue or actor).
         if isCanceled {
             return
         }
+        
         let task = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [weak self] result in
             guard let self = self else { return }
             
@@ -104,7 +102,7 @@ final class UploadDataTask: NSObject, Task {
                     completed(.success([]))
                     return
                 } else if offset == currentOffset {
-//                    print("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
+                    assertionFailure("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
                     throw TUSClientError.receivedUnexpectedOffset
                 }
                 

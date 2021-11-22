@@ -306,6 +306,7 @@ final class TUSClientTests: XCTestCase {
         }
     }
     
+    /*
     func testUploadingWithCustomHeadersForFiles() throws {
         // Make sure client adds custom headers
         
@@ -340,6 +341,7 @@ final class TUSClientTests: XCTestCase {
             }
         }
     }
+     */
 
     // MARK: - Stopping and canceling
     

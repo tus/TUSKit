@@ -272,7 +272,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(tusDelegate.startedUploads.isEmpty)
     }
     
-    /*
     // MARK: - Ids on start
     
 //    func testStartReturnsPreviouslyStoredIds() {
@@ -387,6 +386,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(ids.count, tusDelegate.finishedUploads.count, "Delegate has \(tusDelegate.activityCount) items")
     }
     
+    /*
     // MARK: - Multiple instances
     
     func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {

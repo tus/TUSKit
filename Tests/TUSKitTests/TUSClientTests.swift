@@ -591,6 +591,7 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - Context
     
+    /*
     // These tests are here to make sure you get the same context back that you passed to upload.
     
     func testContextIsReturnedAfterUploading() throws {
@@ -657,6 +658,7 @@ final class TUSClientTests: XCTestCase {
         // Expected the context 4 times. Two files on start, two files on error.
         XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
     }
+    */
     
     // MARK: - Custom URLs
     

@@ -78,7 +78,9 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - File handling
     
-    func testClientCanHandleRelativeStoragelDirectories() throws {
+    /*
+     // TODO Decide if we need this test, since it's also covered by the FilesTests
+    func testClientCanHandleRelativeStorageDirectories() throws {
         // Initialize tusclient with either "TUS" or "/TUS" and it should work
         
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -122,6 +124,7 @@ final class TUSClientTests: XCTestCase {
             clearDirectory(dir: expectedPath)
         }
     }
+    */
     
     // MARK: - Id handling
     

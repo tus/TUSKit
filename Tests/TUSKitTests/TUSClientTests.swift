@@ -359,7 +359,6 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - Testing new client sessions
     
-    /*
     func testUploadIdsArePreservedBetweenSessions() throws {
         // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
         prepareNetworkForErronousResponses()
@@ -387,6 +386,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(ids.count, tusDelegate.finishedUploads.count, "Delegate has \(tusDelegate.activityCount) items")
     }
     
+    /*
     // MARK: - Multiple instances
     
     func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {

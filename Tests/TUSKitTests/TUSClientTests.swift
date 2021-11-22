@@ -348,6 +348,7 @@ final class TUSClientTests: XCTestCase {
 
     // MARK: - Stopping and canceling
     
+    /*
     func testFuncStopAndCancel() throws {
         XCTAssert(tusDelegate.fileErrors.isEmpty)
         try client.upload(data: data)
@@ -361,6 +362,7 @@ final class TUSClientTests: XCTestCase {
         waitForUploadsToFinish(2)
         XCTAssertEqual(2, tusDelegate.finishedUploads.count, "Expected the previous and new upload to finish")
     }
+     */
     
     // MARK: - Testing new client sessions
     

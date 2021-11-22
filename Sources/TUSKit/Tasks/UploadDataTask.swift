@@ -102,7 +102,8 @@ final class UploadDataTask: NSObject, ScheduledTask {
                     completed(.success([]))
                     return
                 } else if offset == currentOffset {
-                    assertionFailure("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
+//                improvement: log this instead
+//                    assertionFailure("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
                     throw TUSClientError.receivedUnexpectedOffset
                 }
                 

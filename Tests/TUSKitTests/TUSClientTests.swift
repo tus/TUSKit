@@ -665,7 +665,6 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - Custom URLs
     
-    /*
     func testUploadingToCustomURL() throws {
         let url = URL(string: "www.custom-url")!
         try client.upload(data: data, uploadURL: url)
@@ -695,7 +694,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(tusDelegate.totalProgressReceived.count > 1)
         XCTAssert(tusDelegate.totalProgressReceived.contains(data.count))
     }
-     */
     
     // MARK: - Preparing network
     

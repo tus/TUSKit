@@ -400,7 +400,6 @@ final class TUSClientTests: XCTestCase {
     }
     
 
-    /*
     func testLargeUploadsWillBeChunked() throws {
         // Above 500kb will be chunked
         let data = Fixtures.makeLargeData()
@@ -414,7 +413,6 @@ final class TUSClientTests: XCTestCase {
         }
         XCTAssertEqual(1, createRequests.count, "The POST method (create) should have been called only once")
     }
-     */
     
     /*
     func testClientThrowsErrorsWhenReceivingWrongOffset() throws {
@@ -772,6 +770,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual("0", firstRequest.allHTTPHeaderFields?["Upload-Offset"])
         XCTAssertEqual(String(firstOffset), secondRequest.allHTTPHeaderFields?["Upload-Offset"], "Even though first request wanted to upload to content length 9. We expect that on server returning \(firstOffset), that the second request continues from that. So should be \(firstOffset) here")
     }
+     
      func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {
         // Make multiple instances, they shouldn't interfere with each other's files.
         

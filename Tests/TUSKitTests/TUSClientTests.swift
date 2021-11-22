@@ -78,7 +78,6 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - File handling
     
-    /*
     func testClientCanHandleRelativeStoragelDirectories() throws {
         // Initialize tusclient with either "TUS" or "/TUS" and it should work
         
@@ -123,7 +122,6 @@ final class TUSClientTests: XCTestCase {
             clearDirectory(dir: expectedPath)
         }
     }
-     */
     
     // MARK: - Id handling
     
@@ -209,7 +207,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(contents.isEmpty, "Expected the client to delete the file")
     }
 
-    /*
     func testClientDeletesFilesOnCompletion() throws {
         // If a file is done uploading (as said by status), but not yet deleted.
         // Then the file can be deleted right after fetching the status.
@@ -237,7 +234,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(contents.isEmpty)
     }
     
-     */
     // MARK: - Retry mechanics
    
     func testClientRetriesOnFailure() throws {
@@ -249,7 +245,7 @@ final class TUSClientTests: XCTestCase {
         let expectedRetryCount = 2
         XCTAssertEqual(fileAmount * (1 + expectedRetryCount), MockURLProtocol.receivedRequests.count)
     }
-    /*
+    
     func testMakeSureMetadataWithTooManyErrorsArentLoadedOnStart() throws {
         prepareNetworkForErronousResponses()
                                             
@@ -275,7 +271,6 @@ final class TUSClientTests: XCTestCase {
         client.start()
         XCTAssert(tusDelegate.startedUploads.isEmpty)
     }
-    */
     
     // MARK: - Ids on start
     
@@ -348,7 +343,6 @@ final class TUSClientTests: XCTestCase {
 
     // MARK: - Stopping and canceling
     
-    /*
     func testFuncStopAndCancel() throws {
         XCTAssert(tusDelegate.fileErrors.isEmpty)
         try client.upload(data: data)
@@ -362,7 +356,6 @@ final class TUSClientTests: XCTestCase {
         waitForUploadsToFinish(2)
         XCTAssertEqual(2, tusDelegate.finishedUploads.count, "Expected the previous and new upload to finish")
     }
-     */
     
     // MARK: - Testing new client sessions
     
@@ -665,6 +658,7 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - Custom URLs
     
+    /*
     func testUploadingToCustomURL() throws {
         let url = URL(string: "www.custom-url")!
         try client.upload(data: data, uploadURL: url)
@@ -681,7 +675,6 @@ final class TUSClientTests: XCTestCase {
     }
     
     // MARK: - Progress
-    /*
     
     func testProgress() throws {
         let ids = try upload(data: data, amount: 2)

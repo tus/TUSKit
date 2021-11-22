@@ -466,13 +466,14 @@ final class TUSClientTests: XCTestCase {
         // Mimick chunk uploading with offsets. Make sure initially we give a too low of an offset
         MockURLProtocol.prepareResponse(for: "PATCH") { headers in
             if isFirstUpload {
+                print("first upload")
                 isFirstUpload.toggle()
                 return MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(firstOffset)], data: nil)
             } else {
+                print("second upload")
                 return MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
             }
         }
-        
         
         try upload(data: data)
         

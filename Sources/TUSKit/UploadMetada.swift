@@ -24,6 +24,9 @@ final class UploadMetadata: Codable {
     
     let context: [String: String]?
     
+    /// The total range that's uploaded
+    var uploadedRange: Range<Int>?
+
     /// The ranges of this file that are uploaded.
     var uploadedRanges = [Range<Int>]()
     
@@ -38,7 +41,6 @@ final class UploadMetadata: Codable {
     let mimeType: String?
     
     let customHeaders: [String: String]?
-    var uploadedRange: Range<Int>?
     let size: Int
     var errorCount: Int
     

@@ -391,59 +391,6 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - Multiple instances
     
-    func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {
-        // Make multiple instances, they shouldn't interfere with each other's files.
-        
-        // Second instance
-        let url = URL(string: "TUSTWO")!
-        let configuration = URLSessionConfiguration.default
-        configuration.protocolClasses = [MockURLProtocol.self]
-        otherClient = TUSClient(config: TUSConfig(server: URL(string: "www.tus.io")!), sessionIdentifier: "TEST", storageDirectory: url, session: URLSession.init(configuration: configuration))
-        
-        // Prerequisites
-        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty)
-
-        let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let otherLocation = documentsDir.appendingPathComponent("TUSTWO")
-        try? FileManager.default.removeItem(atPath: otherLocation.path)
-        
-        XCTAssertFalse(FileManager.default.fileExists(atPath: otherLocation.path, isDirectory: nil), "Prerequite failed, dir shouldn't exist yet in this test")
-
-        for _ in 0..<6 {
-            try client.upload(data: Data("abcdef".utf8))
-            try otherClient.upload(data: Data("abcdef".utf8))
-        }
-
-        var otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
-        XCTAssert(!otherClientContents.isEmpty)
-        
-        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(!contents.isEmpty)
-
-        otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
-        XCTAssert(!otherClientContents.isEmpty)
-
-        // Now clear cache of first client, second should be unaffected
-        do {
-            try client.clearAllCache()
-        } catch {
-            //
-        }
-
-        contents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
-        XCTAssert(!contents.isEmpty)
-
-        otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
-        XCTAssert(!otherClientContents.isEmpty)
-        
-        do {
-            try otherClient.reset()
-        } catch {
-            //
-        }
-    }
-    
     // MARK: - Chunking
     
     func testSmallUploadsArentChunked() throws {
@@ -825,6 +772,59 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual("0", firstRequest.allHTTPHeaderFields?["Upload-Offset"])
         XCTAssertEqual(String(firstOffset), secondRequest.allHTTPHeaderFields?["Upload-Offset"], "Even though first request wanted to upload to content length 9. We expect that on server returning \(firstOffset), that the second request continues from that. So should be \(firstOffset) here")
     }
+     func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {
+        // Make multiple instances, they shouldn't interfere with each other's files.
+        
+        // Second instance
+        let url = URL(string: "TUSTWO")!
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+        otherClient = TUSClient(config: TUSConfig(server: URL(string: "www.tus.io")!), sessionIdentifier: "TEST", storageDirectory: url, session: URLSession.init(configuration: configuration))
+        
+        // Prerequisites
+        var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(contents.isEmpty)
+
+        let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let otherLocation = documentsDir.appendingPathComponent("TUSTWO")
+        try? FileManager.default.removeItem(atPath: otherLocation.path)
+        
+        XCTAssertFalse(FileManager.default.fileExists(atPath: otherLocation.path, isDirectory: nil), "Prerequite failed, dir shouldn't exist yet in this test")
+
+        for _ in 0..<6 {
+            try client.upload(data: Data("abcdef".utf8))
+            try otherClient.upload(data: Data("abcdef".utf8))
+        }
+
+        var otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
+        XCTAssert(!otherClientContents.isEmpty)
+        
+        contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        XCTAssert(!contents.isEmpty)
+
+        otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
+        XCTAssert(!otherClientContents.isEmpty)
+
+        // Now clear cache of first client, second should be unaffected
+        do {
+            try client.clearAllCache()
+        } catch {
+            //
+        }
+
+        contents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
+        XCTAssert(!contents.isEmpty)
+
+        otherClientContents = try FileManager.default.contentsOfDirectory(at: otherLocation, includingPropertiesForKeys: nil)
+        XCTAssert(!otherClientContents.isEmpty)
+        
+        do {
+            try otherClient.reset()
+        } catch {
+            //
+        }
+    }
     
+   
      */
 }

@@ -47,9 +47,6 @@ final class TUSClientTests: XCTestCase {
         }
     }
     
-    
-    /*
-    
     // MARK: - Adding files and data to upload
     
     func testUploadingNonExistentFileShouldThrow() {
@@ -162,6 +159,7 @@ final class TUSClientTests: XCTestCase {
         }
     }
     
+    /*
     // MARK: - Deletions / clearing cache
     
     func testClearingCache() throws {
@@ -443,7 +441,6 @@ final class TUSClientTests: XCTestCase {
             //
         }
     }
-     */
     
     // MARK: - Chunking
     
@@ -573,6 +570,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(1, tusDelegate.startedUploads.count, "Expected start to be only called once for a chunked upload")
     }
     
+    
     func testStartedUploadIsCalledOnceForLargeFileWhenUploadFails() throws {
         prepareNetworkForFailingUploads()
         // Even when retrying, start should only be called once.
@@ -605,7 +603,6 @@ final class TUSClientTests: XCTestCase {
         
     }
     
-    /*
     func testContextIsReturnedAfterUploadingMultipleFiles() throws {
         let expectedContext = ["I am a key" : "I am a value"]
         
@@ -623,7 +620,6 @@ final class TUSClientTests: XCTestCase {
         // Four contexts for start, four for failure
         XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 8)), "Expected the context to be returned once an upload is finished")
     }
-     */
     
     func testContextIsGivenOnStart() throws {
         let expectedContext = ["I am a key" : "I am a value"]
@@ -686,6 +682,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(tusDelegate.totalProgressReceived.contains(data.count))
     }
     
+    */
     
     // MARK: - Preparing network
     

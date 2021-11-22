@@ -450,6 +450,7 @@ final class TUSClientTests: XCTestCase {
      */
     // MARK: - Chunking
     
+    /*
     func testSmallUploadsArentChunked() throws {
         let ids = try upload(data: Data("012345678".utf8))
         XCTAssertEqual(1, ids.count)
@@ -566,6 +567,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(2, uploadRequests.count)
     }
     
+     */
     // MARK: - Delegate start calls
     
     func testStartedUploadIsCalledOnceForLargeFile() throws {

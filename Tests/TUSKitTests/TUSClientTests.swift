@@ -440,18 +440,16 @@ final class TUSClientTests: XCTestCase {
             //
         }
     }
-    /*
     
-     */
     // MARK: - Chunking
     
-    /*
     func testSmallUploadsArentChunked() throws {
         let ids = try upload(data: Data("012345678".utf8))
         XCTAssertEqual(1, ids.count)
         XCTAssertEqual(2, MockURLProtocol.receivedRequests.count)
     }
     
+    /*
     func testClientContinuesPartialUploads() throws {
         // If server gives a content length lower than the data size, meaning a file isn't fully uploaded.
         // The client must continue uploading from that point on.

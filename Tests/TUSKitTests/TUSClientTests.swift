@@ -159,7 +159,6 @@ final class TUSClientTests: XCTestCase {
         }
     }
     
-    /*
     // MARK: - Deletions / clearing cache
     
     func testClearingCache() throws {
@@ -273,6 +272,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(tusDelegate.startedUploads.isEmpty)
     }
     
+    /*
     // MARK: - Ids on start
     
 //    func testStartReturnsPreviouslyStoredIds() {

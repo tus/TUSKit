@@ -681,6 +681,7 @@ final class TUSClientTests: XCTestCase {
     }
     
     // MARK: - Progress
+    /*
     
     func testProgress() throws {
         let ids = try upload(data: data, amount: 2)
@@ -695,6 +696,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(tusDelegate.totalProgressReceived.contains(data.count))
     }
     
+     */
     // MARK: - Preparing network
     
     private func resetReceivedRequests() {

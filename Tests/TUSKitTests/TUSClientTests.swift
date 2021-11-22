@@ -605,6 +605,7 @@ final class TUSClientTests: XCTestCase {
         
     }
     
+    /*
     func testContextIsReturnedAfterUploadingMultipleFiles() throws {
         let expectedContext = ["I am a key" : "I am a value"]
         
@@ -622,6 +623,7 @@ final class TUSClientTests: XCTestCase {
         // Four contexts for start, four for failure
         XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 8)), "Expected the context to be returned once an upload is finished")
     }
+     */
     
     func testContextIsGivenOnStart() throws {
         let expectedContext = ["I am a key" : "I am a value"]

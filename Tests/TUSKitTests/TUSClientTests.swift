@@ -49,132 +49,6 @@ final class TUSClientTests: XCTestCase {
     
     
     /*
-    // MARK: - Preparing network
-    
-    private func resetReceivedRequests() {
-        MockURLProtocol.receivedRequests = []
-    }
-    
-    /// Server gives inappropriorate offsets
-    /// - Parameter data: Data to upload
-    private func prepareNetworkForWrongOffset(data: Data) {
-        MockURLProtocol.prepareResponse(for: "POST") { _ in
-            MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
-        }
-        
-        // Mimick chunk uploading with offsets
-        MockURLProtocol.prepareResponse(for: "PATCH") { headers in
-            
-            guard let headers = headers,
-                  let strOffset = headers["Upload-Offset"],
-                  let offset = Int(strOffset),
-                  let strContentLength = headers["Content-Length"],
-                  let contentLength = Int(strContentLength) else {
-                      let error = "Did not receive expected Upload-Offset and Content-Length in headers"
-                      XCTFail(error)
-                      fatalError(error)
-                  }
-                  
-            let newOffset = offset + contentLength - 1 // 1 offset too low. Trying to trigger potential inifnite upload loop. Which the client should handle, of course.
-            return MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(newOffset)], data: nil)
-        }
-    }
-    
-    private func prepareNetworkForSuccesfulUploads(data: Data, lowerCasedKeysInResponses: Bool = false) {
-        MockURLProtocol.prepareResponse(for: "POST") { _ in
-            let key: String
-            if lowerCasedKeysInResponses {
-                key = "location"
-            } else {
-                key = "Location"
-            }
-            return MockURLProtocol.Response(status: 200, headers: [key: "www.somefakelocation.com"], data: nil)
-        }
-        
-        // Mimick chunk uploading with offsets
-        MockURLProtocol.prepareResponse(for: "PATCH") { headers in
-            
-            guard let headers = headers,
-                  let strOffset = headers["Upload-Offset"],
-                  let offset = Int(strOffset),
-                  let strContentLength = headers["Content-Length"],
-                  let contentLength = Int(strContentLength) else {
-                      let error = "Did not receive expected Upload-Offset and Content-Length in headers"
-                      XCTFail(error)
-                      fatalError(error)
-                  }
-                  
-            let newOffset = offset + contentLength
-            
-            let key: String
-            if lowerCasedKeysInResponses {
-                key = "upload-offset"
-            } else {
-                key = "Upload-Offset"
-            }
-            return MockURLProtocol.Response(status: 200, headers: [key: String(newOffset)], data: nil)
-        }
-        
-    }
-    
-    private func prepareNetworkForErronousResponses() {
-        MockURLProtocol.prepareResponse(for: "POST") { _ in
-            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
-        }
-        MockURLProtocol.prepareResponse(for: "PATCH") { _ in
-            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
-        }
-        MockURLProtocol.prepareResponse(for: "HEAD") { _ in
-            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
-        }
-    }
-    
-    private func prepareNetworkForSuccesfulStatusCall(data: Data) {
-        MockURLProtocol.prepareResponse(for: "HEAD") { _ in
-            MockURLProtocol.Response(status: 200, headers: ["Upload-Length": String(data.count),
-                                                            "Upload-Offset": "0"], data: nil)
-        }
-    }
-    
-    /// Create call can still succeed. This is useful for triggering a status call.
-    private func prepareNetworkForFailingUploads() {
-        // Upload means patch. Letting that fail.
-        MockURLProtocol.prepareResponse(for: "PATCH") { _ in
-            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
-        }
-    }
-    
-    /// Upload data, a certain amount of times, and wait for it to be done.
-    /// Can optionally prepare a failing upload too.
-    @discardableResult
-    private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) throws -> [UUID] {
-        let ids = try (0..<amount).map { _ -> UUID in
-            return try client.upload(data: data, customHeaders: customHeaders)
-        }
-        
-        if shouldSucceed {
-            waitForUploadsToFinish(amount)
-        } else {
-            waitForUploadsToFail(amount)
-        }
-
-        return ids
-    }
-    
-    private func waitForUploadsToFinish(_ amount: Int = 1) {
-        let uploadExpectation = expectation(description: "Waiting for upload to finished")
-        uploadExpectation.expectedFulfillmentCount = amount
-        tusDelegate.finishUploadExpectation = uploadExpectation
-        waitForExpectations(timeout: 6, handler: nil)
-    }
-    
-    private func waitForUploadsToFail(_ amount: Int = 1) {
-        let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
-        uploadFailedExpectation.expectedFulfillmentCount = amount
-        tusDelegate.uploadFailedExpectation = uploadFailedExpectation
-        waitForExpectations(timeout: 6, handler: nil)
-    }
-    
     
     // MARK: - Adding files and data to upload
     
@@ -810,4 +684,132 @@ final class TUSClientTests: XCTestCase {
     }
     
      */
+    
+    // MARK: - Preparing network
+    
+    private func resetReceivedRequests() {
+        MockURLProtocol.receivedRequests = []
+    }
+    
+    /// Server gives inappropriorate offsets
+    /// - Parameter data: Data to upload
+    private func prepareNetworkForWrongOffset(data: Data) {
+        MockURLProtocol.prepareResponse(for: "POST") { _ in
+            MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
+        }
+        
+        // Mimick chunk uploading with offsets
+        MockURLProtocol.prepareResponse(for: "PATCH") { headers in
+            
+            guard let headers = headers,
+                  let strOffset = headers["Upload-Offset"],
+                  let offset = Int(strOffset),
+                  let strContentLength = headers["Content-Length"],
+                  let contentLength = Int(strContentLength) else {
+                      let error = "Did not receive expected Upload-Offset and Content-Length in headers"
+                      XCTFail(error)
+                      fatalError(error)
+                  }
+                  
+            let newOffset = offset + contentLength - 1 // 1 offset too low. Trying to trigger potential inifnite upload loop. Which the client should handle, of course.
+            return MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(newOffset)], data: nil)
+        }
+    }
+    
+    
+    
+    private func prepareNetworkForSuccesfulUploads(data: Data, lowerCasedKeysInResponses: Bool = false) {
+        MockURLProtocol.prepareResponse(for: "POST") { _ in
+            let key: String
+            if lowerCasedKeysInResponses {
+                key = "location"
+            } else {
+                key = "Location"
+            }
+            return MockURLProtocol.Response(status: 200, headers: [key: "www.somefakelocation.com"], data: nil)
+        }
+        
+        // Mimick chunk uploading with offsets
+        MockURLProtocol.prepareResponse(for: "PATCH") { headers in
+            
+            guard let headers = headers,
+                  let strOffset = headers["Upload-Offset"],
+                  let offset = Int(strOffset),
+                  let strContentLength = headers["Content-Length"],
+                  let contentLength = Int(strContentLength) else {
+                      let error = "Did not receive expected Upload-Offset and Content-Length in headers"
+                      XCTFail(error)
+                      fatalError(error)
+                  }
+                  
+            let newOffset = offset + contentLength
+            
+            let key: String
+            if lowerCasedKeysInResponses {
+                key = "upload-offset"
+            } else {
+                key = "Upload-Offset"
+            }
+            return MockURLProtocol.Response(status: 200, headers: [key: String(newOffset)], data: nil)
+        }
+        
+    }
+    
+    private func prepareNetworkForErronousResponses() {
+        MockURLProtocol.prepareResponse(for: "POST") { _ in
+            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
+        }
+        MockURLProtocol.prepareResponse(for: "PATCH") { _ in
+            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
+        }
+        MockURLProtocol.prepareResponse(for: "HEAD") { _ in
+            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
+        }
+    }
+    
+    private func prepareNetworkForSuccesfulStatusCall(data: Data) {
+        MockURLProtocol.prepareResponse(for: "HEAD") { _ in
+            MockURLProtocol.Response(status: 200, headers: ["Upload-Length": String(data.count),
+                                                            "Upload-Offset": "0"], data: nil)
+        }
+    }
+    
+    /// Create call can still succeed. This is useful for triggering a status call.
+    private func prepareNetworkForFailingUploads() {
+        // Upload means patch. Letting that fail.
+        MockURLProtocol.prepareResponse(for: "PATCH") { _ in
+            MockURLProtocol.Response(status: 401, headers: [:], data: nil)
+        }
+    }
+    
+    /// Upload data, a certain amount of times, and wait for it to be done.
+    /// Can optionally prepare a failing upload too.
+    @discardableResult
+    private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) throws -> [UUID] {
+        let ids = try (0..<amount).map { _ -> UUID in
+            return try client.upload(data: data, customHeaders: customHeaders)
+        }
+        
+        if shouldSucceed {
+            waitForUploadsToFinish(amount)
+        } else {
+            waitForUploadsToFail(amount)
+        }
+
+        return ids
+    }
+    
+    private func waitForUploadsToFinish(_ amount: Int = 1) {
+        let uploadExpectation = expectation(description: "Waiting for upload to finished")
+        uploadExpectation.expectedFulfillmentCount = amount
+        tusDelegate.finishUploadExpectation = uploadExpectation
+        waitForExpectations(timeout: 6, handler: nil)
+    }
+    
+    private func waitForUploadsToFail(_ amount: Int = 1) {
+        let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
+        uploadFailedExpectation.expectedFulfillmentCount = amount
+        tusDelegate.uploadFailedExpectation = uploadFailedExpectation
+        waitForExpectations(timeout: 6, handler: nil)
+    }
 }

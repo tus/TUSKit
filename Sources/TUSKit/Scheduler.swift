@@ -7,12 +7,20 @@
 
 import Foundation
 
-typealias TaskCompletion = (Result<[Task], Error>) -> ()
+typealias TaskCompletion = (Result<[ScheduledTask], Error>) -> ()
 
 protocol SchedulerDelegate: AnyObject {
-    func didStartTask(task: Task, scheduler: Scheduler)
-    func didFinishTask(task: Task, scheduler: Scheduler)
-    func onError(error: Error, task: Task, scheduler: Scheduler)
+    func didStartTask(task: ScheduledTask, scheduler: Scheduler)
+    func didFinishTask(task: ScheduledTask, scheduler: Scheduler)
+    func onError(error: Error, task: ScheduledTask, scheduler: Scheduler)
+}
+
+/// A Task is run by the scheduler
+/// Once a Task is finished. It can spawn new tasks that need to be run.
+/// E.g. If a task is to upload a file, then it can spawn into tasks to cut up the file first. Which can then cut up into a task to upload, which can then add a task to delete the files.
+protocol ScheduledTask: AnyObject {
+    func run(completed: @escaping TaskCompletion)
+    func cancel()
 }
 
 /// A scheduler is responsible for processing tasks
@@ -20,11 +28,11 @@ protocol SchedulerDelegate: AnyObject {
 /// Keeps track of related tasks and their errors.
 final class Scheduler {
 
-    private var pendingTasks = [Task]()
-    private var runningTasks = [Task]()
+    private var pendingTasks = [ScheduledTask]()
+    private var runningTasks = [ScheduledTask]()
     weak var delegate: SchedulerDelegate?
     
-    var allTasks: [Task] { runningTasks + pendingTasks }
+    var allTasks: [ScheduledTask] { runningTasks + pendingTasks }
     
     // Tasks are processed in background
     let queue = DispatchQueue(label: "com.TUSKit.Scheduler")
@@ -37,7 +45,7 @@ final class Scheduler {
     
     /// Add multiple tasks. Note that these are independent tasks. If you want multiple tasks that are related in one way or another, use addGroupedTasks
     /// - Parameter tasks: The tasks to add
-    func addTasks(tasks: [Task]) {
+    func addTasks(tasks: [ScheduledTask]) {
         guard !tasks.isEmpty else { return }
         queue.async {
             self.pendingTasks.append(contentsOf: tasks)
@@ -45,7 +53,7 @@ final class Scheduler {
         checkProcessNextTask()
     }
         
-    func addTask(task: Task) {
+    func addTask(task: ScheduledTask) {
         queue.async {
             self.pendingTasks.append(task)
         }
@@ -102,20 +110,13 @@ final class Scheduler {
     
     /// Get first available task, removes it from current tasks
     /// - Returns: First next task, or nil if tasks are empty
-    private func extractFirstTask() -> Task? {
+    private func extractFirstTask() -> ScheduledTask? {
         guard !pendingTasks.isEmpty else { return nil }
         return pendingTasks.removeFirst()
     }
     
 }
 
-/// A Task is run by the scheduler
-/// Once a Task is finished. It can spawn new tasks that need to be run.
-/// E.g. If a task is to upload a file, then it can spawn into tasks to cut up the file first. Which can then cut up into a task to upload, which can then add a task to delete the files.
-protocol Task: AnyObject {
-    func run(completed: @escaping TaskCompletion)
-    func cancel()
-}
 
 // Convenience extensions to help deal with nested arrays.
 private extension Array where Element: Collection {

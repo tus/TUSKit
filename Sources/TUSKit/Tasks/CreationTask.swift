@@ -9,7 +9,7 @@ import Foundation
 
 /// `CreationTask` Prepares the server for a file upload.
 /// The server will return a path to upload to.
-final class CreationTask: Task {
+final class CreationTask: ScheduledTask {
     
     weak var progressDelegate: ProgressDelegate?
     var metaData: UploadMetadata

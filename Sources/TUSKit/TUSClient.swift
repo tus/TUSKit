@@ -379,7 +379,7 @@ public final class TUSClient {
 }
 
 extension TUSClient: SchedulerDelegate {
-    func didFinishTask(task: Task, scheduler: Scheduler) {
+    func didFinishTask(task: ScheduledTask, scheduler: Scheduler) {
         switch task {
         case let task as UploadDataTask:
             handleFinishedUploadTask(task)
@@ -422,7 +422,7 @@ extension TUSClient: SchedulerDelegate {
         delegate?.didFinishUpload(id: uploadTask.metaData.id, url: url, context: uploadTask.metaData.context, client: self)
     }
     
-    func didStartTask(task: Task, scheduler: Scheduler) {
+    func didStartTask(task: ScheduledTask, scheduler: Scheduler) {
         guard let task = task as? UploadDataTask else { return }
         
         if task.metaData.uploadedRange == nil && task.metaData.errorCount == 0 {
@@ -430,7 +430,7 @@ extension TUSClient: SchedulerDelegate {
         }
     }
     
-    func onError(error: Error, task: Task, scheduler: Scheduler) {
+    func onError(error: Error, task: ScheduledTask, scheduler: Scheduler) {
         let metaData: UploadMetadata
         switch task {
         case let task as CreationTask:
@@ -478,7 +478,7 @@ private extension String {
 /// Decide which task to create based on metaData.
 /// - Parameter metaData: The `UploadMetadata` for which to create a `Task`.
 /// - Returns: The task that has to be performed for the relevant metaData. Will return nil if metaData's file is already uploaded / finished. (no task needed).
-func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, progressDelegate: ProgressDelegate? = nil) throws -> Task? {
+func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, progressDelegate: ProgressDelegate? = nil) throws -> ScheduledTask? {
     guard !metaData.isFinished else {
         return nil
     }

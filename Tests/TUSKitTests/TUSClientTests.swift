@@ -306,7 +306,6 @@ final class TUSClientTests: XCTestCase {
         }
     }
     
-    /*
     func testUploadingWithCustomHeadersForFiles() throws {
         // Make sure client adds custom headers
         
@@ -316,7 +315,7 @@ final class TUSClientTests: XCTestCase {
         let customHeaders = [key: value]
         
         // Store file
-        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        let cacheDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         // Store file in cache
         func storeFileInCache() throws -> URL {
             let targetLocation = cacheDir.appendingPathComponent("myfile.txt")
@@ -341,7 +340,6 @@ final class TUSClientTests: XCTestCase {
             }
         }
     }
-     */
 
     // MARK: - Stopping and canceling
     

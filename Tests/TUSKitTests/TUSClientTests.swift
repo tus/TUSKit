@@ -14,6 +14,8 @@ final class TUSClientTests: XCTestCase {
         
         relativeStoragePath = URL(string: "TUSTEST")!
         
+        MockURLProtocol.reset()
+        
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
         
@@ -30,13 +32,11 @@ final class TUSClientTests: XCTestCase {
             XCTFail("Could not reset \(error)")
         }
         
-        MockURLProtocol.reset()
         prepareNetworkForSuccesfulUploads(data: data)
     }
     
     override func tearDown() {
         super.tearDown()
-        MockURLProtocol.reset()
         clearDirectory(dir: fullStoragePath)
         do {
             try client.reset()

@@ -66,12 +66,12 @@ final class TUSMockDelegate: TUSClientDelegate {
     }
 }
 
+    typealias Headers = [String: String]?
+
 /// MockURLProtocol to support mocking the network
 final class MockURLProtocol: URLProtocol {
     
-    let queue = DispatchQueue.global()
-    
-    typealias Headers = [String: String]?
+    private static let queue = DispatchQueue(label: "com.tuskit.mockurlprotocol")
     
     struct Response {
         let status: Int
@@ -83,8 +83,10 @@ final class MockURLProtocol: URLProtocol {
     static var receivedRequests = [URLRequest]()
     
     static func reset() {
-        self.responses = [:]
-        self.receivedRequests = []
+        queue.async {
+            responses = [:]
+            receivedRequests = []
+        }
     }
     
     /// Define a response to be used for a method
@@ -106,7 +108,7 @@ final class MockURLProtocol: URLProtocol {
     }
     
     override func startLoading() {
-        queue.async {
+        type(of: self).queue.async {
             // This is where you create the mock response as per your test case and send it to the URLProtocolClient.
             
             guard let client = self.client else { return }

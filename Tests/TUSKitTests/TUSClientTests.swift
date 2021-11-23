@@ -38,8 +38,6 @@ final class TUSClientTests: XCTestCase {
         super.tearDown()
         MockURLProtocol.reset()
         clearDirectory(dir: fullStoragePath)
-        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        clearDirectory(dir: cacheDir)
         do {
             try client.reset()
         } catch {
@@ -127,6 +125,24 @@ final class TUSClientTests: XCTestCase {
     */
     
     // MARK: - Id handling
+    
+    func testIdsAreGivenAndReturnedWhenFinished() throws {
+        
+        // Make sure id's that are given when uploading, are returned when uploads are finished
+        let expectedId = try client.upload(data: data)
+        
+        XCTAssert(tusDelegate.finishedUploads.isEmpty)
+        
+        tusDelegate.finishUploadExpectation = expectation(description: "Waiting for upload to fail")
+        waitForExpectations(timeout: 3, handler: nil)
+        
+        XCTAssert(tusDelegate.failedUploads.isEmpty, "Found a failed uploads, should have been empty. Something went wrong with uploading.")
+        XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Upload didn't finish.")
+        for (id, _) in tusDelegate.finishedUploads {
+            XCTAssertEqual(id, expectedId)
+        }
+    }
+    
     func testCorrectIdsAreGivenOnFailure() throws {
         prepareNetworkForErronousResponses()
                                             
@@ -300,15 +316,15 @@ final class TUSClientTests: XCTestCase {
         let customHeaders = [key: value]
         
         // Store file
-        let cacheDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let documentDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         // Store file in cache
-        func storeFileInCache() throws -> URL {
-            let targetLocation = cacheDir.appendingPathComponent("myfile.txt")
+        func storeFileInDocumentsDir() throws -> URL {
+            let targetLocation = documentDir.appendingPathComponent("myfile.txt")
             try data.write(to: targetLocation)
             return targetLocation
         }
         
-        let location = try storeFileInCache()
+        let location = try storeFileInDocumentsDir()
         
         try client.uploadFileAt(filePath: location, customHeaders: customHeaders)
         waitForUploadsToFinish()
@@ -371,7 +387,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(ids.count, tusDelegate.finishedUploads.count, "Delegate has \(tusDelegate.activityCount) items")
     }
     
-    // MARK: - Multiple instances
     
     // MARK: - Chunking
     
@@ -380,7 +395,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(1, ids.count)
         XCTAssertEqual(2, MockURLProtocol.receivedRequests.count)
     }
-    
 
     func testLargeUploadsWillBeChunked() throws {
         // Above 500kb will be chunked
@@ -403,6 +417,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(1, tusDelegate.failedUploads.count)
     }
     
+    /*
     func testLargeUploadsWillBeChunkedAfterRetry() throws {
         // Make sure that chunking happens even after retries
         
@@ -451,6 +466,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(2, uploadRequests.count)
     }
     
+     */
         /*
 
     // MARK: - Delegate start calls
@@ -751,6 +767,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(String(firstOffset), secondRequest.allHTTPHeaderFields?["Upload-Offset"], "Even though first request wanted to upload to content length 9. We expect that on server returning \(firstOffset), that the second request continues from that. So should be \(firstOffset) here")
     }
      
+    // MARK: - Multiple instances
      func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {
         // Make multiple instances, they shouldn't interfere with each other's files.
         
@@ -804,23 +821,6 @@ final class TUSClientTests: XCTestCase {
         }
     }
      
-    func testIdsAreGivenAndReturnedWhenFinished() throws {
-        
-        // Make sure id's that are given when uploading, are returned when uploads are finished
-        let expectedId = try client.upload(data: data)
-        
-        XCTAssert(tusDelegate.finishedUploads.isEmpty)
-        
-        tusDelegate.finishUploadExpectation = expectation(description: "Waiting for upload to fail")
-        waitForExpectations(timeout: 3, handler: nil)
-        
-        XCTAssert(tusDelegate.failedUploads.isEmpty, "Found a failed uploads, should have been empty. Something went wrong with uploading.")
-        XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Upload didn't finish.")
-        for (id, _) in tusDelegate.finishedUploads {
-            XCTAssertEqual(id, expectedId)
-        }
-    }
-    
    
    
      */

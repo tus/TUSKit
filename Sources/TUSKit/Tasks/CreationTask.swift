@@ -17,6 +17,7 @@ final class CreationTask: ScheduledTask {
     private let api: TUSAPI
     private let files: Files
     private let chunkSize: Int?
+    private var didCancel: Bool = false
     private weak var sessionTask: URLSessionDataTask?
 
     init(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int? = nil) throws {
@@ -27,9 +28,15 @@ final class CreationTask: ScheduledTask {
     }
     
     func run(completed: @escaping TaskCompletion) {
+        
+        if didCancel { return }
         sessionTask = api.create(metaData: metaData) { [weak self] result in
             guard let self = self else { return }
             // File is created remotely. Now start first datatask.
+            
+            if self.didCancel {
+                completed(.failure(TUSClientError.couldNotCreateFileOnServer))
+            }
             
             // Getting rid of self. in this closure
             let metaData = self.metaData
@@ -39,7 +46,6 @@ final class CreationTask: ScheduledTask {
             let progressDelegate = self.progressDelegate
 
             do {
-                
                 let remoteDestination = try result.get()
                 metaData.remoteDestination = remoteDestination
                 try files.encodeAndStore(metaData: metaData)
@@ -62,6 +68,7 @@ final class CreationTask: ScheduledTask {
     }
     
     func cancel() {
+        didCancel = true
         sessionTask?.cancel()
     }
 }

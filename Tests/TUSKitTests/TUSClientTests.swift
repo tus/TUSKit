@@ -38,11 +38,6 @@ final class TUSClientTests: XCTestCase {
     override func tearDown() {
         super.tearDown()
         clearDirectory(dir: fullStoragePath)
-        do {
-            try client.reset()
-        } catch {
-            // Some dirs may not exist, that's fine. We can ignore the error.
-        }
     }
     
     // MARK: - Adding files and data to upload
@@ -345,6 +340,7 @@ final class TUSClientTests: XCTestCase {
     // MARK: - Stopping and canceling
     
     func testFuncStopAndCancel() throws {
+
         XCTAssert(tusDelegate.fileErrors.isEmpty)
         try client.upload(data: data)
         client.stopAndCancelAll()
@@ -353,9 +349,9 @@ final class TUSClientTests: XCTestCase {
         
         // Test adding new uploads, make sure they work after stopping and cancelling
         try client.upload(data: data)
-        
-        waitForUploadsToFinish(2)
-        XCTAssertEqual(2, tusDelegate.finishedUploads.count, "Expected the previous and new upload to finish")
+
+        waitForUploadsToFinish(1)
+        XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Expected the previous and new upload to finish")
     }
     
     // MARK: - Testing new client sessions

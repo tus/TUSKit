@@ -46,23 +46,26 @@ final class Scheduler {
     /// Add multiple tasks. Note that these are independent tasks. If you want multiple tasks that are related in one way or another, use addGroupedTasks
     /// - Parameter tasks: The tasks to add
     func addTasks(tasks: [ScheduledTask]) {
-        guard !tasks.isEmpty else { return }
         queue.async {
+            guard !tasks.isEmpty else { return }
             self.pendingTasks.append(contentsOf: tasks)
+            self.checkProcessNextTask()
         }
-        checkProcessNextTask()
     }
         
     func addTask(task: ScheduledTask) {
         queue.async {
             self.pendingTasks.append(task)
+            self.checkProcessNextTask()
         }
-        checkProcessNextTask()
     }
     
     func cancelAll() {
-        self.pendingTasks = []
-        self.runningTasks.forEach { $0.cancel() }
+        queue.async {
+            self.pendingTasks = []
+            self.runningTasks.forEach { $0.cancel() }
+            self.runningTasks = []
+        }
     }
 
     private func checkProcessNextTask() {
@@ -88,7 +91,7 @@ final class Scheduler {
                     if let index = self.runningTasks.firstIndex(where: { $0 === task }) {
                         self.runningTasks.remove(at: index)
                     } else {
-                        assertionFailure("Currently finished task does not have an index in running tasks")
+                        assertionFailure("Currently finished task does not have an index in running tasks \(self.runningTasks)")
                     }
                     
                     switch result {

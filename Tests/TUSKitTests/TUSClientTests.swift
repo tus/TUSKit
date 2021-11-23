@@ -353,7 +353,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(1, tusDelegate.failedUploads.count)
     }
     
-    /*
     func testLargeUploadsWillBeChunkedAfterRetry() throws {
         // Make sure that chunking happens even after retries
         
@@ -378,6 +377,7 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(2, uploadRequests.count)
     }
     
+    /*
     func testLargeUploadsWillBeChunkedAfterFetchingStatus() throws {
         // First we make sure create succeeds. But uploading fails.
         // This means we can do a status call after. After which we measure if something will get chunked.

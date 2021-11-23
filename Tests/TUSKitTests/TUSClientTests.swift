@@ -276,42 +276,6 @@ final class TUSClientTests: XCTestCase {
 //        XCTFail("Implement me")
 //    }
 //
-    // MARK: - Support custom headers
-    
-    func testUploadingWithCustomHeadersForFiles() throws {
-        // Make sure client adds custom headers
-        
-        // Expected values
-        let key = "TUSKit"
-        let value = "TransloaditKit"
-        let customHeaders = [key: value]
-        
-        // Store file
-        let documentDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        // Store file in cache
-        func storeFileInDocumentsDir() throws -> URL {
-            let targetLocation = documentDir.appendingPathComponent("myfile.txt")
-            try data.write(to: targetLocation)
-            return targetLocation
-        }
-        
-        let location = try storeFileInDocumentsDir()
-        
-        try client.uploadFileAt(filePath: location, customHeaders: customHeaders)
-        waitForUploadsToFinish()
-        
-        // Validate
-        let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
-        
-        for request in createRequests {
-            let headers = try XCTUnwrap(request.allHTTPHeaderFields)
-            let metaDataString = try XCTUnwrap(headers["Upload-Metadata"])
-            for (key, value) in customHeaders {
-                XCTAssert(metaDataString.contains(key), "Expected \(metaDataString) to contain \(key)")
-                XCTAssert(metaDataString.contains(value.toBase64()), "Expected \(metaDataString) to contain base 64 value for \(value)")
-            }
-        }
-    }
 
     // MARK: - Stopping and canceling
     
@@ -822,7 +786,43 @@ final class TUSClientTests: XCTestCase {
             }
         }
     }
+     // MARK: - Support custom headers
     
+    func testUploadingWithCustomHeadersForFiles() throws {
+        // Make sure client adds custom headers
+        
+        // Expected values
+        let key = "TUSKit"
+        let value = "TransloaditKit"
+        let customHeaders = [key: value]
+        
+        // Store file
+        let documentDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        // Store file in cache
+        func storeFileInDocumentsDir() throws -> URL {
+            let targetLocation = documentDir.appendingPathComponent("myfile.txt")
+            try data.write(to: targetLocation)
+            return targetLocation
+        }
+        
+        let location = try storeFileInDocumentsDir()
+        
+        try client.uploadFileAt(filePath: location, customHeaders: customHeaders)
+        waitForUploadsToFinish()
+        
+        // Validate
+        let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
+        
+        for request in createRequests {
+            let headers = try XCTUnwrap(request.allHTTPHeaderFields)
+            let metaDataString = try XCTUnwrap(headers["Upload-Metadata"])
+            for (key, value) in customHeaders {
+                XCTAssert(metaDataString.contains(key), "Expected \(metaDataString) to contain \(key)")
+                XCTAssert(metaDataString.contains(value.toBase64()), "Expected \(metaDataString) to contain base 64 value for \(value)")
+            }
+        }
+    }
+   
 
    
      */

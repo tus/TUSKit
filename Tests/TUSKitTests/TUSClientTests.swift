@@ -396,7 +396,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(1, createRequests.count, "The POST method (create) should have been called only once")
     }
     
-    /*
     func testClientThrowsErrorsWhenReceivingWrongOffset() throws {
         // Make sure that if a server gives a "wrong" offset, the uploader errors and doesn't end up in an infinite uploading loop.
         prepareNetworkForWrongOffset(data: data)
@@ -452,7 +451,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(2, uploadRequests.count)
     }
     
-     */
         /*
 
     // MARK: - Delegate start calls

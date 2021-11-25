@@ -108,12 +108,14 @@ final class MockURLProtocol: URLProtocol {
     }
     
     override func startLoading() {
-        type(of: self).queue.async {
+        type(of: self).queue.async { [weak self] in
             // This is where you create the mock response as per your test case and send it to the URLProtocolClient.
             
+            guard let self = self else { return }
             guard let client = self.client else { return }
             
-            guard let method = self.request.httpMethod, let preparedResponseClosure = type(of: self).responses[method] else {
+            guard let method = self.request.httpMethod,
+                    let preparedResponseClosure = type(of: self).responses[method] else {
                 //            assertionFailure("No response found for \(String(describing: request.httpMethod)) prepared \(type(of: self).responses)")
                 return
             }

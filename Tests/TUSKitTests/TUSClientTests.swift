@@ -377,7 +377,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(2, uploadRequests.count)
     }
     
-    /*
     func testLargeUploadsWillBeChunkedAfterFetchingStatus() throws {
         // First we make sure create succeeds. But uploading fails.
         // This means we can do a status call after. After which we measure if something will get chunked.
@@ -402,8 +401,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(2, uploadRequests.count)
     }
     
-     */
-        /*
 
     // MARK: - Delegate start calls
     
@@ -494,7 +491,6 @@ final class TUSClientTests: XCTestCase {
         // Expected the context 4 times. Two files on start, two files on error.
         XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
     }
-    */
     
     // MARK: - Custom URLs
     

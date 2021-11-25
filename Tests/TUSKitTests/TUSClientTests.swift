@@ -255,7 +255,7 @@ final class TUSClientTests: XCTestCase {
         let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
         uploadFailedExpectation.expectedFulfillmentCount = uploadCount
         tusDelegate.uploadFailedExpectation = uploadFailedExpectation
-        waitForExpectations(timeout: 3, handler: nil)
+        waitForExpectations(timeout: 5, handler: nil)
         
         XCTAssert(tusDelegate.finishedUploads.isEmpty)
         

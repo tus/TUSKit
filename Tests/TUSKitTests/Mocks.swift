@@ -43,7 +43,6 @@ final class TUSMockDelegate: TUSClientDelegate {
         }
     }
     
-    
     func fileError(error: TUSClientError, client: TUSClient) {
         fileErrors.append(error)
         fileErrorExpectation?.fulfill()
@@ -94,7 +93,9 @@ final class MockURLProtocol: URLProtocol {
     ///   - method: The http method (POST PATCH etc)
     ///   - makeResponse: A closure that returns a Response
     static func prepareResponse(for method: String, makeResponse: @escaping (Headers) -> Response) {
-        responses[method] = makeResponse
+        queue.async {
+            responses[method] = makeResponse
+        }
     }
     
     override class func canInit(with request: URLRequest) -> Bool {

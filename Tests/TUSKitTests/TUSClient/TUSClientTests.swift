@@ -154,9 +154,8 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(String(firstOffset), secondRequest.allHTTPHeaderFields?["Upload-Offset"], "Even though first request wanted to upload to content length 9. We expect that on server returning \(firstOffset), that the second request continues from that. So should be \(firstOffset) here")
     }
      
-    // MARK: - Multiple instances
-    
-     func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {
+    // Flakey on CI, not locally.
+    func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {
         // Make multiple instances, they shouldn't interfere with each other's files.
         
         // Second instance

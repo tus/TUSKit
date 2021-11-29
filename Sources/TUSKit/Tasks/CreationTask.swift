@@ -34,10 +34,6 @@ final class CreationTask: ScheduledTask {
             guard let self = self else { return }
             // File is created remotely. Now start first datatask.
             
-            if self.didCancel {
-                completed(.failure(TUSClientError.couldNotCreateFileOnServer))
-            }
-            
             // Getting rid of self. in this closure
             let metaData = self.metaData
             let files = self.files
@@ -57,7 +53,11 @@ final class CreationTask: ScheduledTask {
                     task = try UploadDataTask(api: api, metaData: metaData, files: files)
                 }
                 task.progressDelegate = progressDelegate
-                completed(.success([task]))
+                if self.didCancel {
+                    completed(.failure(TUSClientError.couldNotCreateFileOnServer))
+                } else {
+                    completed(.success([task]))
+                }
             } catch let error as TUSClientError {
                 completed(.failure(error))
             } catch {

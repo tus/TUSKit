@@ -91,7 +91,7 @@ final class Scheduler {
                     if let index = self.runningTasks.firstIndex(where: { $0 === task }) {
                         self.runningTasks.remove(at: index)
                     } else {
-                        assertionFailure("Currently finished task does not have an index in running tasks \(self.runningTasks)")
+                        // Stray tasks might be canceled meanwhile.
                     }
                     
                     switch result {

@@ -69,56 +69,6 @@ final class TUSClientTests: XCTestCase {
         try XCTAssertThrowsError(client.upload(data: data))
     }
     
-    // MARK: - File handling
-    
-    /*
-     // TODO Decide if we need this test, since it's also covered by the FilesTests
-    func testClientCanHandleRelativeStorageDirectories() throws {
-        // Initialize tusclient with either "TUS" or "/TUS" and it should work
-        
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let cacheDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        
-        let values = [
-            (URL(string: "ABC")!, documentsDirectory.appendingPathComponent("ABC")),
-            (URL(string: "/ABC")!, documentsDirectory.appendingPathComponent("ABC")),
-            (URL(string: "ABC/")!, documentsDirectory.appendingPathComponent("ABC")),
-            (URL(string: "/ABC/")!, documentsDirectory.appendingPathComponent("ABC")),
-            (URL(string: "ABC/ZXC")!, documentsDirectory.appendingPathComponent("ABC/ZXC")),
-            (URL(string: "/ABC/ZXC")!, documentsDirectory.appendingPathComponent("ABC/ZXC")),
-            (URL(string: "ABC/ZXC/")!, documentsDirectory.appendingPathComponent("ABC/ZXC")),
-            (URL(string: "/ABC/ZXC/")!, documentsDirectory.appendingPathComponent("ABC/ZXC")),
-            (nil, documentsDirectory.appendingPathComponent("TUS")),
-            (cacheDirectory.appendingPathComponent("TEST"), cacheDirectory.appendingPathComponent("TEST"))
-            ]
-        
-        var clients = [TUSClient]()
-        for (url, expectedPath) in values {
-            clearDirectory(dir: expectedPath)
-            
-            let client = makeClient(storagePath: url)
-            clients.append(client)
-            
-            let delegate = TUSMockDelegate()
-            client.delegate = delegate
-            
-            try client.upload(data: data)
-            
-            var contents = try FileManager.default.contentsOfDirectory(at: expectedPath, includingPropertiesForKeys: nil)
-            XCTAssertFalse(contents.isEmpty)
-            
-            let uploadFinishedExpectation = expectation(description: "Waiting for upload to finished")
-            delegate.finishUploadExpectation = uploadFinishedExpectation
-            waitForExpectations(timeout: 3, handler: nil)
-            
-            contents = try FileManager.default.contentsOfDirectory(at: expectedPath, includingPropertiesForKeys: nil)
-            XCTAssert(contents.isEmpty)
-            try client.reset()
-            clearDirectory(dir: expectedPath)
-        }
-    }
-    */
-    
     // MARK: - Id handling
     
     func testIdsAreGivenAndReturnedWhenFinished() throws {
@@ -487,14 +437,13 @@ final class TUSClientTests: XCTestCase {
         tusDelegate.uploadFailedExpectation = didFailExpectation
         try client.uploadMultiple(dataFiles: files, context: expectedContext)
         
-        waitForExpectations(timeout: 3, handler: nil)
+        waitForExpectations(timeout: 5, handler: nil)
         // Expected the context 4 times. Two files on start, two files on error.
         XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
     }
     
     // MARK: - Custom URLs
     
-    /*
     func testUploadingToCustomURL() throws {
         let url = URL(string: "www.custom-url")!
         try client.upload(data: data, uploadURL: url)
@@ -525,7 +474,6 @@ final class TUSClientTests: XCTestCase {
         XCTAssert(tusDelegate.totalProgressReceived.contains(data.count))
     }
     
-     */
     // MARK: - Preparing network
     
     private func resetReceivedRequests() {
@@ -656,7 +604,6 @@ final class TUSClientTests: XCTestCase {
     
     // MARK: - Flakey (pass locally not on CI)
     
-    /*
     func testClientContinuesPartialUploads() throws {
         // If server gives a content length lower than the data size, meaning a file isn't fully uploaded.
         // The client must continue uploading from that point on.
@@ -700,6 +647,7 @@ final class TUSClientTests: XCTestCase {
     }
      
     // MARK: - Multiple instances
+    
      func testMultipleInstancesDontClashWithFilesIfPathsAreDifferent() throws {
         // Make multiple instances, they shouldn't interfere with each other's files.
         
@@ -735,7 +683,7 @@ final class TUSClientTests: XCTestCase {
 
         // Now clear cache of first client, second should be unaffected
         do {
-            try client.clearAllCache()
+            try client.reset()
         } catch {
             //
         }
@@ -752,37 +700,8 @@ final class TUSClientTests: XCTestCase {
             //
         }
     }
-     
    
-     // Locally flakey if run in  full suite
-     
-         func testUploadingWithCustomHeadersForData() throws {
-        // Make sure client adds custom headers
-        
-        let createRequestsFirst = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
-        XCTAssert(createRequestsFirst.isEmpty)
-        
-        // Expected values
-        let key = "TUSKit"
-        let value = "TransloaditKit"
-        let customHeaders = [key: value]
-        
-        let ids = try upload(data: data, amount: 2, customHeaders: customHeaders)
-        
-        // Validate
-        let createRequests = MockURLProtocol.getReceivedRequests().filter { $0.httpMethod == "POST" }
-        XCTAssertEqual(ids.count, createRequests.count, "Received \(createRequests)")
-        
-        for request in createRequests {
-            let headers = try XCTUnwrap(request.allHTTPHeaderFields)
-            let metaDataString = try XCTUnwrap(headers["Upload-Metadata"])
-            for (key, value) in customHeaders {
-                XCTAssert(metaDataString.contains(key), "Expected \(metaDataString) to contain \(key)")
-                XCTAssert(metaDataString.contains(value.toBase64()), "Expected \(metaDataString) to contain base 64 value for \(value)")
-            }
-        }
-    }
-     // MARK: - Support custom headers
+    // MARK: - Support custom headers
     
     func testUploadingWithCustomHeadersForFiles() throws {
         // Make sure client adds custom headers
@@ -803,8 +722,11 @@ final class TUSClientTests: XCTestCase {
         
         let location = try storeFileInDocumentsDir()
         
+        let startedExpectation = expectation(description: "Waiting for uploads to start")
+        tusDelegate.startUploadExpectation = startedExpectation
+        
         try client.uploadFileAt(filePath: location, customHeaders: customHeaders)
-        waitForUploadsToFinish()
+        wait(for: [startedExpectation], timeout: 5)
         
         // Validate
         let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
@@ -813,13 +735,43 @@ final class TUSClientTests: XCTestCase {
             let headers = try XCTUnwrap(request.allHTTPHeaderFields)
             let metaDataString = try XCTUnwrap(headers["Upload-Metadata"])
             for (key, value) in customHeaders {
-                XCTAssert(metaDataString.contains(key), "Expected \(metaDataString) to contain \(key)")
+                XCTAssert(metaDataString.contains(key), "Expected \(metaDataString) to contain \(key), headers are \(customHeaders)")
                 XCTAssert(metaDataString.contains(value.toBase64()), "Expected \(metaDataString) to contain base 64 value for \(value)")
             }
         }
     }
-   
-
-   
-     */
+    
+    // TODO: Decide if we want to keep this.
+//    func testUploadingWithCustomHeadersForData() throws {
+//        // Make sure client adds custom headers
+//        
+//        let createRequestsFirst = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
+//        XCTAssert(createRequestsFirst.isEmpty)
+//        
+//        // Expected values
+//        let key = "TUSKit"
+//        let value = "TransloaditKit"
+//        let customHeaders = [key: value]
+//        
+//        let finishedExpectation = expectation(description: "Waiting for uploads to start")
+//        finishedExpectation.expectedFulfillmentCount = 2
+//        tusDelegate.finishUploadExpectation = finishedExpectation
+//        
+//        try client.uploadMultiple(dataFiles: [data, data], customHeaders: customHeaders)
+//        wait(for: [finishedExpectation], timeout: 5)
+//        
+//        // Validate
+//        let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
+//        XCTAssertFalse(createRequests.isEmpty)
+//        
+//        for request in createRequests {
+//            let headers = try XCTUnwrap(request.allHTTPHeaderFields)
+//            let metaDataString = try XCTUnwrap(headers["Upload-Metadata"])
+//            for (key, value) in customHeaders {
+//                XCTAssert(metaDataString.contains(key), "Expected \(metaDataString) to contain \(key)")
+//                XCTAssert(metaDataString.contains(value.toBase64()), "Expected \(metaDataString) to contain base 64 value for \(value)")
+//            }
+//        }
+//    }
+     
 }

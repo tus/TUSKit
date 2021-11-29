@@ -61,17 +61,9 @@ final class UploadDataTask: NSObject, ScheduledTask {
             return
         }
         
-        guard let data = try? Data(contentsOf: metaData.filePath) else {
-            DispatchQueue.main.async {
-                completed(.failure(TUSClientError.couldNotLoadData))
-            }
-            return
-        }
-        
         guard let remoteDestination = metaData.remoteDestination,
               let dataToUpload = loadData() else {
-                  assertionFailure("Somehow did not have a remote destination to upload to.")
-                  completed(Result.failure(TUSClientError.couldNotUploadFile))
+                  completed(Result.failure(TUSClientError.couldNotLoadData))
                   return
               }
         
@@ -131,7 +123,7 @@ final class UploadDataTask: NSObject, ScheduledTask {
         sessionTask = task
         
         if #available(iOS 11.0, macOS 10.13, *) {
-            observation = observeTask(task: task, size: data.count)
+            observation = observeTask(task: task, size: dataToUpload.count)
         }
     }
     
@@ -161,7 +153,6 @@ final class UploadDataTask: NSObject, ScheduledTask {
     /// - Returns: The data, or nil if it can't be loaded.
     func loadData() -> Data? {
         guard let fileHandle = try? FileHandle(forReadingFrom: metaData.filePath) else {
-            assertionFailure("Could not load file \(metaData.filePath)")
             return nil
         }
         

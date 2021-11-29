@@ -37,10 +37,6 @@ final class Scheduler {
     // Tasks are processed in background
     let queue = DispatchQueue(label: "com.TUSKit.Scheduler")
 
-    // We limit the number of concurrent tasks. E.g. iOS can handle 5 concurrent uploads.
-    static let maxConcurrentActions = 5
-    let semaphore = DispatchSemaphore(value: maxConcurrentActions)
-    
     init() {}
     
     /// Add multiple tasks. Note that these are independent tasks. If you want multiple tasks that are related in one way or another, use addGroupedTasks
@@ -78,14 +74,11 @@ final class Scheduler {
                 return
             }
             
-            self.semaphore.wait()
-            
             self.runningTasks.append(task)
             self.delegate?.didStartTask(task: task, scheduler: self)
             
             task.run { [weak self] result in
                 guard let self = self else { return }
-                self.semaphore.signal()
                 // // Make sure tasks are updated atomically
                 self.queue.async {
                     if let index = self.runningTasks.firstIndex(where: { $0 === task }) {

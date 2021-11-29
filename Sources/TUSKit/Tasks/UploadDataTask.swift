@@ -133,7 +133,8 @@ final class UploadDataTask: NSObject, ScheduledTask {
         let targetRange = self.range ?? 0..<size
         observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
             guard let self = self else { return }
-            self.queue.async {
+            self.queue.async { [weak self] in
+                guard let self = self else { return }
                 guard progress.fractionCompleted <= 1 else { return }
                 let index = self.metaData.uploadedRanges.firstIndex { $0.first == targetRange.lowerBound }
                 let uploadedOffset: Double = progress.fractionCompleted * Double(targetRange.count)

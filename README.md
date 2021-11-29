@@ -181,8 +181,6 @@ It does, however, automatically support parallel uploads in a single client. It 
 
 The `TUSClient` will retry a failed upload two times (three total attempts) before reporting it as an error.
 
-The `TUSClient` will try to limit to max 5 concurrent files per upload.
-
 The `TUSClient` will try to upload a file fully, and if it gets interrupted (e.g. broken connection or app is killed), it will continue where it left of.
 
 The `TUSClient` stores files locally to upload them. It will use the `storageDirectory` path that is passed in the initializer. Or create a default directory inside the documentsdir at /TUS .

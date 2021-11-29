@@ -195,3 +195,4 @@ final class UploadDataTask: NSObject, ScheduledTask {
         observation?.invalidate()
     }
 }
+

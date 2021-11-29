@@ -75,8 +75,6 @@ final class TUSClient_RetryTests: XCTestCase {
         client.start()
         XCTAssert(tusDelegate.startedUploads.isEmpty)
     }
-    
-    
 
     // MARK: - Private helper methods for uploading
 

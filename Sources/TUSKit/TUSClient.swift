@@ -96,12 +96,14 @@ public final class TUSClient {
     // MARK: - Starting and stopping
     
     /// Kick off the client to start uploading any locally stored files.
-    /// - Returns: The pre-existing id's that are going to be uploaded.
+    /// - Returns: The pre-existing id's and contexts that are going to be uploaded. You can use this to continue former progress.
     @discardableResult
-    public func start() -> [UUID] {
+    public func start() -> [(UUID, [String: String]?)] {
         didStopAndCancel = false
-        scheduleStoredTasks()
-        return Array(uploads.keys)
+        let metaData = scheduleStoredTasks()
+        return metaData.map { metaData in
+            (metaData.id, metaData.context)
+        }
     }
     
     /// Stops the ongoing sessions, keeps the cache intact so you can continue uploading at a later stage.
@@ -351,7 +353,7 @@ public final class TUSClient {
     }
     
     /// Check which uploads aren't finished. Load them from a store and turn these into tasks.
-    private func scheduleStoredTasks() {
+    private func scheduleStoredTasks() -> [UploadMetadata] {
         do {
             let metaDataItems = try files.loadAllMetadata().filter({ metaData in
                 // Only allow uploads where errors are below an amount
@@ -361,8 +363,11 @@ public final class TUSClient {
             for metaData in metaDataItems {
                 try scheduleTask(for: metaData)
             }
+            
+            return metaDataItems
         } catch {
-            // TODO: Return error, can't load from store
+            delegate?.fileError(error: TUSClientError.couldNotLoadData, client: self)
+            return []
         }
     }
     

@@ -621,11 +621,9 @@ final class TUSClientTests: XCTestCase {
         // Mimick chunk uploading with offsets. Make sure initially we give a too low of an offset
         MockURLProtocol.prepareResponse(for: "PATCH") { headers in
             if isFirstUpload {
-                print("first upload")
                 isFirstUpload.toggle()
                 return MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(firstOffset)], data: nil)
             } else {
-                print("second upload")
                 return MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
             }
         }
@@ -744,26 +742,26 @@ final class TUSClientTests: XCTestCase {
     // TODO: Decide if we want to keep this.
 //    func testUploadingWithCustomHeadersForData() throws {
 //        // Make sure client adds custom headers
-//        
+//
 //        let createRequestsFirst = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
 //        XCTAssert(createRequestsFirst.isEmpty)
-//        
+//
 //        // Expected values
 //        let key = "TUSKit"
 //        let value = "TransloaditKit"
 //        let customHeaders = [key: value]
-//        
+//
 //        let finishedExpectation = expectation(description: "Waiting for uploads to start")
 //        finishedExpectation.expectedFulfillmentCount = 2
 //        tusDelegate.finishUploadExpectation = finishedExpectation
-//        
+//
 //        try client.uploadMultiple(dataFiles: [data, data], customHeaders: customHeaders)
 //        wait(for: [finishedExpectation], timeout: 5)
-//        
+//
 //        // Validate
 //        let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
 //        XCTAssertFalse(createRequests.isEmpty)
-//        
+//
 //        for request in createRequests {
 //            let headers = try XCTUnwrap(request.allHTTPHeaderFields)
 //            let metaDataString = try XCTUnwrap(headers["Upload-Metadata"])

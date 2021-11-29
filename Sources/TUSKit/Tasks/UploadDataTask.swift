@@ -20,6 +20,7 @@ final class UploadDataTask: NSObject, ScheduledTask {
     private let files: Files
     private let range: Range<Int>?
     private var observation: NSKeyValueObservation?
+    private let queue: DispatchQueue = DispatchQueue(label: "com.tuskit.uploadDatTask")
     private weak var sessionTask: URLSessionUploadTask?
     
     /// Specify range, or upload
@@ -123,29 +124,31 @@ final class UploadDataTask: NSObject, ScheduledTask {
         sessionTask = task
         
         if #available(iOS 11.0, macOS 10.13, *) {
-            observation = observeTask(task: task, size: dataToUpload.count)
+            observeTask(task: task, size: dataToUpload.count)
         }
     }
     
     @available(iOS 11.0, macOS 10.13, *)
-    func observeTask(task: URLSessionUploadTask, size: Int) -> NSKeyValueObservation? {
+    func observeTask(task: URLSessionUploadTask, size: Int) {
         let targetRange = self.range ?? 0..<size
-        return task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+        observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
             guard let self = self else { return }
-            guard progress.fractionCompleted <= 1 else { return }
-            let index = self.metaData.uploadedRanges.firstIndex { $0.first == targetRange.lowerBound }
-            let uploadedOffset: Double = progress.fractionCompleted * Double(targetRange.count)
-            let newlyUploadedRange = targetRange.lowerBound..<Int(uploadedOffset) + targetRange.lowerBound
-            guard newlyUploadedRange.count > 0 else { return }
-            
-            if let currentIndex = index {
-                // Update index of existing range
-                self.metaData.uploadedRanges[currentIndex] = newlyUploadedRange
-            } else {
-                // Range not part of metadata yet, add it.
-                self.metaData.uploadedRanges.append(newlyUploadedRange)
+            self.queue.async {
+                guard progress.fractionCompleted <= 1 else { return }
+                let index = self.metaData.uploadedRanges.firstIndex { $0.first == targetRange.lowerBound }
+                let uploadedOffset: Double = progress.fractionCompleted * Double(targetRange.count)
+                let newlyUploadedRange = targetRange.lowerBound..<Int(uploadedOffset) + targetRange.lowerBound
+                guard newlyUploadedRange.count > 0 else { return }
+                
+                if let currentIndex = index {
+                    // Update index of existing range
+                    self.metaData.uploadedRanges[currentIndex] = newlyUploadedRange
+                } else {
+                    // Range not part of metadata yet, add it.
+                    self.metaData.uploadedRanges.append(newlyUploadedRange)
+                }
+                self.progressDelegate?.progressUpdatedFor(metaData: self.metaData)
             }
-            self.progressDelegate?.progressUpdatedFor(metaData: self.metaData)
         }
     }
     
@@ -192,4 +195,3 @@ final class UploadDataTask: NSObject, ScheduledTask {
         observation?.invalidate()
     }
 }
-

@@ -67,9 +67,6 @@ final class TUSClientTests: XCTestCase {
             XCTAssert(ids.contains(id))
             XCTAssert(progress > 0)
         }
-        
-        XCTAssert(tusDelegate.totalProgressReceived.count > 1)
-        XCTAssert(tusDelegate.totalProgressReceived.contains(data.count))
     }
     
     /// Upload data, a certain amount of times, and wait for it to be done.

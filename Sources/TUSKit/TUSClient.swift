@@ -41,7 +41,7 @@ public extension TUSClientDelegate {
 
 protocol ProgressDelegate: AnyObject {
     @available(iOS 11.0, macOS 10.13, *)
-    func progressUpdatedFor(metaData: UploadMetadata)
+    func progressUpdatedFor(metaData: UploadMetadata, totalUploadedBytes: Int)
 }
 
 /// The TUSKit client.
@@ -502,16 +502,16 @@ func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, progressDelega
 extension TUSClient: ProgressDelegate {
     
     @available(iOS 11.0, macOS 10.13, *)
-    func progressUpdatedFor(metaData: UploadMetadata) {
-        delegate?.progressFor(id: metaData.id, bytesUploaded: metaData.bytesUploaded, totalBytes: metaData.size, client: self)
-        
+    func progressUpdatedFor(metaData: UploadMetadata, totalUploadedBytes: Int) {
+        delegate?.progressFor(id: metaData.id, bytesUploaded: totalUploadedBytes, totalBytes: metaData.size, client: self)
+
         var totalBytesUploaded: Int = 0
         var totalSize: Int = 0
         for (_, metaData) in uploads {
-            totalBytesUploaded += metaData.bytesUploaded
+            totalBytesUploaded += metaData.uploadedRange?.count ?? 0
             totalSize += metaData.size
         }
-        
+
         delegate?.totalProgress(bytesUploaded: totalBytesUploaded, totalBytes: totalSize, client: self)
     }
 }

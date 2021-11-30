@@ -20,7 +20,6 @@ final class UploadDataTask: NSObject, ScheduledTask {
     private let files: Files
     private let range: Range<Int>?
     private var observation: NSKeyValueObservation?
-    private let queue: DispatchQueue = DispatchQueue(label: "com.tuskit.uploadDatTask")
     private weak var sessionTask: URLSessionUploadTask?
     
     /// Specify range, or upload
@@ -84,28 +83,27 @@ final class UploadDataTask: NSObject, ScheduledTask {
             let progressDelegate = self.progressDelegate
             
             do {
-                let offset = try result.get()
+                let receivedOffset = try result.get()
                 let currentOffset = metaData.uploadedRange?.upperBound ?? 0
+                metaData.uploadedRange = 0..<receivedOffset
                 
-                let hasFinishedUploading = offset == metaData.size
+                let hasFinishedUploading = receivedOffset == metaData.size
                 if hasFinishedUploading {
-                    metaData.uploadedRange = 0..<offset
                     try files.encodeAndStore(metaData: metaData)
                     completed(.success([]))
                     return
-                } else if offset == currentOffset {
+                } else if receivedOffset == currentOffset {
 //                improvement: log this instead
 //                    assertionFailure("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
                     throw TUSClientError.receivedUnexpectedOffset
                 }
                 
-                metaData.uploadedRange = 0..<offset
                 try files.encodeAndStore(metaData: metaData)
                 
                 let nextRange: Range<Int>?
                 if let range = range {
                     let chunkSize = range.count
-                    nextRange = offset..<min((offset + chunkSize), metaData.size)
+                    nextRange = receivedOffset..<min((receivedOffset + chunkSize), metaData.size)
                 } else {
                     nextRange = nil
                 }
@@ -131,26 +129,15 @@ final class UploadDataTask: NSObject, ScheduledTask {
     @available(iOS 11.0, macOS 10.13, *)
     func observeTask(task: URLSessionUploadTask, size: Int) {
         let targetRange = self.range ?? 0..<size
+        let uploaded = metaData.uploadedRange?.count ?? 0
+        
         observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-            
             guard let self = self else { return }
-            self.queue.async { [weak self] in
-                guard let self = self else { return }
-                guard progress.fractionCompleted <= 1 else { return }
-                let index = self.metaData.uploadedRanges.firstIndex { $0.first == targetRange.lowerBound }
-                let uploadedOffset: Double = progress.fractionCompleted * Double(targetRange.count)
-                let newlyUploadedRange = targetRange.lowerBound..<Int(uploadedOffset) + targetRange.lowerBound
-                guard newlyUploadedRange.count > 0 else { return }
-                
-                if let currentIndex = index {
-                    // Update index of existing range
-                    self.metaData.uploadedRanges[currentIndex] = newlyUploadedRange
-                } else {
-                    // Range not part of metadata yet, add it.
-                    self.metaData.uploadedRanges.append(newlyUploadedRange)
-                }
-                self.progressDelegate?.progressUpdatedFor(metaData: self.metaData)
-            }
+            guard progress.fractionCompleted <= 1 else { return }
+            let bytes = progress.fractionCompleted * Double(targetRange.count)
+            
+            let totalUploaded = uploaded + Int(bytes)
+            self.progressDelegate?.progressUpdatedFor(metaData: self.metaData, totalUploadedBytes: totalUploaded)
         }
     }
     

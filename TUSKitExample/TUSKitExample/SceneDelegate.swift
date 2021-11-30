@@ -85,11 +85,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 extension SceneDelegate: TUSClientDelegate {
     
     func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
-       print("TUSClient uploaded \(bytesUploaded) of \(totalBytes) bytes.")
+       print("TUSClient total upload progress: \(bytesUploaded) of \(totalBytes) bytes.")
     }
     
     func progressFor(id: UUID, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
-       print("Upload progress \(bytesUploaded) / \(totalBytes)")
+       print("TUSClient single upload progress: \(bytesUploaded) / \(totalBytes)")
     }
     
     func didStartUpload(id: UUID, context: [String : String]?, client: TUSClient) {

@@ -9,7 +9,7 @@ import Foundation
 
 /// This type represents data to store on the disk. To allow for persistence between sessions.
 /// E.g. For background uploading or when an app is killed, we can use this data to continue where we left off.
-/// The reason this is a class is to preserve refernece semantics.
+/// The reason this is a class is to preserve reference semantics while the data is being updated.
 final class UploadMetadata: Codable {
     
     var isFinished: Bool {
@@ -26,17 +26,6 @@ final class UploadMetadata: Codable {
     
     /// The total range that's uploaded
     var uploadedRange: Range<Int>?
-
-    /// The ranges of this file that are uploaded.
-    var uploadedRanges = [Range<Int>]()
-    
-    /// The sum of the bytes that are uploaded, based on `uploadedRanges`
-    var bytesUploaded: Int {
-        let uploadedBytes = uploadedRanges.reduce(into: 0) { partialResult, range in
-            partialResult += range.count
-        }
-        return uploadedBytes
-    }
     
     let mimeType: String?
     

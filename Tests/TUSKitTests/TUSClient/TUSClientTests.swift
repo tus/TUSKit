@@ -40,15 +40,6 @@ final class TUSClientTests: XCTestCase {
         clearDirectory(dir: fullStoragePath)
     }
     
-    // MARK: - Ids on start
-    
-//    func testStartReturnsPreviouslyStoredIds() {
-//        // TODO: Make sure that if you are going to upload, and then stop, and start again. That by starting the ids are properly returned.
-////        let ids = client.start()
-//        XCTFail("Implement me")
-//    }
-//
-
     // MARK: - Stopping and canceling
     
     func testFuncStopAndCancel() throws {

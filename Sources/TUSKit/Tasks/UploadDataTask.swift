@@ -76,7 +76,6 @@ final class UploadDataTask: NSObject, ScheduledTask {
         let task = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [weak self] result in
             guard let self = self else { return }
             
-            
             // Getting rid of needing .self inside this closure
             let metaData = self.metaData
             let files = self.files
@@ -132,6 +131,7 @@ final class UploadDataTask: NSObject, ScheduledTask {
     func observeTask(task: URLSessionUploadTask, size: Int) {
         let targetRange = self.range ?? 0..<size
         observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+            
             guard let self = self else { return }
             self.queue.async { [weak self] in
                 guard let self = self else { return }

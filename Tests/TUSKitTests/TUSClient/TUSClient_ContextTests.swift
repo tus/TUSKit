@@ -37,6 +37,7 @@ final class TUSClient_ContextTests: XCTestCase {
     
     override func tearDown() {
         super.tearDown()
+        client.stopAndCancelAll()
         clearDirectory(dir: fullStoragePath)
     }
     
@@ -48,16 +49,7 @@ final class TUSClient_ContextTests: XCTestCase {
         
         waitForUploadsToFinish()
         
-        // One context for start, one for failure
-        
         XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 2)),  "Expected the context to be returned once an upload is finished")
-        
-        try XCTAssertNoThrow(client.uploadFileAt(filePath: Fixtures.makeFilePath(), context: expectedContext), "TUSClient should accept files that exist")
-        
-        waitForUploadsToFinish()
-        // Two contexts for start, two for failure
-        XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
-        
     }
     
     func testContextIsReturnedAfterUploadingMultipleFiles() throws {

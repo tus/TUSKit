@@ -14,7 +14,7 @@ With this client, you can upload regular raw `Data` or file-paths.
 
 You can refer to the example project to see how TUSKit is implemented. 
 
-As a starting point, please refer to the SceneDelegate [SceneDelegate](TUSKitExample/TUSKitExample/SceneDelegate.swift).
+As a starting point, please refer to the [SceneDelegate](TUSKitExample/TUSKitExample/SceneDelegate.swift).
 
 Here is how you can instantiate a `TUSClient` instance.
 
@@ -122,6 +122,7 @@ An upload can fail at any time. Even when an app is in the background.
 Therefore, after starting a new app session, we recommend you inspect any failed uploads that may have occurred and act accordingly.
 For instance, you can decide to do something with the failed uploads such as retrying them, deleting them, or reporting to the user.
 
+
 ```swift
 For instance, here is how you can initialize the client and check its failed uploads. Note that we first fetch the id's, after which retry the uploads.
   
@@ -180,8 +181,6 @@ It does, however, automatically support parallel uploads in a single client. It 
 
 The `TUSClient` will retry a failed upload two times (three total attempts) before reporting it as an error.
 
-The `TUSClient` will try to limit to max 5 concurrent files per upload.
-
 The `TUSClient` will try to upload a file fully, and if it gets interrupted (e.g. broken connection or app is killed), it will continue where it left of.
 
 The `TUSClient` stores files locally to upload them. It will use the `storageDirectory` path that is passed in the initializer. Or create a default directory inside the documentsdir at /TUS .
@@ -204,4 +203,4 @@ final class MyClass {
 }
 ```
 
-But we discourage you from doing so.
+But we discourage you from doing so because it makes resetting between tests harder, and it becomes problematic in a multi-threaded environment.

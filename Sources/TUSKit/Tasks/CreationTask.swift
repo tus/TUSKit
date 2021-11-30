@@ -9,7 +9,7 @@ import Foundation
 
 /// `CreationTask` Prepares the server for a file upload.
 /// The server will return a path to upload to.
-final class CreationTask: Task {
+final class CreationTask: ScheduledTask {
     
     weak var progressDelegate: ProgressDelegate?
     var metaData: UploadMetadata
@@ -17,6 +17,7 @@ final class CreationTask: Task {
     private let api: TUSAPI
     private let files: Files
     private let chunkSize: Int?
+    private var didCancel: Bool = false
     private weak var sessionTask: URLSessionDataTask?
 
     init(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int? = nil) throws {
@@ -27,6 +28,8 @@ final class CreationTask: Task {
     }
     
     func run(completed: @escaping TaskCompletion) {
+        
+        if didCancel { return }
         sessionTask = api.create(metaData: metaData) { [weak self] result in
             guard let self = self else { return }
             // File is created remotely. Now start first datatask.
@@ -39,7 +42,6 @@ final class CreationTask: Task {
             let progressDelegate = self.progressDelegate
 
             do {
-                
                 let remoteDestination = try result.get()
                 metaData.remoteDestination = remoteDestination
                 try files.encodeAndStore(metaData: metaData)
@@ -51,7 +53,11 @@ final class CreationTask: Task {
                     task = try UploadDataTask(api: api, metaData: metaData, files: files)
                 }
                 task.progressDelegate = progressDelegate
-                completed(.success([task]))
+                if self.didCancel {
+                    completed(.failure(TUSClientError.couldNotCreateFileOnServer))
+                } else {
+                    completed(.success([task]))
+                }
             } catch let error as TUSClientError {
                 completed(.failure(error))
             } catch {
@@ -62,6 +68,7 @@ final class CreationTask: Task {
     }
     
     func cancel() {
+        didCancel = true
         sessionTask?.cancel()
     }
 }

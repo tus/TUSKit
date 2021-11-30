@@ -83,20 +83,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 }
 
 extension SceneDelegate: TUSClientDelegate {
+    
     func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
-       print("TUSClient uploaded \(bytesUploaded) of \(totalBytes) bytes.")
+       print("TUSClient total upload progress: \(bytesUploaded) of \(totalBytes) bytes.")
     }
     
     func progressFor(id: UUID, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
-       print("Upload progress \(bytesUploaded) / \(totalBytes)")
+       print("TUSClient single upload progress: \(bytesUploaded) / \(totalBytes)")
     }
     
-    func didStartUpload(id: UUID, client: TUSClient) {
+    func didStartUpload(id: UUID, context: [String : String]?, client: TUSClient) {
         print("TUSClient started upload, id is \(id)")
         print("TUSClient remaining is \(client.remainingUploads)")
     }
     
-    func didFinishUpload(id: UUID, url: URL, client: TUSClient) {
+    func didFinishUpload(id: UUID, url: URL, context: [String : String]?, client: TUSClient) {
         print("TUSClient finished upload, id is \(id) url is \(url)")
         print("TUSClient remaining is \(client.remainingUploads)")
         if client.remainingUploads == 0 {
@@ -104,7 +105,7 @@ extension SceneDelegate: TUSClientDelegate {
         }
     }
     
-    func uploadFailed(id: UUID, error: Error, client: TUSClient) {
+    func uploadFailed(id: UUID, error: Error, context: [String : String]?, client: TUSClient) {
         print("TUSClient upload failed for \(id) error \(error)")
     }
     

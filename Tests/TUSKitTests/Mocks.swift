@@ -11,7 +11,6 @@ import XCTest
 
 /// TUSClientDelegate to support testing
 final class TUSMockDelegate: TUSClientDelegate {
-    
     var startedUploads = [UUID]()
     var finishedUploads = [(UUID, URL)]()
     var failedUploads = [(UUID, Error)]()
@@ -19,21 +18,29 @@ final class TUSMockDelegate: TUSClientDelegate {
     var progressPerId = [UUID: Int]()
     var totalProgressReceived = [Int]()
     
+    var receivedContexts = [[String: String]]()
+    
     var activityCount: Int { finishedUploads.count + startedUploads.count + failedUploads.count + fileErrors.count }
     
     var finishUploadExpectation: XCTestExpectation?
     var startUploadExpectation: XCTestExpectation?
     var fileErrorExpectation: XCTestExpectation?
     var uploadFailedExpectation: XCTestExpectation?
-    
-    func didFinishUpload(id: UUID, url: URL, client: TUSClient) {
-        finishedUploads.append((id, url))
-        finishUploadExpectation?.fulfill()
-    }
-    
-    func didStartUpload(id: UUID, client: TUSClient) {
+
+    func didStartUpload(id: UUID, context: [String : String]?, client: TUSClient) {
         startedUploads.append(id)
         startUploadExpectation?.fulfill()
+        if let context = context {
+            receivedContexts.append(context)
+        }
+    }
+    
+    func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient) {
+        finishedUploads.append((id, url))
+        finishUploadExpectation?.fulfill()
+        if let context = context {
+            receivedContexts.append(context)
+        }
     }
     
     func fileError(error: TUSClientError, client: TUSClient) {
@@ -41,9 +48,12 @@ final class TUSMockDelegate: TUSClientDelegate {
         fileErrorExpectation?.fulfill()
     }
     
-    func uploadFailed(id: UUID, error: Error, client: TUSClient) {
+    func uploadFailed(id: UUID, error: Error, context: [String : String]?, client: TUSClient) {
         failedUploads.append((id, error))
         uploadFailedExpectation?.fulfill()
+        if let context = context {
+            receivedContexts.append(context)
+        }
     }
     
     func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
@@ -55,10 +65,12 @@ final class TUSMockDelegate: TUSClientDelegate {
     }
 }
 
+    typealias Headers = [String: String]?
+
 /// MockURLProtocol to support mocking the network
 final class MockURLProtocol: URLProtocol {
     
-    typealias Headers = [String: String]?
+    private static let queue = DispatchQueue(label: "com.tuskit.mockurlprotocol")
     
     struct Response {
         let status: Int
@@ -70,8 +82,10 @@ final class MockURLProtocol: URLProtocol {
     static var receivedRequests = [URLRequest]()
     
     static func reset() {
-        responses = [:]
-        receivedRequests = []
+        queue.async {
+            responses = [:]
+            receivedRequests = []
+        }
     }
     
     /// Define a response to be used for a method
@@ -79,7 +93,9 @@ final class MockURLProtocol: URLProtocol {
     ///   - method: The http method (POST PATCH etc)
     ///   - makeResponse: A closure that returns a Response
     static func prepareResponse(for method: String, makeResponse: @escaping (Headers) -> Response) {
-        responses[method] = makeResponse
+        queue.async {
+            responses[method] = makeResponse
+        }
     }
     
     override class func canInit(with request: URLRequest) -> Bool {
@@ -93,28 +109,32 @@ final class MockURLProtocol: URLProtocol {
     }
     
     override func startLoading() {
-        // This is where you create the mock response as per your test case and send it to the URLProtocolClient.
-        
-        guard let client = client else { return }
-        
-        guard let method = request.httpMethod, let preparedResponseClosure = type(of: self).responses[method] else {
-//            assertionFailure("No response found for \(String(describing: request.httpMethod)) prepared \(type(of: self).responses)")
-            return
+        type(of: self).queue.async { [weak self] in
+            // This is where you create the mock response as per your test case and send it to the URLProtocolClient.
+            
+            guard let self = self else { return }
+            guard let client = self.client else { return }
+            
+            guard let method = self.request.httpMethod,
+                    let preparedResponseClosure = type(of: self).responses[method] else {
+                //            assertionFailure("No response found for \(String(describing: request.httpMethod)) prepared \(type(of: self).responses)")
+                return
+            }
+            
+            let preparedResponse = preparedResponseClosure(self.request.allHTTPHeaderFields)
+            
+            type(of: self).receivedRequests.append(self.request)
+            
+            let url = URL(string: "https://tusd.tusdemo.net/files")!
+            let response = HTTPURLResponse(url: url, statusCode: preparedResponse.status, httpVersion: nil, headerFields: preparedResponse.headers)!
+            
+            client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            
+            if let data = preparedResponse.data {
+                client.urlProtocol(self, didLoad: data)
+            }
+            client.urlProtocolDidFinishLoading(self)
         }
-        
-        let preparedResponse = preparedResponseClosure(request.allHTTPHeaderFields)
-        
-        type(of: self).receivedRequests.append(request)
-        
-        let url = URL(string: "https://tusd.tusdemo.net/files")!
-        let response = HTTPURLResponse(url: url, statusCode: preparedResponse.status, httpVersion: nil, headerFields: preparedResponse.headers)!
-        
-        client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        
-        if let data = preparedResponse.data {
-            client.urlProtocol(self, didLoad: data)
-        }
-        client.urlProtocolDidFinishLoading(self)
     }
     
     override func stopLoading() {

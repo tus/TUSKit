@@ -16,7 +16,7 @@ final class TUSBackground {
     // Same as in the Info.plist `Permitted background task scheduler identifiers`
     private static let identifier = "io.tus.uploading"
     
-    private var currentTask: Task?
+    private var currentTask: ScheduledTask?
     private let scheduler: BGTaskScheduler
     private let api: TUSAPI
     private let files: Files
@@ -96,7 +96,7 @@ final class TUSBackground {
     
     /// Return first available task
     /// - Returns: A possible task to run
-    private func firstTask() -> Task? {
+    private func firstTask() -> ScheduledTask? {
         guard let allMetaData = try? files.loadAllMetadata() else {
             print("No background task to run")
             return nil

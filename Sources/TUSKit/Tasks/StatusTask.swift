@@ -8,7 +8,7 @@
 import Foundation
 
 /// A `StatusTask` fetches the status of an upload. It fetches the offset from we can continue uploading, and then makes a possible uploadtask.
-final class StatusTask: Task {
+final class StatusTask: ScheduledTask {
     
     weak var progressDelegate: ProgressDelegate?
     let api: TUSAPI
@@ -16,6 +16,7 @@ final class StatusTask: Task {
     let remoteDestination: URL
     let metaData: UploadMetadata
     let chunkSize: Int
+    private var didCancel: Bool = false
     weak var sessionTask: URLSessionDataTask?
     
     init(api: TUSAPI, remoteDestination: URL, metaData: UploadMetadata, files: Files, chunkSize: Int) {
@@ -28,6 +29,7 @@ final class StatusTask: Task {
     
     func run(completed: @escaping TaskCompletion) {
         // Improvement: On failure, try uploading from the start. Create creationtask.
+        if didCancel { return }
         sessionTask = api.status(remoteDestination: remoteDestination) { [weak self] result in
             guard let self = self else { return }
             // Getting rid of self. in this closure
@@ -72,6 +74,7 @@ final class StatusTask: Task {
     }
     
     func cancel() {
+        didCancel = true
         sessionTask?.cancel()
     }
 }

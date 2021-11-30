@@ -42,7 +42,7 @@ final class TUSClient_CacheTests: XCTestCase {
 
     // MARK: - Deletions / clearing cache
     
-    func testClearsCacheOfFinishedUploads() throws {
+    func testClearsCacheOfUnfinishedUploads() throws {
         func getContents() throws -> [URL] {
             return try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         }
@@ -55,8 +55,6 @@ final class TUSClient_CacheTests: XCTestCase {
         }
         
         XCTAssertFalse(try getContents().isEmpty, "Contents expected NOT to be empty.")
-       
-        waitForUploadsToFinish(2)
         
         client.stopAndCancelAll()
 

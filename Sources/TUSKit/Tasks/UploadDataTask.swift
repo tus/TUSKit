@@ -102,14 +102,15 @@ final class UploadDataTask: NSObject, ScheduledTask {
                 metaData.uploadedRange = 0..<offset
                 try files.encodeAndStore(metaData: metaData)
                 
-                let task: UploadDataTask
+                let nextRange: Range<Int>?
                 if let range = range {
                     let chunkSize = range.count
-                    let nextRange = offset..<min((offset + chunkSize), metaData.size)
-                    task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
+                    nextRange = offset..<min((offset + chunkSize), metaData.size)
                 } else {
-                    task = try UploadDataTask(api: api, metaData: metaData, files: files)
+                    nextRange = nil
                 }
+                
+                let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
                 task.progressDelegate = progressDelegate
                 completed(.success([task]))
             } catch let error as TUSClientError {

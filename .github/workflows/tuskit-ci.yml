@@ -19,6 +19,7 @@ jobs:
         run: swift build
       - name: Run tests
         run: swift test
+        max_attempts: 3
       - uses: 8398a7/action-slack@v3
         if: failure() && env.BRANCH == 'master'
         with:

@@ -106,14 +106,20 @@ For example. If you upload 10 files, and 3 are finished, then you are at 3/10. H
 
 For byte level progress. Please implement the `TUSClientDelegate` protocol and set it as a the `delegate` property of `TUSClient`.
 
-## Upload id's
+## Upload id's and contexts
 
 By starting an upload you will receive an id. These id's are also passed to you via if you implement the `TUSClientDelegate`.
-You can use these id's to identify which files are finished or failed. You can also delete these files on failure if you want. You can also use these id's to retry a failed upload.
+You can use these id's to identify which files are finished or failed (but you can also use contexts for that, see below). You can also delete these files on failure if you want. You can also use these id's to retry a failed upload.
 
 Note that `TUSClient` will automatically retry an upload a few times, but will eventually give up, after which it will report an error. At a later moment you can call the `retry` method and try again.
 
 *Note that calling `retry` before an upload is finished, will cause undefined behavior.*
+
+## Contexts
+
+You can use id's to monitor progress and perform other tasks, such as stopping uploads. But you can also pass a context with richer information. TUSKit will return this context through various delegate calls. This way you don't have to keep track of the status of upload id's. You can pass in a small object with information, and you receive this from TUSKit.
+
+Security notice: TUSKit will store this context on the disk next to other file metadata. This is to maintain the information between sessions.
 
 ## Starting a new session 
 

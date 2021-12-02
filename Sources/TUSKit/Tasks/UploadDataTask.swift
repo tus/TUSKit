@@ -14,6 +14,8 @@ final class UploadDataTask: NSObject, ScheduledTask {
     weak var progressDelegate: ProgressDelegate?
     let metaData: UploadMetadata
     
+    let queue = DispatchQueue(label: "com.tuskit.uploadDataTask")
+    
     private var isCanceled = false
     
     private let api: TUSAPI
@@ -73,50 +75,51 @@ final class UploadDataTask: NSObject, ScheduledTask {
         }
         
         let task = api.upload(data: dataToUpload, range: range, location: remoteDestination) { [weak self] result in
-            guard let self = self else { return }
-            
-            // Getting rid of needing .self inside this closure
-            let metaData = self.metaData
-            let files = self.files
-            let range = self.range
-            let api = self.api
-            let progressDelegate = self.progressDelegate
-            
-            do {
-                let receivedOffset = try result.get()
-                let currentOffset = metaData.uploadedRange?.upperBound ?? 0
-                metaData.uploadedRange = 0..<receivedOffset
+            self?.queue.async {
+                guard let self = self else { return }
+                // Getting rid of needing .self inside this closure
+                let metaData = self.metaData
+                let files = self.files
+                let range = self.range
+                let api = self.api
+                let progressDelegate = self.progressDelegate
                 
-                let hasFinishedUploading = receivedOffset == metaData.size
-                if hasFinishedUploading {
+                do {
+                    let receivedOffset = try result.get()
+                    let currentOffset = metaData.uploadedRange?.upperBound ?? 0
+                    metaData.uploadedRange = 0..<receivedOffset
+                    
+                    let hasFinishedUploading = receivedOffset == metaData.size
+                    if hasFinishedUploading {
+                        try files.encodeAndStore(metaData: metaData)
+                        completed(.success([]))
+                        return
+                    } else if receivedOffset == currentOffset {
+                        //                improvement: log this instead
+                        //                    assertionFailure("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
+                        throw TUSClientError.receivedUnexpectedOffset
+                    }
+                    
                     try files.encodeAndStore(metaData: metaData)
-                    completed(.success([]))
-                    return
-                } else if receivedOffset == currentOffset {
-//                improvement: log this instead
-//                    assertionFailure("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
-                    throw TUSClientError.receivedUnexpectedOffset
+                    
+                    let nextRange: Range<Int>?
+                    if let range = range {
+                        let chunkSize = range.count
+                        nextRange = receivedOffset..<min((receivedOffset + chunkSize), metaData.size)
+                    } else {
+                        nextRange = nil
+                    }
+                    
+                    let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
+                    task.progressDelegate = progressDelegate
+                    completed(.success([task]))
+                } catch let error as TUSClientError {
+                    completed(.failure(error))
+                } catch {
+                    completed(.failure(TUSClientError.couldNotUploadFile))
                 }
                 
-                try files.encodeAndStore(metaData: metaData)
-                
-                let nextRange: Range<Int>?
-                if let range = range {
-                    let chunkSize = range.count
-                    nextRange = receivedOffset..<min((receivedOffset + chunkSize), metaData.size)
-                } else {
-                    nextRange = nil
-                }
-                
-                let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
-                task.progressDelegate = progressDelegate
-                completed(.success([task]))
-            } catch let error as TUSClientError {
-                completed(.failure(error))
-            } catch {
-                completed(.failure(TUSClientError.couldNotUploadFile))
             }
-            
         }
         
         sessionTask = task
@@ -132,12 +135,14 @@ final class UploadDataTask: NSObject, ScheduledTask {
         let uploaded = metaData.uploadedRange?.count ?? 0
         
         observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-            guard let self = self else { return }
-            guard progress.fractionCompleted <= 1 else { return }
-            let bytes = progress.fractionCompleted * Double(targetRange.count)
-            
-            let totalUploaded = uploaded + Int(bytes)
-            self.progressDelegate?.progressUpdatedFor(metaData: self.metaData, totalUploadedBytes: totalUploaded)
+            self?.queue.async {
+                guard let self = self else { return }
+                guard progress.fractionCompleted <= 1 else { return }
+                let bytes = progress.fractionCompleted * Double(targetRange.count)
+                
+                let totalUploaded = uploaded + Int(bytes)
+                self.progressDelegate?.progressUpdatedFor(metaData: self.metaData, totalUploadedBytes: totalUploaded)
+            }
         }
     }
     

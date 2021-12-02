@@ -13,6 +13,7 @@ import MobileCoreServices
 enum FilesError: Error {
     case relatedFileNotFound
     case dataIsEmpty
+    case unknownError
 }
 
 /// This type handles the storage for `TUSClient`
@@ -21,6 +22,8 @@ enum FilesError: Error {
 final class Files {
     
     let storageDirectory: URL
+    
+    private let queue = DispatchQueue(label: "com.tuskit.files")
     
     /// Pass a directory to store the local cache in.
     /// - Parameter storageDirectory: Leave nil for the documents dir. Pass a relative path for a dir inside the documents dir. Pass an absolute path for storing files there.
@@ -81,25 +84,30 @@ final class Files {
     /// - Throws: File related errors
     /// - Returns: An array of UploadMetadata types
     func loadAllMetadata() throws -> [UploadMetadata] {
-        let directoryContents = try FileManager.default.contentsOfDirectory(at: storageDirectory, includingPropertiesForKeys: nil)
-        
-        // if you want to filter the directory contents you can do like this:
-        let files = directoryContents.filter{ $0.pathExtension == "plist" }
-        let decoder = PropertyListDecoder()
-        
-        return files.compactMap { url in
-            if let data = try? Data(contentsOf: url) {
-                let metaData = try? decoder.decode(UploadMetadata.self, from: data)
-                        
-                // The documentsDirectory can change between restarts (at least during testing). So we update the filePath to match the existing plist again. To avoid getting an out of sync situation where the filePath still points to a dir in a different directory than the plist.
-                // (The plist and file to upload should always be in the same dir together).
-                metaData?.filePath = url.deletingPathExtension()
+        try queue.sync {
+
+            let directoryContents = try FileManager.default.contentsOfDirectory(at: storageDirectory, includingPropertiesForKeys: nil)
+            
+            // if you want to filter the directory contents you can do like this:
+            let files = directoryContents.filter{ $0.pathExtension == "plist" }
+            let decoder = PropertyListDecoder()
+            
+            let metaData: [UploadMetadata] = files.compactMap { url in
+                if let data = try? Data(contentsOf: url) {
+                    let metaData = try? decoder.decode(UploadMetadata.self, from: data)
+                    
+                    // The documentsDirectory can change between restarts (at least during testing). So we update the filePath to match the existing plist again. To avoid getting an out of sync situation where the filePath still points to a dir in a different directory than the plist.
+                    // (The plist and file to upload should always be in the same dir together).
+                    metaData?.filePath = url.deletingPathExtension()
+                    
+                    return metaData
+                }
                 
-                return metaData
+                // Improvement: Handle error when it can't be decoded?
+                return nil
             }
             
-            // Improvement: Handle error when it can't be decoded?
-            return nil
+            return metaData
         }
     }
     
@@ -128,13 +136,15 @@ final class Files {
     /// - Returns: The URL of the stored file
     @discardableResult
     func store(data: Data, id: UUID) throws -> URL {
-        guard !data.isEmpty else { throw FilesError.dataIsEmpty }
-        try makeDirectoryIfNeeded()
-        let fileName = id.uuidString
-        
-        let targetLocation = storageDirectory.appendingPathComponent(fileName)
-        try data.write(to: targetLocation)
-        return targetLocation
+        try queue.sync {
+            guard !data.isEmpty else { throw FilesError.dataIsEmpty }
+            try makeDirectoryIfNeeded()
+            let fileName = id.uuidString
+            
+            let targetLocation = storageDirectory.appendingPathComponent(fileName)
+            try data.write(to: targetLocation, options: .atomic)
+            return targetLocation
+        }
     }
     
     /// Removes metadata and its related file from disk
@@ -156,18 +166,20 @@ final class Files {
     /// - Returns: The URL of the location where the metadata is stored.
     @discardableResult
     func encodeAndStore(metaData: UploadMetadata) throws -> URL {
-        guard FileManager.default.fileExists(atPath: metaData.filePath.path) else {
-            // Could not find the file that's related to this metadata.
-            throw FilesError.relatedFileNotFound
+        try queue.sync {
+            guard FileManager.default.fileExists(atPath: metaData.filePath.path) else {
+                // Could not find the file that's related to this metadata.
+                throw FilesError.relatedFileNotFound
+            }
+            
+            let targetLocation = metaData.filePath.appendingPathExtension("plist")
+            try self.makeDirectoryIfNeeded()
+            
+            let encoder = PropertyListEncoder()
+            let encodedData = try encoder.encode(metaData)
+            try encodedData.write(to: targetLocation, options: .atomic)
+            return targetLocation
         }
-        
-        let targetLocation = metaData.filePath.appendingPathExtension("plist")
-        try makeDirectoryIfNeeded()
-        
-        let encoder = PropertyListEncoder()
-        let encodedData = try encoder.encode(metaData)
-        try encodedData.write(to: targetLocation)
-        return targetLocation
     }
     
     /// Load metadata from store and find matching one by id

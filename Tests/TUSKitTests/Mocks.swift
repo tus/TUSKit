@@ -11,6 +11,7 @@ import XCTest
 
 /// TUSClientDelegate to support testing
 final class TUSMockDelegate: TUSClientDelegate {
+    
     var startedUploads = [UUID]()
     var finishedUploads = [(UUID, URL)]()
     var failedUploads = [(UUID, Error)]()
@@ -60,7 +61,7 @@ final class TUSMockDelegate: TUSClientDelegate {
         totalProgressReceived.append(bytesUploaded)
     }
     
-    func progressFor(id: UUID, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
+    func progressFor(id: UUID, context: [String : String]?, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
         progressPerId[id] = bytesUploaded
     }
 }

@@ -88,7 +88,7 @@ extension SceneDelegate: TUSClientDelegate {
        print("TUSClient total upload progress: \(bytesUploaded) of \(totalBytes) bytes.")
     }
     
-    func progressFor(id: UUID, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
+    func progressFor(id: UUID, context: [String: String]?, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
        print("TUSClient single upload progress: \(bytesUploaded) / \(totalBytes)")
     }
     

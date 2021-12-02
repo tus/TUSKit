@@ -30,11 +30,11 @@ public protocol TUSClientDelegate: AnyObject {
     
     @available(iOS 11.0, macOS 10.13, *)
     /// Get the progress of a specific upload by id. The id is given when adding an upload and methods of this delegate.
-    func progressFor(id: UUID, bytesUploaded: Int, totalBytes: Int, client: TUSClient)
+    func progressFor(id: UUID, context: [String: String]?, bytesUploaded: Int, totalBytes: Int, client: TUSClient)
 }
 
 public extension TUSClientDelegate {
-    func progressFor(id: UUID, progress: Float, client: TUSClient) {
+    func progressFor(id: UUID, context: [String: String]?, progress: Float, client: TUSClient) {
         // Optional
     }
 }
@@ -503,7 +503,7 @@ extension TUSClient: ProgressDelegate {
     
     @available(iOS 11.0, macOS 10.13, *)
     func progressUpdatedFor(metaData: UploadMetadata, totalUploadedBytes: Int) {
-        delegate?.progressFor(id: metaData.id, bytesUploaded: totalUploadedBytes, totalBytes: metaData.size, client: self)
+        delegate?.progressFor(id: metaData.id, context: metaData.context, bytesUploaded: totalUploadedBytes, totalBytes: metaData.size, client: self)
 
         var totalBytesUploaded: Int = 0
         var totalSize: Int = 0

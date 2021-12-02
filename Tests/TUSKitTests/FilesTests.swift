@@ -8,11 +8,7 @@ final class FilesTests: XCTestCase {
         super.setUp()
         
         files = Files(storageDirectory: URL(string: "TUS")!)
-        do {
-            try files.clearCacheInStorageDirectory()
-        } catch {
-            XCTFail("Could not clear dir \(error)")
-        }
+        try? files.clearCacheInStorageDirectory() // ok if it fails, if dir doesn't exit yet
     }
     
     override func tearDown() {
@@ -20,7 +16,7 @@ final class FilesTests: XCTestCase {
             try files.clearCacheInStorageDirectory()
             try emptyCacheDir()
         } catch {
-//            XCTFail("Could not clear cache \(error)")
+            // Okay if dir doesn't exist
         }
     }
     
@@ -123,7 +119,7 @@ final class FilesTests: XCTestCase {
         // To see if retrieving metadata updates its directory.
         func writeDummyFileToCacheDir() throws -> URL {
             let cacheURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            let fileURL = cacheURL.appendingPathComponent("dummyfile.txt")
+            let fileURL = cacheURL.appendingPathComponent("abcdefgh.txt")
             return fileURL
         }
         

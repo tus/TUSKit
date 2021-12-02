@@ -204,16 +204,7 @@ final class Files {
             return
         }
         
-        // We collect errors since we don't want to stop iterating at any error
-        // We try to delete whatever we can.
-        let metaDataFiles = try loadAllMetadata()
-        let errors = metaDataFiles.collectErrors { metaData in
-            try removeFileAndMetadata(metaData)
-        }
-        
-        if let error = errors.first {
-            throw error
-        }
+        try FileManager.default.removeItem(at: storageDirectory)
     }
     
 }

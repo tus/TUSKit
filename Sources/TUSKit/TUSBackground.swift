@@ -38,11 +38,8 @@ final class TUSBackground {
             guard let backgroundTask = bgTask as? BGProcessingTask else {
                 return
             }
-            // TODO: Clear prints
-            print("Running background task")
             
             guard let tusTask = self.firstTask() else {
-                print("No available tasks found in metaData")
                 return
             }
             
@@ -80,25 +77,18 @@ final class TUSBackground {
     /// Try and schedule another task. But, might not schedule a task if none are available.
     private func scheduleSingleTask() {
         guard firstTask() != nil else {
-            print("No available tasks found in metaData")
             return
         }
         
         let request = BGProcessingTaskRequest(identifier: type(of: self).identifier)
         request.requiresNetworkConnectivity = true
-        do {
-            try scheduler.submit(request)
-        } catch {
-            // TODO: Pass to reporter
-            print("TUS: Could not schedule background task \(error))")
-        }
+        try? scheduler.submit(request)
     }
     
     /// Return first available task
     /// - Returns: A possible task to run
     private func firstTask() -> ScheduledTask? {
         guard let allMetaData = try? files.loadAllMetadata() else {
-            print("No background task to run")
             return nil
         }
         

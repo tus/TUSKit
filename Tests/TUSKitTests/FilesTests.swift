@@ -8,7 +8,6 @@ final class FilesTests: XCTestCase {
         super.setUp()
         
         files = Files(storageDirectory: URL(string: "TUS")!)
-        try? files.clearCacheInStorageDirectory() // ok if it fails, if dir doesn't exit yet
     }
     
     override func tearDown() {

@@ -43,23 +43,21 @@ final class TUSClient_CacheTests: XCTestCase {
     // MARK: - Deletions / clearing cache
     
     func testClearsCacheOfUnfinishedUploads() throws {
-        func getContents() throws -> [URL] {
-            return try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        }
         
-        XCTAssert(try getContents().isEmpty, "Prerequisite for tests fails. Expected dir to be empty \(String(describing: fullStoragePath))")
+        verifyTheStorageIsEmpty()
         
         let amount = 2
         for _ in 0..<amount {
             try client.upload(data: data)
         }
         
-        XCTAssertFalse(try getContents().isEmpty, "Contents expected NOT to be empty.")
+        verifyTheStorageIsNOTEmpty()
         
         client.stopAndCancelAll()
+        
+        clearCache()
 
-        try client.clearAllCache()
-        XCTAssert(try getContents().isEmpty, "Expected clearing cache to empty the folder")
+        verifyTheStorageIsEmpty()
     }
     
     func testClearingUploadsAndStartingNewUploads () throws {
@@ -68,8 +66,7 @@ final class TUSClient_CacheTests: XCTestCase {
         let firstId = try client.upload(data: data)
         try client.reset()
         
-        let contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty, "Stopping and canceling should have cleared files")
+        verifyTheStorageIsEmpty()
         
         let secondId = try upload(data: data)[0]
         XCTAssertEqual(1, tusDelegate.finishedUploads.count)
@@ -145,4 +142,35 @@ final class TUSClient_CacheTests: XCTestCase {
 
         return ids
     }
+    
+    // MARK: Storage helpers
+    
+    private func verifyTheStorageIsNOTEmpty() {
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+            XCTAssertFalse(contents.isEmpty)
+        } catch {
+            XCTFail("Expected to load contents, error is \(error)")
+        }
+    }
+    
+    private func verifyTheStorageIsEmpty() {
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+            XCTAssert(contents.isEmpty)
+        } catch {
+            // No dir is fine
+        }
+    }
+    
+    private func clearCache() {
+        do {
+            try client.clearAllCache()
+        } catch {
+            // Sometimes we get file permission errors, retry
+            try? client.clearAllCache()
+        }
+        
+    }
+    
 }

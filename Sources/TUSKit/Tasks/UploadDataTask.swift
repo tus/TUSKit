@@ -63,11 +63,21 @@ final class UploadDataTask: NSObject, ScheduledTask {
             return
         }
         
-        guard let remoteDestination = metaData.remoteDestination,
-              let dataToUpload = loadData() else {
-                  completed(Result.failure(TUSClientError.couldNotLoadData))
-                  return
-              }
+        guard let remoteDestination = metaData.remoteDestination else {
+            DispatchQueue.main.async {
+                completed(Result.failure(TUSClientError.missingRemoteDestination))
+            }
+            return
+        }
+        
+        let dataToUpload: Data
+        do {
+            dataToUpload = try loadData()
+        } catch let error {
+            let tusError = TUSClientError.couldNotLoadData(underlyingError: error)
+            completed(Result.failure(tusError))
+            return
+        }
         
         // This check is right before the task is created. In case another thread calls cancel during this loop. Optimization: Add synchronization point (e.g. serial queue or actor).
         if isCanceled {
@@ -148,34 +158,28 @@ final class UploadDataTask: NSObject, ScheduledTask {
     
     /// Load data based on range (if there). Uses FileHandle to be able to handle large files
     /// - Returns: The data, or nil if it can't be loaded.
-    func loadData() -> Data? {
-        guard let fileHandle = try? FileHandle(forReadingFrom: metaData.filePath) else {
-            return nil
-        }
+    func loadData() throws -> Data {
+        let fileHandle = try FileHandle(forReadingFrom: metaData.filePath)
         
         defer {
             fileHandle.closeFile()
         }
         
-        do {
-            // Can't use switch with #available :'(
-            
-            if let range = self.range, #available(iOS 13.0, macOS 10.15, *) { // Has range, for newer versions
-                try fileHandle.seek(toOffset: UInt64(range.startIndex))
-                return fileHandle.readData(ofLength: range.count)
-            } else if let range = self.range { // Has range, for older versions
-                fileHandle.seek(toFileOffset: UInt64(range.startIndex))
-                return fileHandle.readData(ofLength: range.count)
-                /*
-                 } else if #available(iOS 13.4, macOS 10.15, *) { // No range, newer versions.
-                 Note that compiler and api says that readToEnd is available on macOS 10.15.4 and higher, but yet github actions of 10.15.7 fails to find the member.
-                return try fileHandle.readToEnd()
-                 */
-            } else { // No range, older versions
-                return fileHandle.readDataToEndOfFile()
-            }
-        } catch {
-            return nil
+        // Can't use switch with #available :'(
+        
+        if let range = self.range, #available(iOS 13.0, macOS 10.15, *) { // Has range, for newer versions
+            try fileHandle.seek(toOffset: UInt64(range.startIndex))
+            return fileHandle.readData(ofLength: range.count)
+        } else if let range = self.range { // Has range, for older versions
+            fileHandle.seek(toFileOffset: UInt64(range.startIndex))
+            return fileHandle.readData(ofLength: range.count)
+            /*
+             } else if #available(iOS 13.4, macOS 10.15, *) { // No range, newer versions.
+             Note that compiler and api says that readToEnd is available on macOS 10.15.4 and higher, but yet github actions of 10.15.7 fails to find the member.
+             return try fileHandle.readToEnd()
+             */
+        } else { // No range, older versions
+            return fileHandle.readDataToEndOfFile()
         }
     }
     

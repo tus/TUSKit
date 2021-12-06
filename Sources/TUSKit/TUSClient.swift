@@ -143,8 +143,8 @@ public final class TUSClient {
             return id
         } catch let error as TUSClientError {
             throw error
-        } catch {
-            throw TUSClientError.couldNotCopyFile
+        } catch let error {
+            throw TUSClientError.couldNotCopyFile(underlyingError: error)
         }
     }
     
@@ -166,8 +166,8 @@ public final class TUSClient {
             return id
         } catch let error as TUSClientError {
             throw error
-        } catch {
-            throw TUSClientError.couldNotStoreFile
+        } catch let error {
+            throw TUSClientError.couldNotStoreFile(underlyingError: error)
         }
     }
     
@@ -214,8 +214,8 @@ public final class TUSClient {
     public func clearAllCache() throws {
         do {
             try files.clearCacheInStorageDirectory()
-        } catch {
-            throw TUSClientError.couldNotDeleteFile
+        } catch let error {
+            throw TUSClientError.couldNotDeleteFile(underlyingError: error)
         }
     }
     
@@ -233,8 +233,8 @@ public final class TUSClient {
             
             try files.removeFileAndMetadata(metaData)
             return true
-        } catch {
-            throw TUSClientError.couldNotDeleteFile
+        } catch let error {
+            throw TUSClientError.couldNotDeleteFile(underlyingError: error)
         }
     }
    
@@ -297,8 +297,9 @@ public final class TUSClient {
             for metaData in metaDataList {
                 try files.removeFileAndMetadata(metaData)
             }
-        } catch {
-            delegate?.fileError(error: TUSClientError.couldnotRemoveFinishedUploads, client: self)
+        } catch let error {
+            let tusError = TUSClientError.couldnotRemoveFinishedUploads(underlyingError: error)
+            delegate?.fileError(error: tusError , client: self)
         }
     }
     
@@ -347,8 +348,8 @@ public final class TUSClient {
         do {
             // We store metadata here, so it's saved even if this job doesn't run this session. (Only created, doesn't mean it will run)
             try files.encodeAndStore(metaData: metaData)
-        } catch {
-            throw TUSClientError.couldNotStoreFileMetadata
+        } catch let error {
+            throw TUSClientError.couldNotStoreFileMetadata(underlyingError: error)
         }
     }
     
@@ -365,8 +366,9 @@ public final class TUSClient {
             }
             
             return metaDataItems
-        } catch {
-            delegate?.fileError(error: TUSClientError.couldNotLoadData, client: self)
+        } catch (let error) {
+            let tusError = TUSClientError.couldNotLoadData(underlyingError: error)
+            delegate?.fileError(error: tusError, client: self)
             return []
         }
     }
@@ -414,8 +416,9 @@ extension TUSClient: SchedulerDelegate {
         
         do {
             try files.removeFileAndMetadata(uploadTask.metaData)
-        } catch {
-            delegate?.fileError(error: TUSClientError.couldNotDeleteFile, client: self)
+        } catch let error {
+            let tusError = TUSClientError.couldNotDeleteFile(underlyingError: error)
+            delegate?.fileError(error: tusError, client: self)
         }
         
         guard let url = uploadTask.metaData.remoteDestination else {
@@ -455,8 +458,9 @@ extension TUSClient: SchedulerDelegate {
         metaData.errorCount += 1
         do {
             try files.encodeAndStore(metaData: metaData)
-        } catch {
-            delegate?.fileError(error: TUSClientError.couldNotStoreFileMetadata, client: self)
+        } catch let error {
+            let tusError = TUSClientError.couldNotStoreFileMetadata(underlyingError: error)
+            delegate?.fileError(error: tusError, client: self)
         }
         
         let canRetry = metaData.errorCount <= retryCount

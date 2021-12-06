@@ -154,8 +154,10 @@ final class Files {
         let filePath = metaData.filePath
         let metaDataPath = metaData.filePath.appendingPathExtension("plist")
         
-        try FileManager.default.removeItem(at: filePath)
-        try FileManager.default.removeItem(at: metaDataPath)
+        try queue.sync {
+            try FileManager.default.removeItem(at: filePath)
+            try FileManager.default.removeItem(at: metaDataPath)
+        }
     }
     
     /// Store the metadata of a file. Will follow a convention, based on a file's url, to determine where to store it.
@@ -200,11 +202,13 @@ final class Files {
     }
     
     func clearCacheInStorageDirectory() throws {
-        guard FileManager.default.fileExists(atPath: storageDirectory.path, isDirectory: nil) else {
-            return
+        try queue.sync {
+            guard FileManager.default.fileExists(atPath: storageDirectory.path, isDirectory: nil) else {
+                return
+            }
+            
+            try FileManager.default.removeItem(at: storageDirectory)
         }
-        
-        try FileManager.default.removeItem(at: storageDirectory)
     }
     
 }

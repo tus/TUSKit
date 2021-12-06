@@ -16,9 +16,9 @@ jobs:
           swift-version: ${{ matrix.swift }}
       - uses: actions/checkout@v2
       - name: Build
-        run: swift build
+        run: swift build -Xswiftc --disable-experimental-concurrency
       - name: Run tests
-        run: swift test
+        run: swift test -Xswiftc --disable-experimental-concurrency
       - uses: 8398a7/action-slack@v3
         if: failure() && env.BRANCH == 'master'
         with:

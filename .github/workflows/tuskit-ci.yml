@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Extract Branch Name
         run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV    
-      - uses: fwal/setup-swift@d43a564349d1341cd990cfbd70d94d63b8899475
+      - uses: fwal/setup-swift@1.10.0
         with:
           swift-version: ${{ matrix.swift }}
       - uses: actions/checkout@v2

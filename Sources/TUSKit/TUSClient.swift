@@ -151,17 +151,18 @@ public final class TUSClient {
     /// Upload data
     /// - Parameters:
     ///   - data: The data to be upload
+    ///   - preferredFileExtension: A file extension to add when saving the file. E.g. You can add ".JPG" to raw data that's being saved. This will help the uploader's metadata.
     ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url from the config. Will call the `create` on this custom url to get the definitive upload url.
     ///   - customHeaders: The headers to upload.
     ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload. Don't put sensitive information in here! Since a context will be stored to the disk.
     /// - Returns: An id
     /// - Throws: TUSClientError
     @discardableResult
-    public func upload(data: Data, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> UUID {
+    public func upload(data: Data, preferredFileExtension: String? = nil, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> UUID {
         didStopAndCancel = false
         do {
             let id = UUID()
-            let filePath = try files.store(data: data, id: id)
+            let filePath = try files.store(data: data, id: id, preferredFileExtension: preferredFileExtension)
             try scheduleTask(for: filePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
             return id
         } catch let error as TUSClientError {
@@ -193,15 +194,16 @@ public final class TUSClient {
     /// If you want a different uploadURL for each file, then please use `upload(data:)` individually.
     /// - Parameters:
     ///   - dataFiles: An array of data to be uploaded.
+    ///   - preferredFileExtension: A file extension to add when saving the file. E.g. You can add ".JPG" to raw data that's being saved. This will help the uploader's metadata.
     ///   - uploadURL: The URL to upload to. Leave nil for the default URL.
     ///   - customHeaders: Any headers you want to add to the upload
     ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload. Don't put sensitive information in here! Since a context will be stored to the disk.
     /// - Returns: An array of ids
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadMultiple(dataFiles: [Data], uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> [UUID] {
+    public func uploadMultiple(dataFiles: [Data], preferredFileExtension: String? = nil, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> [UUID] {
         try dataFiles.map { data in
-            try upload(data: data, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
+            try upload(data: data, preferredFileExtension: preferredFileExtension, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
         }
     }
     

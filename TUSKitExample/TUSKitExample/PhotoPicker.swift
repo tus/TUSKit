@@ -53,6 +53,7 @@ struct PhotoPicker: UIViewControllerRepresentable {
             dataFrom(pickerResults: results) { [weak tusClient] urls in
                 guard let tusClient = tusClient else { return }
                 do {
+                    print("Going to upload files \(urls)")
                     try tusClient.uploadFiles(filePaths: urls)
                 } catch {
                     print("Error is \(error)")
@@ -78,6 +79,7 @@ struct PhotoPicker: UIViewControllerRepresentable {
                     assetURLs.append(url)
 
                     if expectedCount == 0 {
+                        print("Found assets")
                         completed(assetURLs)
                     }
                 }
@@ -101,7 +103,15 @@ private extension PHAsset {
                 return true
             }
             self.requestContentEditingInput(with: options, completionHandler: {(contentEditingInput: PHContentEditingInput?, info: [AnyHashable : Any]) -> Void in
-                completionHandler(contentEditingInput!.fullSizeImageURL as URL?)
+                if let imageURL = contentEditingInput?.fullSizeImageURL {
+                    completionHandler(imageURL)
+                } else {
+#if targetEnvironment(simulator)
+                    print("Image could not be found.")
+#else
+                    print("Image could not be found, maybe it needs to be prefetched from iCloud. Alternatively, you can try from the simulator to see the working example")
+#endif
+                }
             })
         } else if self.mediaType == .video {
             let options: PHVideoRequestOptions = PHVideoRequestOptions()

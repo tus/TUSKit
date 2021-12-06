@@ -135,11 +135,17 @@ final class Files {
     /// - Throws: Any file related error (e.g. can't save)
     /// - Returns: The URL of the stored file
     @discardableResult
-    func store(data: Data, id: UUID) throws -> URL {
+    func store(data: Data, id: UUID, preferredFileExtension: String? = nil) throws -> URL {
         try queue.sync {
             guard !data.isEmpty else { throw FilesError.dataIsEmpty }
             try makeDirectoryIfNeeded()
-            let fileName = id.uuidString
+            
+            let fileName: String
+            if let fileExtension = preferredFileExtension {
+                fileName = id.uuidString + fileExtension
+            } else {
+                fileName = id.uuidString
+            }
             
             let targetLocation = storageDirectory.appendingPathComponent(fileName)
             try data.write(to: targetLocation, options: .atomic)

@@ -69,6 +69,17 @@ final class TUSClientTests: XCTestCase {
         }
     }
     
+    func testRemainingUploads() throws {
+        XCTAssertEqual(0, client.remainingUploads)
+        let numUploads = 2
+        for _ in 0..<numUploads {
+            try client.upload(data: data)
+        }
+        XCTAssertEqual(numUploads, client.remainingUploads)
+        try client.reset()
+        XCTAssertEqual(0, client.remainingUploads)
+    }
+    
     /// Upload data, a certain amount of times, and wait for it to be done.
     /// Can optionally prepare a failing upload too.
     @discardableResult

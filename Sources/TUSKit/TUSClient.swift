@@ -66,7 +66,6 @@ public final class TUSClient {
     private let api: TUSAPI
     /// Keep track of uploads and their id's
     private var uploads = [UUID: UploadMetadata]()
-    private var progress = [UUID: Set<Range<Int>>]()
     public weak var delegate: TUSClientDelegate?
     
 #if os(iOS)
@@ -120,6 +119,7 @@ public final class TUSClient {
     public func reset() throws {
         stopAndCancelAll()
         try clearAllCache()
+        uploads = [:]
     }
     
     // MARK: - Upload single file

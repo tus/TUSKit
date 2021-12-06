@@ -61,13 +61,17 @@ final class TUSClient_ContextTests: XCTestCase {
         
         // Two contexts for start, two for failure
         XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
+    }
+    
+    func testContextIsReturnedAfterUploadingMultipleFilePaths() throws {
+        let expectedContext = ["I am a key" : "I am a value"]
         
         let path = try Fixtures.makeFilePath()
         try client.uploadFiles(filePaths: [path, path], context: expectedContext)
         waitForUploadsToFinish(2)
         
         // Four contexts for start, four for failure
-        XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 8)), "Expected the context to be returned once an upload is finished")
+        XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
     }
     
     func testContextIsGivenOnStart() throws {

@@ -49,81 +49,36 @@ struct PhotoPicker: UIViewControllerRepresentable {
         }
         
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-            
-            dataFrom(pickerResults: results) { [weak tusClient] urls in
-                guard let tusClient = tusClient else { return }
-                do {
-                    print("Going to upload files \(urls)")
-                    try tusClient.uploadFiles(filePaths: urls)
-                } catch {
-                    print("Error is \(error)")
-                }
+            var images = [Data]()
+            for result in results {
+                result.itemProvider.loadObject(ofClass: UIImage.self, completionHandler: { [weak self] (object, error) in
+                    guard let self = self else { return }
+                    if let image = object as? UIImage {
+                        
+                        if let imageData = image.jpegData(compressionQuality: 0.7) {
+                            images.append(imageData)
+                        } else {
+                            print("Could not retrieve image data")
+                        }
+                        
+                        if results.count == images.count {
+                            print("Received \(images.count) images")
+                            do {
+                                try self.tusClient.uploadMultiple(dataFiles: images)
+                            } catch {
+                                print("Error is \(error)")
+                            }
+                        }
+                        
+                    } else {
+                        print(object)
+                        print(error)
+                    }
+                })
             }
             parent.presentationMode.wrappedValue.dismiss()
         }
         
-        func dataFrom(pickerResults: [PHPickerResult], completed: @escaping ([URL]) -> Void) {
-            let identifiers = pickerResults.compactMap(\.assetIdentifier)
-            
-            let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil)
-            var assetURLs = [URL]()
-            
-            var expectedCount = pickerResults.count // Can't rely on count in enumerateObjects in Xcode 13
-            fetchResult.enumerateObjects { asset, count, _ in
-                asset.getURL { url in
-                    expectedCount -= 1
-                    guard let url = url else {
-                        print("No url found for asset")
-                        return
-                    }
-                    assetURLs.append(url)
-
-                    if expectedCount == 0 {
-                        print("Found assets")
-                        completed(assetURLs)
-                    }
-                }
-                
-            }
-           
-        }
-        
-        deinit {
-            
-        }
     }
 }
 
-private extension PHAsset {
-    // From https://stackoverflow.com/questions/38183613/how-to-get-url-for-a-phasset
-    func getURL(completionHandler : @escaping ((_ responseURL : URL?) -> Void)){
-        if self.mediaType == .image {
-            let options: PHContentEditingInputRequestOptions = PHContentEditingInputRequestOptions()
-            options.canHandleAdjustmentData = {(adjustmeta: PHAdjustmentData) -> Bool in
-                return true
-            }
-            self.requestContentEditingInput(with: options, completionHandler: {(contentEditingInput: PHContentEditingInput?, info: [AnyHashable : Any]) -> Void in
-                if let imageURL = contentEditingInput?.fullSizeImageURL {
-                    completionHandler(imageURL)
-                } else {
-#if targetEnvironment(simulator)
-                    print("Image could not be found.")
-#else
-                    print("Image could not be found, maybe it needs to be prefetched from iCloud. Alternatively, you can try from the simulator to see the working example")
-#endif
-                }
-            })
-        } else if self.mediaType == .video {
-            let options: PHVideoRequestOptions = PHVideoRequestOptions()
-            options.version = .original
-            PHImageManager.default().requestAVAsset(forVideo: self, options: options, resultHandler: {(asset: AVAsset?, audioMix: AVAudioMix?, info: [AnyHashable : Any]?) -> Void in
-                if let urlAsset = asset as? AVURLAsset {
-                    let localVideoUrl: URL = urlAsset.url as URL
-                    completionHandler(localVideoUrl)
-                } else {
-                    completionHandler(nil)
-                }
-            })
-        }
-    }
-}

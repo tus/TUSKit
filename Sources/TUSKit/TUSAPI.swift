@@ -253,7 +253,7 @@ extension Dictionary {
     
     /// Case insenstiive subscripting. Only for string keys.
     /// We downcast to string to support AnyHashable keys.
-    public subscript(caseInsensitive key: Key) -> Value? {
+    subscript(caseInsensitive key: Key) -> Value? {
         guard let someKey = key as? String else {
             return nil
         }

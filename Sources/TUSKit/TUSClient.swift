@@ -86,7 +86,7 @@ public final class TUSClient {
     ///   You can also pass an absolute path, e.g. "file://uploads/TUS"
     ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
     /// - Throws: File related errors when it can't make a directory at the designated path.
-    public init(server: URL, sessionIdentifier: String, storageDirectory: URL?, session: URLSession = URLSession.shared) throws {
+    public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared) throws {
         self.sessionIdentifier = sessionIdentifier
         self.api = TUSAPI(session: session)
         self.files = try Files(storageDirectory: storageDirectory)
@@ -215,7 +215,7 @@ public final class TUSClient {
     
     /// Throw away all files.
     /// - Important:This will clear the storage directory that you supplied.
-    /// - Important:Don't call this while the client is active. Only between uploading sessions.
+    /// - Important:Don't call this while the client is active. Only between uploading sessions. You can check for the `remainingUploads` property.
     /// - Throws: TUSClientError if a file is found but couldn't be deleted. Or if files couldn't be loaded.
     public func clearAllCache() throws {
         do {

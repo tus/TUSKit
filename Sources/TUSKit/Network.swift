@@ -11,8 +11,6 @@ enum NetworkError: Error {
     case noHTTPURLResponse
 }
 
-import Foundation
-
 // Result support for URLSession
 extension URLSession {
     

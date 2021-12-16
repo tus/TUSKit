@@ -214,23 +214,3 @@ final class Files {
     
 }
 
-
-private extension Array {
-    
-    /// Iterate through the array. If any error occurs, keep going. Then at the end, return an array of errors received
-    /// Useful if you don't want to stop iteration when an error occurs
-    /// - Parameter action: Anything you want to perform.
-    /// - Returns: An array of possible errors
-    func collectErrors(action: (Element) throws -> Void) -> [Error] {
-        var errors = [Error]()
-        for element in self {
-            do {
-                try action(element)
-            } catch {
-                errors.append(error)
-            }
-        }
-        
-        return errors
-    }
-}

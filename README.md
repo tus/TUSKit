@@ -24,7 +24,7 @@ final class MyClass {
   let tusClient: TUSClient
   
   init() {
-      tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "TUS")!)
+      tusClient = TUSClient(server: URL(string: "https://tusd.tusdemo.net/files")!, sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "TUS")!)
       tusClient.delegate = self
   }
 }
@@ -111,9 +111,7 @@ For byte level progress. Please implement the `TUSClientDelegate` protocol and s
 By starting an upload you will receive an id. These id's are also passed to you via if you implement the `TUSClientDelegate`.
 You can use these id's to identify which files are finished or failed (but you can also use contexts for that, see below). You can also delete these files on failure if you want. You can also use these id's to retry a failed upload.
 
-Note that `TUSClient` will automatically retry an upload a few times, but will eventually give up, after which it will report an error. At a later moment you can call the `retry` method and try again.
-
-*Note that calling `retry` before an upload is finished, will cause undefined behavior.*
+Note that `TUSClient` will automatically retry an upload a few times, but will eventually give up, after which it will report an error. After which you can call the `retry` method and try again.
 
 ## Contexts
 
@@ -132,7 +130,7 @@ For instance, you can decide to do something with the failed uploads such as ret
 ```swift
 For instance, here is how you can initialize the client and check its failed uploads. Note that we first fetch the id's, after which retry the uploads.
   
-tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "/TUS")!)
+tusClient = TUSClient(server: URL(string: "https://tusd.tusdemo.net/files")!, sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "/TUS")!)
 tusClient.delegate = self
 tusClient.start()
         

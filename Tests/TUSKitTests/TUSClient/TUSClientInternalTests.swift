@@ -20,20 +20,22 @@ final class TUSClientInternalTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        
-        relativeStoragePath = URL(string: "TUSTEST")!
-        
-        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
-        files = Files(storageDirectory: fullStoragePath)
-        clearDirectory(dir: fullStoragePath)
-        
-        data = Data("abcdef".utf8)
-        
-        client = makeClient(storagePath: relativeStoragePath)
-        tusDelegate = TUSMockDelegate()
-        client.delegate = tusDelegate
-      
+        do {
+            relativeStoragePath = URL(string: "TUSTEST")!
+            
+            let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
+            files = try Files(storageDirectory: fullStoragePath)
+            clearDirectory(dir: fullStoragePath)
+            
+            data = Data("abcdef".utf8)
+            
+            client = makeClient(storagePath: relativeStoragePath)
+            tusDelegate = TUSMockDelegate()
+            client.delegate = tusDelegate
+        } catch {
+            XCTFail("Could not instantiate Files \(error)")
+        }
         MockURLProtocol.reset()
     }
     

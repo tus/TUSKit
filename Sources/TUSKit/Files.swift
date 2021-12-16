@@ -6,9 +6,6 @@
 //
 
 import Foundation
-#if os(iOS)
-import MobileCoreServices
-#endif
 
 enum FilesError: Error {
     case relatedFileNotFound
@@ -27,7 +24,8 @@ final class Files {
     
     /// Pass a directory to store the local cache in.
     /// - Parameter storageDirectory: Leave nil for the documents dir. Pass a relative path for a dir inside the documents dir. Pass an absolute path for storing files there.
-    init(storageDirectory: URL?) {
+    /// - Throws: File related errors when it can't make a directory at the designated path.
+    init(storageDirectory: URL?) throws {
         func removeLeadingSlash(url: URL) -> String {
             if url.absoluteString.first == "/" {
                 return String(url.absoluteString.dropFirst())
@@ -64,11 +62,8 @@ final class Files {
                 self.storageDirectory = type(of: self).documentsDirectory.appendingPathComponent("TUS")
             }
         }
-        do {
-            try makeDirectoryIfNeeded()
-        } catch {
-            assertionFailure("Couldn't create dir \(storageDirectory). In other methods this class will try as well.")
-        }
+        
+        try makeDirectoryIfNeeded()
     }
     
     static private var documentsDirectory: URL {
@@ -219,18 +214,6 @@ final class Files {
     
 }
 
-
-extension URL {
-    var mimeType: String {
-        let pathExtension = self.pathExtension
-        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension as NSString, nil)?.takeRetainedValue() {
-            if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
-                return mimetype as String
-            }
-        }
-        return "application/octet-stream"
-    }
-}
 
 private extension Array {
     

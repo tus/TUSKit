@@ -7,6 +7,7 @@
 
 import Foundation
 import TUSKit // No testable import to properly use TUSClient
+import XCTest
 
 func makeDirectoryIfNeeded(url: URL) throws {
     let doesExist = FileManager.default.fileExists(atPath: url.path, isDirectory: nil)
@@ -25,7 +26,7 @@ func clearDirectory(dir: URL) {
             try FileManager.default.removeItem(atPath: path)
         }
     } catch {
-        print(error.localizedDescription)
+        // Might error if dir doesn't exist, that's okay.
     }
 }
 
@@ -35,8 +36,13 @@ func makeClient(storagePath: URL?) -> TUSClient {
     // We don't use a live URLSession, we mock it out.
     let configuration = URLSessionConfiguration.default
     configuration.protocolClasses = [MockURLProtocol.self]
-    let client = TUSClient(config: TUSConfig(server: liveDemoPath), sessionIdentifier: "TEST", storageDirectory: storagePath, session: URLSession.init(configuration: configuration))
-    return client
+    do {
+        let client = try TUSClient(server: liveDemoPath, sessionIdentifier: "TEST", storageDirectory: storagePath, session: URLSession.init(configuration: configuration))
+        return client
+    } catch {
+        XCTFail("Could not create TUSClient instance \(error)")
+        fatalError("Could not create TUSClient instance")
+    }
 }
 
 /// Base 64 extensions

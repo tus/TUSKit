@@ -19,12 +19,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         
-        
-        tusClient = TUSClient(config: TUSConfig(server: URL(string: "https://tusd.tusdemo.net/files")!), sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "/TUS")!)
-        tusClient.delegate = self
-        tusClient.start()
-        
         do {
+            tusClient = try TUSClient(server: URL(string: "https://tusd.tusdemo.net/files")!, sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "/TUS")!)
+            tusClient.delegate = self
+            tusClient.start()
+            
             // When starting, you can retrieve the locally stored uploads that are marked as failure, and handle those.
             // E.g. Maybe some uploads failed from a last session, or failed from a background upload.
             let ids = try tusClient.failedUploadIds()
@@ -35,7 +34,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 // tusClient.removeCacheFor(id: id)
             }
         } catch {
-            // Could not fetch failed id's from disk
+            assertionFailure("Could not fetch failed id's from disk, or could not instantiate TUSClient \(error)")
         }
         
         let photoPicker = PhotoPicker(tusClient: tusClient)

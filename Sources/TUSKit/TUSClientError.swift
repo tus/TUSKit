@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Tjeerd in ‘t Veen on 07/10/2021.
-//
-
 import Foundation
 
 /// The errors that are passed from TUSClient

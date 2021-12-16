@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Tjeerd in ‘t Veen on 22/09/2021.
-//
-
 import Foundation
 
 /// Base 64 extensions

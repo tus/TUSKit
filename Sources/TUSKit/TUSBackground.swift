@@ -67,7 +67,6 @@ final class TUSBackground {
     
     func scheduleBackgroundTasks() {
         #if targetEnvironment(simulator)
-        // TODO: Logger?
         print("Background tasks aren't supported on simulator (iOS limitation). Ignoring.")
         #else
         scheduleSingleTask()

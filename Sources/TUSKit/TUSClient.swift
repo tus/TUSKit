@@ -7,6 +7,9 @@
 
 import Foundation
 import BackgroundTasks
+#if os(iOS)
+import MobileCoreServices
+#endif
 
 /// Implement this delegate to receive updates from the TUSClient
 public protocol TUSClientDelegate: AnyObject {
@@ -61,7 +64,7 @@ public final class TUSClient {
     public let sessionIdentifier: String
     private let files: Files
     private var didStopAndCancel = false
-    private let config: TUSConfig
+    private let serverURL: URL
     private let scheduler = Scheduler()
     private let api: TUSAPI
     /// Keep track of uploads and their id's
@@ -77,16 +80,17 @@ public final class TUSClient {
     
     /// Initialize a TUSClient
     /// - Parameters:
-    ///   - config: A config
+    ///   - server: The URL of the server where you want to upload to.
     ///   - sessionIdentifier: An identifier to know which TUSClient calls delegate methods, also used for URLSession configurations.
     ///   - storageDirectory: A directory to store local files for uploading and continuing uploads. Leave nil to use the documents dir. Pass a relative path (e.g. "TUS" or "/TUS" or "/Uploads/TUS") for a relative directory inside the documents directory.
     ///   You can also pass an absolute path, e.g. "file://uploads/TUS"
     ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
-    public init(config: TUSConfig, sessionIdentifier: String, storageDirectory: URL?, session: URLSession = URLSession.shared) {
-        self.config = config
+    /// - Throws: File related errors when it can't make a directory at the designated path.
+    public init(server: URL, sessionIdentifier: String, storageDirectory: URL?, session: URLSession = URLSession.shared) throws {
         self.sessionIdentifier = sessionIdentifier
         self.api = TUSAPI(session: session)
-        self.files = Files(storageDirectory: storageDirectory)
+        self.files = try Files(storageDirectory: storageDirectory)
+        self.serverURL = server
         
         scheduler.delegate = self
         removeFinishedUploads()
@@ -152,7 +156,7 @@ public final class TUSClient {
     /// - Parameters:
     ///   - data: The data to be upload
     ///   - preferredFileExtension: A file extension to add when saving the file. E.g. You can add ".JPG" to raw data that's being saved. This will help the uploader's metadata.
-    ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url from the config. Will call the `create` on this custom url to get the definitive upload url.
+    ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url. Will call the `create` on this custom url to get the definitive upload url.
     ///   - customHeaders: The headers to upload.
     ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload. Don't put sensitive information in here! Since a context will be stored to the disk.
     /// - Returns: An id
@@ -242,13 +246,13 @@ public final class TUSClient {
    
     /// Retry a failed upload. Note that `TUSClient` already has an internal retry mechanic before it reports an upload as failure.
     /// If however, you like to retry an upload at a later stage, you can use this method to trigger the upload again.
-    /// - Important: Don't retry an upload while it's still being uploaded. You get undefined behavior.
     /// - Parameter id: The id of an upload. Received when starting an upload, or via the `TUSClientDelegate`.
     /// - Returns: True if the id is found. False if it's not found
     /// - Throws: `TUSClientError.couldNotRetryUpload` if it can't load an the file. Or file related errors.
     @discardableResult
     public func retry(id: UUID) throws -> Bool {
         do {
+            guard uploads[id] == nil else { return false }
             guard let metaData = try files.findMetadata(id: id) else {
                 return false
             }
@@ -288,7 +292,7 @@ public final class TUSClient {
     
     // MARK: - Private
     
-    /// Ceck for any uploads that are finished and remove them from the cache.
+    /// Check for any uploads that are finished and remove them from the cache.
     private func removeFinishedUploads() {
         do {
             let metaDataList = try files.loadAllMetadata()
@@ -322,7 +326,7 @@ public final class TUSClient {
         
         func makeMetadata() throws -> UploadMetadata {
             let size = try getSize()
-            let url = uploadURL ?? config.server
+            let url = uploadURL ?? serverURL
             return UploadMetadata(id: id, filePath: filePath, uploadURL: url, size: size, customHeaders: customHeaders, mimeType: filePath.mimeType.nonEmpty, context: context)
         }
         
@@ -343,7 +347,7 @@ public final class TUSClient {
         scheduler.addTask(task: task)
     }
     
-    /// Store UploadMetadata to sdisk
+    /// Store UploadMetadata to disk
     /// - Parameter metaData: The `UploadMetadata` to store.
     /// - Throws: TUSClientError.couldNotStoreFileMetadata
     private func store(metaData: UploadMetadata) throws {
@@ -441,19 +445,25 @@ extension TUSClient: SchedulerDelegate {
     }
     
     func onError(error: Error, task: ScheduledTask, scheduler: Scheduler) {
-        let metaData: UploadMetadata
-        switch task {
-        case let task as CreationTask:
-            metaData = task.metaData
-        case let task as UploadDataTask:
-            metaData = task.metaData
-        case let task as StatusTask:
-            metaData = task.metaData
-        default:
-            fatalError("Unsupported task errored")
+        func getMetaData() -> UploadMetadata? {
+            switch task {
+            case let task as CreationTask:
+                return task.metaData
+            case let task as UploadDataTask:
+                return task.metaData
+            case let task as StatusTask:
+                return task.metaData
+            default:
+                return nil
+            }
         }
         
         if didStopAndCancel {
+            return
+        }
+        
+        guard let metaData = getMetaData() else {
+            assertionFailure("Could not fetch metadata from task \(task)")
             return
         }
         
@@ -469,6 +479,7 @@ extension TUSClient: SchedulerDelegate {
         if canRetry {
             scheduler.addTask(task: task)
         } else { // Exhausted all retries, reporting back as failure.
+            uploads[metaData.id] = nil
             delegate?.uploadFailed(id: metaData.id, error: error, context: metaData.context, client: self)
         }
     }
@@ -521,3 +532,16 @@ extension TUSClient: ProgressDelegate {
         delegate?.totalProgress(bytesUploaded: totalBytesUploaded, totalBytes: totalSize, client: self)
     }
 }
+
+private extension URL {
+    var mimeType: String {
+        let pathExtension = self.pathExtension
+        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension as NSString, nil)?.takeRetainedValue() {
+            if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
+                return mimetype as String
+            }
+        }
+        return "application/octet-stream"
+    }
+}
+

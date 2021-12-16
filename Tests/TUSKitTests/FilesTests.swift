@@ -7,7 +7,11 @@ final class FilesTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        files = Files(storageDirectory: URL(string: "TUS")!)
+        do {
+            files = try Files(storageDirectory: URL(string: "TUS")!)
+        } catch {
+            XCTFail("Could not instantiate Files")
+        }
     }
     
     override func tearDown() {
@@ -54,13 +58,17 @@ final class FilesTests: XCTestCase {
             ]
         
         for (url, expectedPath) in values {
-            let files = Files(storageDirectory: url)
-            
-            // Depending on the OS, there might be trailing slashes at the end of the path, that's okay.
-            let trimmedExpectedPath = removeTrailingSlash(url: expectedPath)
-            let trimmedPath = removeTrailingSlash(url: files.storageDirectory)
-            
-            XCTAssertEqual(trimmedPath, trimmedExpectedPath)
+            do {
+                let files = try Files(storageDirectory: url)
+                
+                // Depending on the OS, there might be trailing slashes at the end of the path, that's okay.
+                let trimmedExpectedPath = removeTrailingSlash(url: expectedPath)
+                let trimmedPath = removeTrailingSlash(url: files.storageDirectory)
+                
+                XCTAssertEqual(trimmedPath, trimmedExpectedPath)
+            } catch {
+                XCTFail("Could not instantiate Files \(error)")
+            }
         }
     }
     

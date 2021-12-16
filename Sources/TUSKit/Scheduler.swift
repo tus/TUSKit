@@ -110,36 +110,3 @@ final class Scheduler {
     }
     
 }
-
-
-// Convenience extensions to help deal with nested arrays.
-private extension Array where Element: Collection {
-    
-    var firstNested: Element.Element? {
-        for col in self {
-            for el in col {
-                return el
-            }
-        }
-        
-        return nil
-    }
-    
-    func filterNested(predicate: (Element.Element) -> Bool) -> [[Element.Element]] {
-        var arr = [[Element.Element]]()
-        
-        for col in self {
-            var newArr = [Element.Element]()
-            for el in col {
-                if !predicate(el) {
-                    newArr.append(el)
-                }
-            }
-            if !newArr.isEmpty {
-                arr.append(newArr)
-            }
-        }
-        
-        return arr
-    }
-}

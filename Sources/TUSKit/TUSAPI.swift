@@ -24,27 +24,12 @@ struct Status {
 /// The Uploader's responsibility is to perform work related to uploading.
 /// This includes: Making requests, handling requests, handling errors.
 final class TUSAPI {
-    enum HTTPMethod: CustomStringConvertible {
-        case head
-        case post
-        case get
-        case patch
-        case delete
-        
-        var description: String {
-            switch self {
-            case .head:
-                return "HEAD"
-            case .post:
-                return "POST"
-            case .get:
-                return "GET"
-            case .patch:
-                return "PATCH"
-            case .delete:
-                return "DELETE"
-            }
-        }
+    enum HTTPMethod: String {
+        case head = "HEAD"
+        case post = "POST"
+        case get = "GET"
+        case patch = "PATCH"
+        case delete = "DELETE"
     }
     
     let session: URLSession
@@ -219,7 +204,7 @@ final class TUSAPI {
     /// - Returns: A new URLRequest to use in any TUS API call.
     private func makeRequest(url: URL, method: HTTPMethod, headers: [String: String]) -> URLRequest {
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
-        request.httpMethod = String(describing: method)
+        request.httpMethod = method.rawValue
         request.addValue("1.0.0", forHTTPHeaderField: "TUS-Resumable")
         for header in headers {
             request.addValue(header.value, forHTTPHeaderField: header.key)

@@ -22,7 +22,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         do {
             tusClient = try TUSClient(server: URL(string: "https://tusd.tusdemo.net/files")!, sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "/TUS")!)
             tusClient.delegate = self
-            tusClient.start()
+            let remainingUploads = tusClient.start()
+            switch remainingUploads.count {
+            case 0:
+                print("No files to upload")
+            case 1:
+                print("Continuing uploading single file")
+            case let nr:
+                print("Continuing uploading \(nr) file(s)")
+            }
             
             // When starting, you can retrieve the locally stored uploads that are marked as failure, and handle those.
             // E.g. Maybe some uploads failed from a last session, or failed from a background upload.

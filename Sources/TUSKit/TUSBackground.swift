@@ -17,12 +17,10 @@ final class TUSBackground {
     private static let identifier = "io.tus.uploading"
     
     private var currentTask: ScheduledTask?
-    private let scheduler: BGTaskScheduler
     private let api: TUSAPI
     private let files: Files
     
-    init(scheduler: BGTaskScheduler, api: TUSAPI, files: Files) {
-        self.scheduler = scheduler
+    init(api: TUSAPI, files: Files) {
         self.api = api
         self.files = files
         
@@ -33,13 +31,14 @@ final class TUSBackground {
 #if targetEnvironment(simulator)
         return
 #else
-        scheduler.register(forTaskWithIdentifier: type(of: self).identifier, using: nil) { [weak self] bgTask in
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: type(of: self).identifier, using: nil) { [weak self] bgTask in
             guard let self = self else { return }
             guard let backgroundTask = bgTask as? BGProcessingTask else {
                 return
             }
             
             guard let tusTask = self.firstTask() else {
+                backgroundTask.setTaskCompleted(success: true)
                 return
             }
             
@@ -50,17 +49,16 @@ final class TUSBackground {
                 tusTask.cancel()
             }
             
-            tusTask.run { [weak self] result in
+            tusTask.run { result in
                 switch result {
                 case .success:
                     backgroundTask.setTaskCompleted(success: true)
                 case .failure:
                     backgroundTask.setTaskCompleted(success: false)
                 }
-                
-                guard let self = self else { return }
-                self.scheduleSingleTask() // Try and schedule another task.
             }
+            
+            self.scheduleSingleTask() // Try and schedule another task.
         }
 #endif
     }
@@ -81,7 +79,12 @@ final class TUSBackground {
         
         let request = BGProcessingTaskRequest(identifier: type(of: self).identifier)
         request.requiresNetworkConnectivity = true
-        try? scheduler.submit(request)
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            print("Could not schedule background task \(error)")
+        }
+        
     }
     
     /// Return first available task

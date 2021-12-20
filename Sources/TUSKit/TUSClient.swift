@@ -74,7 +74,7 @@ public final class TUSClient {
 #if os(iOS)
     @available(iOS 13.0, *)
     private lazy var backgroundClient: TUSBackground = {
-        return TUSBackground(scheduler: BGTaskScheduler.shared, api: api, files: files)
+        return TUSBackground(api: api, files: files)
     }()
 #endif
     

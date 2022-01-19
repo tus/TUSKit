@@ -280,7 +280,7 @@ public final class TUSClient {
     
     /// Return the id's all failed uploads. Good to check after launch or after background processing for example, to handle them at a later stage.
     /// - Returns: An id's array of erronous uploads.
-    public func failedUploadIds() throws -> [UUID] {
+    public func failedUploadIDs() throws -> [UUID] {
         try files.loadAllMetadata().compactMap { metaData in
             if metaData.errorCount > retryCount {
                 return metaData.id

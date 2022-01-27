@@ -1,0 +1,27 @@
+name: TUSKit CI
+on: [push]
+jobs:
+  build:
+    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["macos-latest"]
+        swift: ["5.5"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Extract Branch Name
+        run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV    
+      - uses: fwal/setup-swift@v1.10.0
+        with:
+          swift-version: ${{ matrix.swift }}
+      - uses: actions/checkout@v2
+      - name: Build
+        run: swift build -Xswiftc --disable-experimental-concurrency
+      - name: Run tests
+        run: swift test -Xswiftc --disable-experimental-concurrency
+      - uses: 8398a7/action-slack@v3
+        if: failure() && env.BRANCH == 'master'
+        with:
+          status: failure
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

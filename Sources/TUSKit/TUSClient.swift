@@ -51,25 +51,28 @@ protocol ProgressDelegate: AnyObject {
 /// Please refer to the Readme.md on how to use this type.
 public final class TUSClient {
     
+    // MARK: - Public Properties
+    
     /// The number of uploads that the TUSClient will try to complete.
     public var remainingUploads: Int {
         uploads.count
     }
+    public let sessionIdentifier: String
+    public weak var delegate: TUSClientDelegate?
     
-    static let chunkSize: Int = 500 * 1024
+    // MARK: - Private Properties
     
     /// How often to try an upload if it fails. A retryCount of 2 means 3 total uploads max. (1 initial upload, and on repeated failure, 2 more retries.)
     private let retryCount = 2
     
-    public let sessionIdentifier: String
     private let files: Files
     private var didStopAndCancel = false
     private let serverURL: URL
     private let scheduler = Scheduler()
     private let api: TUSAPI
+    private let chunkSize: Int
     /// Keep track of uploads and their id's
     private var uploads = [UUID: UploadMetadata]()
-    public weak var delegate: TUSClientDelegate?
     
 #if os(iOS)
     @available(iOS 13.0, *)
@@ -85,12 +88,14 @@ public final class TUSClient {
     ///   - storageDirectory: A directory to store local files for uploading and continuing uploads. Leave nil to use the documents dir. Pass a relative path (e.g. "TUS" or "/TUS" or "/Uploads/TUS") for a relative directory inside the documents directory.
     ///   You can also pass an absolute path, e.g. "file://uploads/TUS"
     ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
+    ///   - chunkSize: The amount of bytes the data to upload will be chunked by. Defaults to 512 kB.
     /// - Throws: File related errors when it can't make a directory at the designated path.
-    public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared) throws {
+    public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024) throws {
         self.sessionIdentifier = sessionIdentifier
         self.api = TUSAPI(session: session)
         self.files = try Files(storageDirectory: storageDirectory)
         self.serverURL = server
+        self.chunkSize = chunkSize
         
         scheduler.delegate = self
         removeFinishedUploads()
@@ -336,7 +341,7 @@ public final class TUSClient {
             uploads[id] = metaData
         }
         
-        guard let task = try taskFor(metaData: metaData, api: api, files: files, progressDelegate: self) else {
+        guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, progressDelegate: self) else {
             assertionFailure("Could not find a task for metaData \(metaData)")
             return
         }
@@ -382,7 +387,7 @@ public final class TUSClient {
     /// Schedule a single task if needed. Will decide what task to schedule for the metaData.
     /// - Parameter metaData:The metaData the schedule.
     private func scheduleTask(for metaData: UploadMetadata) throws {
-        guard let task = try taskFor(metaData: metaData, api: api, files: files, progressDelegate: self) else {
+        guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, progressDelegate: self) else {
             throw TUSClientError.uploadIsAlreadyFinished
         }
         uploads[metaData.id] = metaData
@@ -500,17 +505,17 @@ private extension String {
 /// Decide which task to create based on metaData.
 /// - Parameter metaData: The `UploadMetadata` for which to create a `Task`.
 /// - Returns: The task that has to be performed for the relevant metaData. Will return nil if metaData's file is already uploaded / finished. (no task needed).
-func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, progressDelegate: ProgressDelegate? = nil) throws -> ScheduledTask? {
+func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int, progressDelegate: ProgressDelegate? = nil) throws -> ScheduledTask? {
     guard !metaData.isFinished else {
         return nil
     }
     
     if let remoteDestination = metaData.remoteDestination {
-        let statusTask = StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData, files: files, chunkSize: TUSClient.chunkSize)
+        let statusTask = StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData, files: files, chunkSize: chunkSize)
         statusTask.progressDelegate = progressDelegate
         return statusTask
     } else {
-        let creationTask = try CreationTask(metaData: metaData, api: api, files: files, chunkSize: TUSClient.chunkSize)
+        let creationTask = try CreationTask(metaData: metaData, api: api, files: files, chunkSize: chunkSize)
         creationTask.progressDelegate = progressDelegate
         return creationTask
     }

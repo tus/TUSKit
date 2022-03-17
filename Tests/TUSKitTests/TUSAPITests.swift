@@ -100,8 +100,12 @@ final class TUSAPITests: XCTestCase {
         let length = data.count
         let range = offset..<data.count
         let uploadExpectation = expectation(description: "Call api.upload()")
+        let metaData = UploadMetadata(id: UUID(),
+                                      filePath: URL(string: "file://whatever/abc")!,
+                                      uploadURL: URL(string: "io.tus")!,
+                                      size: length)
     
-        api.upload(data: Data(), range: range, location: uploadURL) { _ in
+        api.upload(data: Data(), range: range, location: uploadURL, metaData: metaData) { _ in
             uploadExpectation.fulfill()
         }
         

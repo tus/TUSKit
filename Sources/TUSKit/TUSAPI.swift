@@ -183,20 +183,6 @@ final class TUSAPI {
         return task
     }
     
-    func makeUploadRequest(data: Data, location: URL) -> URLRequest {
-        let offset: Int = 0
-        let length: Int = data.count
-        
-        let headers = [
-            "Content-Type": "application/offset+octet-stream",
-            "Upload-Offset": String(offset),
-            "Content-Length": String(length)
-        ]
-
-        return makeRequest(url: location, method: .patch, headers: headers)
-        
-    }
-    
     /// A factory to make requests with sane defaults.
     /// - Parameters:
     ///   - url: The URL of the request.

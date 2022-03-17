@@ -9,7 +9,13 @@ import Foundation
 
 /// The upload task will upload to data a destination.
 /// Will spawn more UploadDataTasks if an upload isn't complete.
-final class UploadDataTask: NSObject, ScheduledTask {
+final class UploadDataTask: NSObject, IdentifiableTask {
+    
+    // MARK: - IdentifiableTask
+    
+    var id: UUID {
+        metaData.id
+    }
     
     weak var progressDelegate: ProgressDelegate?
     let metaData: UploadMetadata
@@ -111,6 +117,12 @@ final class UploadDataTask: NSObject, ScheduledTask {
                     }
                     
                     try files.encodeAndStore(metaData: metaData)
+                    
+                    // If the task has been canceled
+                    // we don't continue to create subsequent UploadDataTasks
+                    if self.isCanceled {
+                        return
+                    }
                     
                     let nextRange: Range<Int>?
                     if let range = range {

@@ -57,6 +57,16 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Expected the previous and new upload to finish")
     }
     
+    func testCancelForID() throws {
+        let taskIDtoCancel = try client.upload(data: data)
+        
+        try client.cancel(id: taskIDtoCancel)
+        
+        XCTAssert(tusDelegate.finishedUploads.isEmpty)
+        XCTAssert(tusDelegate.failedUploads.isEmpty)
+        XCTAssert(tusDelegate.fileErrors.isEmpty)
+    }
+    
     // MARK: - Progress
     
     func testProgress() throws {
@@ -108,6 +118,13 @@ final class TUSClientTests: XCTestCase {
         let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
         uploadFailedExpectation.expectedFulfillmentCount = amount
         tusDelegate.uploadFailedExpectation = uploadFailedExpectation
+        waitForExpectations(timeout: 6, handler: nil)
+    }
+    
+    private func waitForUploadsToStart(_ amount: Int = 1) {
+        let uploadStartedExpectation = expectation(description: "Waiting for upload to start")
+        uploadStartedExpectation.expectedFulfillmentCount = amount
+        tusDelegate.startUploadExpectation = uploadStartedExpectation
         waitForExpectations(timeout: 6, handler: nil)
     }
     

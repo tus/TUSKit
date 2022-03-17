@@ -8,7 +8,13 @@
 import Foundation
 
 /// A `StatusTask` fetches the status of an upload. It fetches the offset from we can continue uploading, and then makes a possible uploadtask.
-final class StatusTask: ScheduledTask {
+final class StatusTask: IdentifiableTask {
+    
+    // MARK: - IdentifiableTask
+    
+    var id: UUID {
+        metaData.id
+    }
     
     weak var progressDelegate: ProgressDelegate?
     let api: TUSAPI
@@ -58,6 +64,12 @@ final class StatusTask: ScheduledTask {
                 if offset == metaData.size {
                     completed(.success([]))
                 } else {
+                    // If the task has been canceled
+                    // we don't continue to create subsequent UploadDataTasks
+                    if self.didCancel {
+                        return
+                    }
+                    
                     let nextRange = offset..<min((offset + chunkSize), metaData.size)
                     
                     let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)

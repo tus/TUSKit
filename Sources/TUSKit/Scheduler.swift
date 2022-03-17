@@ -32,7 +32,11 @@ final class Scheduler {
     private var runningTasks = [ScheduledTask]()
     weak var delegate: SchedulerDelegate?
     
-    var allTasks: [ScheduledTask] { runningTasks + pendingTasks }
+    var allTasks: [ScheduledTask] {
+        queue.sync {
+            runningTasks + pendingTasks
+        }
+    }
     
     // Tasks are processed in background
     let queue = DispatchQueue(label: "com.TUSKit.Scheduler")
@@ -59,6 +63,28 @@ final class Scheduler {
             self.pendingTasks = []
             self.runningTasks.forEach { $0.cancel() }
             self.runningTasks = []
+        }
+    }
+    
+    func cancelTasks(_ tasksToCancel: [ScheduledTask]) {
+        queue.async {
+            tasksToCancel.forEach { taskToCancel in
+                if let pendingTaskIndex = self.pendingTasks.firstIndex(where: { pendingTask in
+                    pendingTask === taskToCancel
+                }) {
+                    let pendingTask = self.pendingTasks[pendingTaskIndex]
+                    pendingTask.cancel()
+                    self.pendingTasks.remove(at: pendingTaskIndex)
+                }
+                
+                if let runningTaskIndex = self.runningTasks.firstIndex(where: { runningTask in
+                    runningTask === taskToCancel
+                }) {
+                    let runningTask = self.runningTasks[runningTaskIndex]
+                    runningTask.cancel()
+                    self.runningTasks.remove(at: runningTaskIndex)
+                }
+            }
         }
     }
 

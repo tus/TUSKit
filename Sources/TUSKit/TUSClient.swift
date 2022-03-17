@@ -121,6 +121,11 @@ public final class TUSClient {
         scheduler.cancelAll()
     }
     
+    public func cancel(id: UUID) throws {
+        let tasksToCancel = scheduler.allTasks.filter { ($0 as? IdentifiableTask)?.id == id }
+        scheduler.cancelTasks(tasksToCancel)
+    }
+    
     /// This will cancel all running uploads and clear the local cache.
     /// Expect errors passed to the delegate for canceled tasks.
     /// - Warning: This method is destructive and will remove any stored cache.

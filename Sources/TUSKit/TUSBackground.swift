@@ -19,10 +19,12 @@ final class TUSBackground {
     private var currentTask: ScheduledTask?
     private let api: TUSAPI
     private let files: Files
+    private let chunkSize: Int
     
-    init(api: TUSAPI, files: Files) {
+    init(api: TUSAPI, files: Files, chunkSize: Int) {
         self.api = api
         self.files = files
+        self.chunkSize = chunkSize
         
         registerForBackgroundTasks()
     }
@@ -95,7 +97,7 @@ final class TUSBackground {
         }
         
         return allMetaData.firstMap { metaData in
-            try? taskFor(metaData: metaData, api: api, files: files)
+            try? taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize)
         }
     }
     

@@ -7,7 +7,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'TUSKit'
-  s.version          = '3.0.0'
+  s.version          = '3.1.0'
   s.summary          = 'TUSKit client in Swift'
   s.swift_version = '5.0'
 
@@ -32,5 +32,5 @@ Swift client for https://tus.io called TUSKit. Mac and iOS compatible.
   s.osx.deployment_target  = '10.9'
 
   s.source_files = 'Sources/TUSKit/**/*'
-  
+
 end

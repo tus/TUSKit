@@ -92,25 +92,25 @@ final class TUSAPI {
     }
     
     func makeCreateRequest(metaData: UploadMetadata) -> URLRequest {
-        func makeUploadMetaHeaders() -> [String: String] {
-            let fileName = metaData.filePath.lastPathComponent
+        func makeUploadMetaHeader() -> [String: String] {
+            var metaDataDict: [String: String] = [:]
             
-            var metaDataHeaders: [String: String] = [:]
+            let fileName = metaData.filePath.lastPathComponent
             if !fileName.isEmpty && fileName != "/" { // A filename can be invalid, e.g. "/"
-                metaDataHeaders["filename"] = fileName
+                metaDataDict["filename"] = fileName
             }
             
             if let mimeType = metaData.mimeType, !mimeType.isEmpty {
-                metaDataHeaders["filetype"] = mimeType
+                metaDataDict["filetype"] = mimeType
             }
-            return metaDataHeaders
+            return metaDataDict
         }
        
         /// Turn dict into a comma separated base64 string
-        func encode(headers: [String: String]) -> String? {
-            guard !headers.isEmpty else { return nil }
+        func encode(_ dict: [String: String]) -> String? {
+            guard !dict.isEmpty else { return nil }
             var str = ""
-            for (key, value) in headers {
+            for (key, value) in dict {
                 let appendingStr: String
                 if !str.isEmpty {
                     str += ", "
@@ -121,19 +121,17 @@ final class TUSAPI {
             return str
         }
         
-        var headers = ["Upload-Extension": "creation",
-                       "Upload-Length": String(metaData.size)]
+        var defaultHeaders = ["Upload-Extension": "creation",
+                              "Upload-Length": String(metaData.size)]
         
-        let encoded = encode(headers: makeUploadMetaHeaders())
-        
-        if let encodedMetadata = encoded  {
-            headers["Upload-Metadata"] = encodedMetadata
+        if let encodedMetadata = encode(makeUploadMetaHeader())  {
+            defaultHeaders["Upload-Metadata"] = encodedMetadata
         }
         
         /// Attach all headers from customHeader property
-        let headersWithCustom = headers.merging(metaData.customHeaders ?? [:]) { _, new in new }
+        let headers = defaultHeaders.merging(metaData.customHeaders ?? [:]) { _, new in new }
         
-        return makeRequest(url: metaData.uploadURL, method: .post, headers: headersWithCustom)
+        return makeRequest(url: metaData.uploadURL, method: .post, headers: headers)
     }
     
     /// Uploads data

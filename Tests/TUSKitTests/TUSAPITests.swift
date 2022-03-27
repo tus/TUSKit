@@ -54,7 +54,7 @@ final class TUSAPITests: XCTestCase {
     }
     
     func testCreation() throws {
-        let remoteFileURL = URL(string: "tus.io/myfile")!
+        let remoteFileURL = URL(string: "https://tus.io/myfile")!
         MockURLProtocol.prepareResponse(for: "POST") { _ in
             MockURLProtocol.Response(status: 200, headers: ["Location": remoteFileURL.absoluteString], data: nil)
         }

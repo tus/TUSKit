@@ -79,7 +79,7 @@ final class TUSAPI {
                 let (_, response) = try result.get()
 
                 guard let location = response.allHeaderFields[caseInsensitive: "location"] as? String,
-                      let locationURL = URL(string: location) else {
+                      let locationURL = URL(string: location, relativeTo: metaData.uploadURL) else {
                     throw TUSAPIError.couldNotRetrieveLocation
                 }
 

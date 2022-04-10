@@ -5,12 +5,12 @@ jobs:
     name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
     strategy:
       matrix:
-        os: ["macos-latest"]
+        os: ["macos-11.6.2"]
         swift: ["5.5"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Extract Branch Name
-        run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV    
+        run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
       - uses: fwal/setup-swift@v1.10.0
         with:
           swift-version: ${{ matrix.swift }}

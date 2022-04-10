@@ -92,25 +92,25 @@ final class TUSAPI {
     }
     
     func makeCreateRequest(metaData: UploadMetadata) -> URLRequest {
-        func makeMetadataHeaders() -> [String: String] {
-            let fileName = metaData.filePath.lastPathComponent
+        func makeUploadMetaHeader() -> [String: String] {
+            var metaDataDict: [String: String] = [:]
             
-            var metaDataHeaders = metaData.customHeaders ?? [:]
+            let fileName = metaData.filePath.lastPathComponent
             if !fileName.isEmpty && fileName != "/" { // A filename can be invalid, e.g. "/"
-                metaDataHeaders["filename"] = fileName
+                metaDataDict["filename"] = fileName
             }
             
             if let mimeType = metaData.mimeType, !mimeType.isEmpty {
-                metaDataHeaders["filetype"] = mimeType
+                metaDataDict["filetype"] = mimeType
             }
-            return metaDataHeaders
+            return metaDataDict
         }
        
         /// Turn dict into a comma separated base64 string
-        func encode(headers: [String: String]) -> String? {
-            guard !headers.isEmpty else { return nil }
+        func encode(_ dict: [String: String]) -> String? {
+            guard !dict.isEmpty else { return nil }
             var str = ""
-            for (key, value) in headers {
+            for (key, value) in dict {
                 let appendingStr: String
                 if !str.isEmpty {
                     str += ", "
@@ -121,19 +121,15 @@ final class TUSAPI {
             return str
         }
         
-        var headers = ["Upload-Extension": "creation",
-                       "Upload-Length": String(metaData.size)]
+        var defaultHeaders = ["Upload-Extension": "creation",
+                              "Upload-Length": String(metaData.size)]
         
-        let defaultHeaders = makeMetadataHeaders()
-        let allMetaDataHeaders = defaultHeaders.merging(metaData.customHeaders ?? [:]) { _, rhs in
-            rhs
+        if let encodedMetadata = encode(makeUploadMetaHeader())  {
+            defaultHeaders["Upload-Metadata"] = encodedMetadata
         }
         
-        let encoded = encode(headers: allMetaDataHeaders)
-        
-        if let encodedMetadata = encoded  {
-            headers["Upload-Metadata"] = encodedMetadata
-        }
+        /// Attach all headers from customHeader property
+        let headers = defaultHeaders.merging(metaData.customHeaders ?? [:]) { _, new in new }
         
         return makeRequest(url: metaData.uploadURL, method: .post, headers: headers)
     }
@@ -145,7 +141,7 @@ final class TUSAPI {
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
     @discardableResult
-    func upload(data: Data, range: Range<Int>?, location: URL, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
+    func upload(data: Data, range: Range<Int>?, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
         let offset: Int
         let length: Int
         if let range = range {
@@ -163,7 +159,10 @@ final class TUSAPI {
             "Content-Length": String(length)
         ]
         
-        let request = makeRequest(url: location, method: .patch, headers: headers)
+        /// Attach all headers from customHeader property
+        let headersWithCustom = headers.merging(metaData.customHeaders ?? [:]) { _, new in new }
+        
+        let request = makeRequest(url: location, method: .patch, headers: headersWithCustom)
         
         let task = session.uploadTask(request: request, data: data) { result in
             processResult(completion: completion) {
@@ -180,20 +179,6 @@ final class TUSAPI {
         task.resume()
         
         return task
-    }
-    
-    func makeUploadRequest(data: Data, location: URL) -> URLRequest {
-        let offset: Int = 0
-        let length: Int = data.count
-        
-        let headers = [
-            "Content-Type": "application/offset+octet-stream",
-            "Upload-Offset": String(offset),
-            "Content-Length": String(length)
-        ]
-
-        return makeRequest(url: location, method: .patch, headers: headers)
-        
     }
     
     /// A factory to make requests with sane defaults.

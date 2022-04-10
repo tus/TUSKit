@@ -44,8 +44,8 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
         // Make sure client adds custom headers
         
         // Expected values
-        let key = "TUSKit"
-        let value = "TransloaditKit"
+        let key = "Authorization"
+        let value = "Bearer [token]"
         let customHeaders = [key: value]
         
         // Store file
@@ -70,11 +70,7 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
         
         for request in createRequests {
             let headers = try XCTUnwrap(request.allHTTPHeaderFields)
-            let metaDataString = try XCTUnwrap(headers["Upload-Metadata"])
-            for (key, value) in customHeaders {
-                XCTAssert(metaDataString.contains(key), "Expected \(metaDataString) to contain \(key), headers are \(customHeaders)")
-                XCTAssert(metaDataString.contains(value.toBase64()), "Expected \(metaDataString) to contain base 64 value for \(value)")
-            }
+            XCTAssert(headers[key] == value, "Expected custom header '\(key)' to exist on headers with value: '\(value)'")
         }
     }
     

@@ -113,7 +113,21 @@ public final class TUSClient {
             (metaData.id, metaData.context)
         }
     }
-    
+
+    /// Start specific remaining uploads from locally stored files.
+    public func start(taskIds: [UUID]) {
+        didStopAndCancel = false
+        
+    }
+
+    /// Get which uploads aren't finished.
+    public func getRemainingUploads() -> [(UUID, [String: String]?)] {
+        let metaData = getStoredTasks()
+        return metadata.map { metaData in
+            (metaData.id, metaData.context)   
+        }
+    }
+
     /// Stops the ongoing sessions, keeps the cache intact so you can continue uploading at a later stage.
     /// - Important: This method is `not` destructive. It only stops the client from running. If you want to avoid uploads to run again. Then please refer to `reset()` or `clearAllCache()`.
     public func stopAndCancelAll() {
@@ -368,7 +382,33 @@ public final class TUSClient {
             throw TUSClientError.couldNotStoreFileMetadata(underlyingError: error)
         }
     }
-    
+  
+    /// Check which uploads aren't finished and return them.
+    private func getStoredTasks() -> [UploadMetadata] {
+        do {
+            let metaDataItems = try files.loadAllMetadata().filter({ metaData in
+                // Only allow uploads where errors are below an amount
+                metaData.errorCount <= retryCount && !metaData.isFinished
+            })
+            
+            return metaDataItems
+        } catch (let error) {
+            let tusError = TUSClientError.couldNotLoadData(underlyingError: error)
+            delegate?.fileError(error: tusError, client: self)
+            return []
+        }
+    }
+
+    /// Convert UUIDs into tasks.
+    private func scheduleStoredTasks(taskIds: [UUID]) => {
+        do {
+            let metaDataItems = try files.loadAllMetadata().filter({ metaData in 
+                // Only allow specified uploads and errors are below an amount
+                metaData.errorCount <= retryCount && !metaData.isFinished && taskIds.contains( metaData.id )
+            })
+        }
+    }
+
     /// Check which uploads aren't finished. Load them from a store and turn these into tasks.
     private func scheduleStoredTasks() -> [UploadMetadata] {
         do {

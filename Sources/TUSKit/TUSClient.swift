@@ -406,6 +406,16 @@ public final class TUSClient {
                 // Only allow specified uploads and errors are below an amount
                 metaData.errorCount <= retryCount && !metaData.isFinished && taskIds.contains( metaData.id )
             })
+           
+            for metaData in metaDataItems {
+                try scheduleTask(for: metaData)
+            }
+
+            return metaDataItems
+        } catch (let error) {
+            let tusError = TUSClientError.couldNotLoadData(underlyingError: error)
+            delegate?.fileError(error: tusError, client: self)
+            return []
         }
     }
 

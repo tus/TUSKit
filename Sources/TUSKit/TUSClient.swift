@@ -123,7 +123,7 @@ public final class TUSClient {
     /// Get which uploads aren't finished.
     public func getRemainingUploads() -> [(UUID, [String: String]?)] {
         let metaData = getStoredTasks()
-        return metadata.map { metaData in
+        return metaData.map { metaData in
             (metaData.id, metaData.context)   
         }
     }
@@ -400,7 +400,7 @@ public final class TUSClient {
     }
 
     /// Convert UUIDs into tasks.
-    private func scheduleStoredTasks(taskIds: [UUID]) => {
+    private func scheduleStoredTasks(taskIds: [UUID]) -> [UploadMetadata] {
         do {
             let metaDataItems = try files.loadAllMetadata().filter({ metaData in 
                 // Only allow specified uploads and errors are below an amount

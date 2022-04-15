@@ -115,9 +115,13 @@ public final class TUSClient {
     }
 
     /// Start specific remaining uploads from locally stored files.
-    public func start(taskIds: [UUID]) {
+    @discardableResult
+    public func start(taskIds: [UUID]) -> [(UUID, [String: String]?)] {
         didStopAndCancel = false
-        
+        let metaData = scheduleStoredTasks()
+        return metaData.map { metaData in
+            (metaData.id, metaData.context)
+        }
     }
 
     /// Get which uploads aren't finished.
@@ -386,6 +390,7 @@ public final class TUSClient {
     /// Check which uploads aren't finished and return them.
     private func getStoredTasks() -> [UploadMetadata] {
         do {
+            try files.makeDirectoryIfNeeded()
             let metaDataItems = try files.loadAllMetadata().filter({ metaData in
                 // Only allow uploads where errors are below an amount
                 metaData.errorCount <= retryCount && !metaData.isFinished

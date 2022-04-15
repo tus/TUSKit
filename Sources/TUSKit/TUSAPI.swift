@@ -94,7 +94,7 @@ final class TUSAPI {
     func makeCreateRequest(metaData: UploadMetadata) -> URLRequest {
         func makeUploadMetaHeader() -> [String: String] {
             var metaDataDict: [String: String] = [:]
-            
+             
             let fileName = metaData.filePath.lastPathComponent
             if !fileName.isEmpty && fileName != "/" { // A filename can be invalid, e.g. "/"
                 metaDataDict["filename"] = fileName
@@ -103,6 +103,10 @@ final class TUSAPI {
             if let mimeType = metaData.mimeType, !mimeType.isEmpty {
                 metaDataDict["filetype"] = mimeType
             }
+           
+            let context = (metaData.context ?? [:]) as [String:String]
+            metaDataDict.merge(context) { (first, _) in first }
+
             return metaDataDict
         }
        
@@ -113,7 +117,7 @@ final class TUSAPI {
             for (key, value) in dict {
                 let appendingStr: String
                 if !str.isEmpty {
-                    str += ", "
+                    str += ","
                 }
                 appendingStr = "\(key) \(value.toBase64())"
                 str = str + appendingStr
@@ -188,7 +192,7 @@ final class TUSAPI {
     ///   - headers: The headers to add to the request.
     /// - Returns: A new URLRequest to use in any TUS API call.
     private func makeRequest(url: URL, method: HTTPMethod, headers: [String: String]) -> URLRequest {
-        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 60)
         request.httpMethod = method.rawValue
         request.addValue("1.0.0", forHTTPHeaderField: "TUS-Resumable")
         for header in headers {

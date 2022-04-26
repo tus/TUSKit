@@ -42,10 +42,11 @@ final class TUSAPI {
     /// By retrieving the status,  we know where to continue when we upload again.
     /// - Parameters:
     ///   - remoteDestination: A URL to retrieve the status from (received from the create call)
+    ///   - headers: Request headers.
     ///   - completion: A completion giving us the `Status` of an upload.
     @discardableResult
-    func status(remoteDestination: URL, completion: @escaping (Result<Status, TUSAPIError>) -> Void) -> URLSessionDataTask {
-        let request = makeRequest(url: remoteDestination, method: .head, headers: [:])
+    func status(remoteDestination: URL, headers: [String: String]?, completion: @escaping (Result<Status, TUSAPIError>) -> Void) -> URLSessionDataTask {
+        let request = makeRequest(url: remoteDestination, method: .head, headers: headers ?? [:])
         let task = session.dataTask(request: request) { result in
             processResult(completion: completion) {
                 let (_, response) =  try result.get()

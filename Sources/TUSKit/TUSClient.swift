@@ -166,12 +166,14 @@ public final class TUSClient {
     /// - Returns: ANn id
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadFileAt(filePath: URL, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> UUID {
+    public func uploadFileAt(filePath: URL, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil, startNow: Bool = true) throws -> UUID {
         didStopAndCancel = false
         do {
             let id = UUID()
             let destinationFilePath = try files.copy(from: filePath, id: id)
-            try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
+            if(startNow) {
+              try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
+            }
             return id
         } catch let error as TUSClientError {
             throw error

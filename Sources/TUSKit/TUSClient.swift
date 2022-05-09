@@ -13,6 +13,8 @@ import MobileCoreServices
 
 /// Implement this delegate to receive updates from the TUSClient
 public protocol TUSClientDelegate: AnyObject {
+    /// TUSClient initialized an upload
+    func didInitializeUpload(id: UUID, context: [String: String]?, client: TUSClient)
     /// TUSClient is starting an upload
     func didStartUpload(id: UUID, context: [String: String]?, client: TUSClient)
     /// `TUSClient` just finished an upload, returns the URL of the uploaded file.
@@ -171,6 +173,7 @@ public final class TUSClient {
         do {
             let id = UUID()
             let destinationFilePath = try files.copy(from: filePath, id: id)
+            delegate?.didInitializeUpload(id: id, context: context, client: self);
             if(startNow) {
               try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
             }

@@ -36,7 +36,7 @@ final class StatusTask: IdentifiableTask {
     func run(completed: @escaping TaskCompletion) {
         // Improvement: On failure, try uploading from the start. Create creationtask.
         if didCancel { return }
-        sessionTask = api.status(remoteDestination: remoteDestination) { [weak self] result in
+        sessionTask = api.status(remoteDestination: remoteDestination, headers: self.metaData.customHeaders) { [weak self] result in
             guard let self = self else { return }
             // Getting rid of self. in this closure
             let metaData = self.metaData

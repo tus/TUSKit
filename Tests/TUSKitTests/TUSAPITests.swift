@@ -39,7 +39,13 @@ final class TUSAPITests: XCTestCase {
         
         let statusExpectation = expectation(description: "Call api.status()")
         let remoteFileURL = URL(string: "https://tus.io/myfile")!
-        api.status(remoteDestination: remoteFileURL, completion: { result in
+        
+        let metaData = UploadMetadata(id: UUID(),
+                                              filePath: URL(string: "file://whatever/abc")!,
+                                              uploadURL: URL(string: "io.tus")!,
+                                              size: length)
+        
+        api.status(remoteDestination: remoteFileURL, headers:  metaData.customHeaders, completion: { result in
             do {
                 let values = try result.get()
                 XCTAssertEqual(length, values.length)

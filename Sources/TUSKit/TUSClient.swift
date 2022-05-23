@@ -173,10 +173,7 @@ public final class TUSClient {
         do {
             let id = UUID()
             let destinationFilePath = try files.copy(from: filePath, id: id)
-            delegate?.didInitializeUpload(id: id, context: context, client: self);
-            if(startNow) {
-              try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
-            }
+            try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context, startNow: startNow)
             return id
         } catch let error as TUSClientError {
             throw error
@@ -344,7 +341,7 @@ public final class TUSClient {
     
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
-    private func scheduleTask(for storedFilePath: URL, id: UUID, uploadURL: URL?, customHeaders: [String: String], context: [String: String]?) throws {
+    private func scheduleTask(for storedFilePath: URL, id: UUID, uploadURL: URL?, customHeaders: [String: String], context: [String: String]?, startTask: Bool = true) throws {
         let filePath = storedFilePath
         
         func getSize() throws -> Int {
@@ -376,8 +373,12 @@ public final class TUSClient {
         
         try store(metaData: metaData)
         trackUpload()
-        
-        scheduler.addTask(task: task)
+       
+        delegate?.didInitializeUpload(id: id, context: context, client: self);
+       
+        if (startTask) {
+          scheduler.addTask(task: task)
+        }
     }
     
     /// Store UploadMetadata to disk

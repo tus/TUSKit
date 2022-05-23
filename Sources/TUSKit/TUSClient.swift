@@ -173,7 +173,7 @@ public final class TUSClient {
         do {
             let id = UUID()
             let destinationFilePath = try files.copy(from: filePath, id: id)
-            try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context, startNow: startNow)
+            try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context, startTask: startNow)
             return id
         } catch let error as TUSClientError {
             throw error

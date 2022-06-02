@@ -65,7 +65,9 @@ public final class TUSClient {
     // MARK: - Private Properties
     
     /// How often to try an upload if it fails. A retryCount of 2 means 3 total uploads max. (1 initial upload, and on repeated failure, 2 more retries.)
-    private let retryCount = 2
+    private let retryCount = 9
+    /// How long to delay the retry. This is intended to allow the server time to realize the connection has broken. Expected time in milliseconds.
+    private let retryDelay = 500
     
     private let files: Files
     private var didStopAndCancel = false
@@ -548,7 +550,7 @@ extension TUSClient: SchedulerDelegate {
         
         let canRetry = metaData.errorCount <= retryCount
         if canRetry {
-            scheduler.addTask(task: task)
+            scheduler.addTask(task: task, delayMilliSeconds: retryDelay)
         } else { // Exhausted all retries, reporting back as failure.
             uploads[metaData.id] = nil
             delegate?.uploadFailed(id: metaData.id, error: error, context: metaData.context, client: self)

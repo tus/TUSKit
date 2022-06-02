@@ -51,11 +51,19 @@ final class Scheduler {
         }
     }
         
-    func addTask(task: ScheduledTask) {
+  func addTask(task: ScheduledTask, delayMilliSeconds: Int = 0) {
+      if (delayMilliSeconds > 0) {
+          let delayTime = DispatchTime.now() + DispatchTimeInterval.milliseconds(delayMilliSeconds)
+          queue.asyncAfter(deadline: delayTime){
+              self.pendingTasks.append(task)
+              self.checkProcessNextTask()
+          }
+      } else {
         queue.async {
             self.pendingTasks.append(task)
             self.checkProcessNextTask()
         }
+      }
     }
     
     func cancelAll() {

@@ -34,10 +34,16 @@ public protocol TUSClientDelegate: AnyObject {
     @available(iOS 11.0, macOS 10.13, *)
     /// Get the progress of a specific upload by id. The id is given when adding an upload and methods of this delegate.
     func progressFor(id: UUID, context: [String: String]?, bytesUploaded: Int, totalBytes: Int, client: TUSClient)
+    
+    func didRetryUpload(id: UUID, error: Error, attempt: Int, context: [String: String]?, client: TUSClient)
 }
 
 public extension TUSClientDelegate {
     func progressFor(id: UUID, context: [String: String]?, progress: Float, client: TUSClient) {
+        // Optional
+    }
+    
+    func didRetryUpload(id: UUID, error: Error, attempt: Int, context: [String: String]?, client: TUSClient) {
         // Optional
     }
 }
@@ -524,6 +530,7 @@ extension TUSClient: SchedulerDelegate {
         
         let canRetry = metaData.errorCount <= retryCount
         if canRetry {
+            delegate?.didRetryUpload(id: metaData.id, error: error, attempt: metaData.errorCount, context: metaData.context, client: self)
             scheduler.addTask(task: task)
         } else { // Exhausted all retries, reporting back as failure.
             uploads[metaData.id] = nil

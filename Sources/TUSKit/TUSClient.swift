@@ -59,6 +59,7 @@ public final class TUSClient {
     }
     public let sessionIdentifier: String
     public weak var delegate: TUSClientDelegate?
+	public var supportsCreation: Bool = false
     
     // MARK: - Private Properties
     
@@ -337,7 +338,14 @@ public final class TUSClient {
         func makeMetadata() throws -> UploadMetadata {
             let size = try getSize()
             let url = uploadURL ?? serverURL
-            return UploadMetadata(id: id, filePath: filePath, uploadURL: url, size: size, customHeaders: customHeaders, mimeType: filePath.mimeType.nonEmpty, context: context)
+
+			let metadata = UploadMetadata(id: id, filePath: filePath, uploadURL: url, size: size, customHeaders: customHeaders, mimeType: filePath.mimeType.nonEmpty, context: context)
+
+			if !supportsCreation {
+				metadata.remoteDestination = url
+			}
+
+            return metadata
         }
         
         let metaData = try makeMetadata()

@@ -33,11 +33,9 @@ final class TUSAPI {
     }
     
     let session: URLSession
-	let supportedExtensions: [TUSProtocolExtension]
 
-	init(session: URLSession, supportedExtensions: [TUSProtocolExtension]) {
+	init(session: URLSession) {
         self.session = session
-		self.supportedExtensions = supportedExtensions
     }
     
     /// Fetch the status of an upload if an upload is not finished (e.g. interrupted).
@@ -126,9 +124,7 @@ final class TUSAPI {
         
         var defaultHeaders = ["Upload-Length": String(metaData.size)]
 
-		if supportedExtensions.contains(.creation) {
-			defaultHeaders["Upload-Extension"] = "creation"
-		}
+		defaultHeaders["Upload-Extension"] = "creation"
         
         if let encodedMetadata = encode(makeUploadMetaHeader())  {
             defaultHeaders["Upload-Metadata"] = encodedMetadata

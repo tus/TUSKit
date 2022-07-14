@@ -93,7 +93,7 @@ public final class TUSClient {
     /// - Throws: File related errors when it can't make a directory at the designated path.
 	public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024, supportedExtensions: [TUSProtocolExtension] = [.creation]) throws {
         self.sessionIdentifier = sessionIdentifier
-        self.api = TUSAPI(session: session, supportedExtensions: supportedExtensions)
+        self.api = TUSAPI(session: session)
         self.files = try Files(storageDirectory: storageDirectory)
         self.serverURL = server
         self.chunkSize = chunkSize

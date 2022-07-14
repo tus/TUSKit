@@ -22,7 +22,7 @@ final class TUSAPITests: XCTestCase {
         configuration.protocolClasses = [MockURLProtocol.self]
         let session = URLSession.init(configuration: configuration)
         uploadURL = URL(string: "www.tus.io")!
-        api = TUSAPI(session: session)
+		api = TUSAPI(session: session, supportedExtensions: .all)
     }
     
     override func tearDown() {

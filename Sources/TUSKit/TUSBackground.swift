@@ -9,7 +9,6 @@ import Foundation
 import BackgroundTasks
 
 #if os(iOS)
-@available(iOS 13.0, *)
 /// Perform background uploading
 final class TUSBackground {
     
@@ -74,6 +73,7 @@ final class TUSBackground {
     }
     
     /// Try and schedule another task. But, might not schedule a task if none are available.
+    @available(iOS 13.0, *)
     private func scheduleSingleTask() {
         guard firstTask() != nil else {
             return

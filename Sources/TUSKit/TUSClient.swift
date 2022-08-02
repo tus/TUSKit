@@ -75,7 +75,6 @@ public final class TUSClient {
     private var uploads = [UUID: UploadMetadata]()
     
 #if os(iOS)
-    @available(iOS 13.0, *)
     private lazy var backgroundClient: TUSBackground = {
         return TUSBackground(api: api, files: files, chunkSize: chunkSize)
     }()

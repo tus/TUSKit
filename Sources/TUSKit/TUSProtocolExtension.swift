@@ -6,12 +6,12 @@
 //
 
 public enum TUSProtocolExtension {
-	case creation
+    case creation
 
-	static let all: [TUSProtocolExtension] = [.creation]
+    static let all: [TUSProtocolExtension] = [.creation]
 }
 
 extension Array where Element == TUSProtocolExtension {
-	public static let all: [TUSProtocolExtension] = [.creation]
+    public static let all: [TUSProtocolExtension] = [.creation]
 }
 

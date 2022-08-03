@@ -59,7 +59,7 @@ public final class TUSClient {
     }
     public let sessionIdentifier: String
     public weak var delegate: TUSClientDelegate?
-	public let supportedExtensions: [TUSProtocolExtension]
+    public let supportedExtensions: [TUSProtocolExtension]
     
     // MARK: - Private Properties
     
@@ -91,13 +91,13 @@ public final class TUSClient {
     ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
     ///   - chunkSize: The amount of bytes the data to upload will be chunked by. Defaults to 512 kB.
     /// - Throws: File related errors when it can't make a directory at the designated path.
-	public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024, supportedExtensions: [TUSProtocolExtension] = [.creation]) throws {
+    public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024, supportedExtensions: [TUSProtocolExtension] = [.creation]) throws {
         self.sessionIdentifier = sessionIdentifier
         self.api = TUSAPI(session: session)
         self.files = try Files(storageDirectory: storageDirectory)
         self.serverURL = server
         self.chunkSize = chunkSize
-		self.supportedExtensions = supportedExtensions
+        self.supportedExtensions = supportedExtensions
         scheduler.delegate = self
         removeFinishedUploads()
     }
@@ -335,19 +335,19 @@ public final class TUSClient {
             return size
         }
         
-		func makeMetadata() throws -> UploadMetadata {
-			let size = try getSize()
-			let url = uploadURL ?? serverURL
+        func makeMetadata() throws -> UploadMetadata {
+            let size = try getSize()
+            let url = uploadURL ?? serverURL
 
-			let metadata = UploadMetadata(id: id, filePath: filePath, uploadURL: url, size: size, customHeaders: customHeaders, mimeType: filePath.mimeType.nonEmpty, context: context)
+            let metadata = UploadMetadata(id: id, filePath: filePath, uploadURL: url, size: size, customHeaders: customHeaders, mimeType: filePath.mimeType.nonEmpty, context: context)
 
-			// If Creation isn't supported, we will use the provided url as the upload destination and assume the file has already been created by the server
-			if !supportedExtensions.contains(.creation) {
-				metadata.remoteDestination = url
-			}
+            // If Creation isn't supported, we will use the provided url as the upload destination and assume the file has already been created by the server
+            if !supportedExtensions.contains(.creation) {
+                metadata.remoteDestination = url
+            }
 
-			return metadata
-		}
+            return metadata
+        }
         
         let metaData = try makeMetadata()
         

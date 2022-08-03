@@ -34,7 +34,7 @@ final class TUSAPI {
     
     let session: URLSession
 
-	init(session: URLSession) {
+    init(session: URLSession) {
         self.session = session
     }
     
@@ -124,7 +124,7 @@ final class TUSAPI {
         
         var defaultHeaders = ["Upload-Length": String(metaData.size)]
 
-		defaultHeaders["Upload-Extension"] = "creation"
+        defaultHeaders["Upload-Extension"] = "creation"
         
         if let encodedMetadata = encode(makeUploadMetaHeader())  {
             defaultHeaders["Upload-Metadata"] = encodedMetadata

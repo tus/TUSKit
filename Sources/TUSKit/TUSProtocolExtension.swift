@@ -7,8 +7,6 @@
 
 public enum TUSProtocolExtension {
     case creation
-
-    static let all: [TUSProtocolExtension] = [.creation]
 }
 
 extension Array where Element == TUSProtocolExtension {

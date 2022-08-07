@@ -33,7 +33,7 @@ final class TUSAPI {
     }
     
     let session: URLSession
-    
+
     init(session: URLSession) {
         self.session = session
     }

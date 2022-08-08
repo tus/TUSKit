@@ -90,6 +90,42 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(0, client.remainingUploads)
     }
     
+    // MARK: - Supported Extensions
+    
+    func testClientExcludesCreationStep() throws {
+        prepareNetworkForSuccesfulStatusCall(data: data)
+        client = makeClient(storagePath: fullStoragePath, supportedExtensions: [])
+        client.delegate = tusDelegate
+        
+        // Act
+        try client.upload(data: data)
+        waitForUploadsToFinish()
+        
+        // Assert (ensure that the create HTTP request has not been called)
+        XCTAssertFalse(MockURLProtocol.receivedRequests.contains(where: {
+            $0.httpMethod == "POST" &&
+            $0.url?.absoluteString == "https://tusd.tusdemo.net/files" &&
+            $0.allHTTPHeaderFields?["Upload-Extension"] == "creation"
+        }))
+    }
+    
+    func testClientIncludesCreationStep() throws {
+        prepareNetworkForSuccesfulStatusCall(data: data)
+        client = makeClient(storagePath: fullStoragePath, supportedExtensions: [.creation])
+        client.delegate = tusDelegate
+        
+        // Act
+        try client.upload(data: data)
+        waitForUploadsToFinish()
+        
+        // Assert (ensure that the create HTTP request has not been called)
+        XCTAssert(MockURLProtocol.receivedRequests.contains(where: {
+            $0.httpMethod == "POST" &&
+            $0.url?.absoluteString == "https://tusd.tusdemo.net/files" &&
+            $0.allHTTPHeaderFields?["Upload-Extension"] == "creation"
+        }))
+    }
+    
     /// Upload data, a certain amount of times, and wait for it to be done.
     /// Can optionally prepare a failing upload too.
     @discardableResult

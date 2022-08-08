@@ -30,14 +30,18 @@ func clearDirectory(dir: URL) {
     }
 }
 
-func makeClient(storagePath: URL?) -> TUSClient {
+func makeClient(storagePath: URL?, supportedExtensions: [TUSProtocolExtension] = [.creation]) -> TUSClient {
     let liveDemoPath = URL(string: "https://tusd.tusdemo.net/files")!
     
     // We don't use a live URLSession, we mock it out.
     let configuration = URLSessionConfiguration.default
     configuration.protocolClasses = [MockURLProtocol.self]
     do {
-        let client = try TUSClient(server: liveDemoPath, sessionIdentifier: "TEST", storageDirectory: storagePath, session: URLSession.init(configuration: configuration))
+        let client = try TUSClient(server: liveDemoPath,
+                                   sessionIdentifier: "TEST",
+                                   storageDirectory: storagePath,
+                                   session: URLSession.init(configuration: configuration),
+                                   supportedExtensions: supportedExtensions)
         return client
     } catch {
         XCTFail("Could not create TUSClient instance \(error)")

@@ -90,6 +90,10 @@ public final class TUSClient {
     ///   You can also pass an absolute path, e.g. "file://uploads/TUS"
     ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
     ///   - chunkSize: The amount of bytes the data to upload will be chunked by. Defaults to 512 kB.
+    ///   - supportedExtensions: The TUS protocol extensions that the client should use. For now, the available supported extensions are `.creation`. Defaults to `[.creation]`.
+    ///
+    /// - Important: The client assumes by default that your server implements the Creation TUS protocol extension. If your server does not support that,
+    ///   make sure that you provide an empty array in the `supportExtensions` parameter.
     /// - Throws: File related errors when it can't make a directory at the designated path.
     public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024, supportedExtensions: [TUSProtocolExtension] = [.creation]) throws {
         self.sessionIdentifier = sessionIdentifier

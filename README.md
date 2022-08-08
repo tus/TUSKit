@@ -170,7 +170,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 }
 ```
 
+
 If you incorporate background-uploading, we strongly recommend you to inspect any failed uploads that may have occured in the background. Please refer to [Starting a new Session](#Starting a new Session) for more information.
+
+## TUS Protocol Extensions
+The client assumes by default that the server implements the [Creation TUS protocol extension](https://tus.io/protocols/resumable-upload.html#protocol-extensions). If your server does not support that, please ensure to provide an empty array for the `supportedExtensions` parameter in the client initializer.
 
 ## Example app
 

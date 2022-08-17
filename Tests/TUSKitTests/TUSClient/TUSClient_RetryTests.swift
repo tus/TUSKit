@@ -53,20 +53,21 @@ final class TUSClient_RetryTests: XCTestCase {
     func testMakeSureMetadataWithTooManyErrorsArentLoadedOnStart() throws {
         prepareNetworkForErronousResponses()
                                             
+        // Pre-assertions
         XCTAssert(tusDelegate.failedUploads.isEmpty)
         
         let uploadCount = 5
+        let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
+        uploadFailedExpectation.expectedFulfillmentCount = uploadCount
+        tusDelegate.uploadFailedExpectation = uploadFailedExpectation
+        
         for _ in 0..<uploadCount {
             try client.upload(data: Data("hello".utf8))
         }
         
-        let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
-        uploadFailedExpectation.expectedFulfillmentCount = uploadCount
-        tusDelegate.uploadFailedExpectation = uploadFailedExpectation
         waitForExpectations(timeout: 5, handler: nil)
         
         XCTAssert(tusDelegate.finishedUploads.isEmpty)
-        
         XCTAssertEqual(uploadCount, tusDelegate.failedUploads.count)
         
         // Reload client, and see what happens

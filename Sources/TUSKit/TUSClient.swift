@@ -28,10 +28,8 @@ public protocol TUSClientDelegate: AnyObject {
     /// - Important: The total is based on active uploads, so it will lower once files are uploaded. This is because it's ambiguous what the total is. E.g. You can be uploading 100 bytes, after 50 bytes are uploaded, let's say you add 150 more bytes, is the total then 250 or 200? And what if the upload is done, and you add 50 more. Is the total 50 or 300? or 250?
     ///
     /// As a rule of thumb: The total will be highest on the start, a good starting point is to compare the progress against that number.
-    @available(iOS 11.0, macOS 10.13, *)
     func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient)
     
-    @available(iOS 11.0, macOS 10.13, *)
     /// Get the progress of a specific upload by id. The id is given when adding an upload and methods of this delegate.
     func progressFor(id: UUID, context: [String: String]?, bytesUploaded: Int, totalBytes: Int, client: TUSClient)
     
@@ -49,7 +47,6 @@ public extension TUSClientDelegate {
 }
 
 protocol ProgressDelegate: AnyObject {
-    @available(iOS 11.0, macOS 10.13, *)
     func progressUpdatedFor(metaData: UploadMetadata, totalUploadedBytes: Int)
 }
 
@@ -69,8 +66,12 @@ public final class TUSClient {
     
     // MARK: - Private Properties
     
+    public var retryDelays: [TimeInterval] = [0, 0]
+    
     /// How often to try an upload if it fails. A retryCount of 2 means 3 total uploads max. (1 initial upload, and on repeated failure, 2 more retries.)
-    private let retryCount = 2
+    private var retryCount: Int {
+        retryDelays.count
+    }
     
     private let files: Files
     private var didStopAndCancel = false
@@ -308,7 +309,6 @@ public final class TUSClient {
     /// This will signal the OS to upload files when appropriate (e.g. when a phone is on a charger and on Wifi).
     /// Note that the OS decides when uploading begins.
 #if os(iOS)
-    @available(iOS 13.0, *)
     public func scheduleBackgroundTasks() {
         //backgroundClient?.scheduleBackgroundTasks()
     }
@@ -572,7 +572,6 @@ func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int
 
 extension TUSClient: ProgressDelegate {
     
-    @available(iOS 11.0, macOS 10.13, *)
     func progressUpdatedFor(metaData: UploadMetadata, totalUploadedBytes: Int) {
         delegate?.progressFor(id: metaData.id, context: metaData.context, bytesUploaded: totalUploadedBytes, totalBytes: metaData.size, client: self)
 

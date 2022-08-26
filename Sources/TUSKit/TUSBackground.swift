@@ -9,7 +9,6 @@ import Foundation
 import BackgroundTasks
 
 #if os(iOS)
-@available(iOS 13.0, *)
 /// Perform background uploading
 final class TUSBackground {
     

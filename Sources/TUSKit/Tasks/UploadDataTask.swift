@@ -148,12 +148,9 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         
         sessionTask = task
         
-        if #available(iOS 11.0, macOS 10.13, *) {
-            observeTask(task: task, size: dataToUpload.count)
-        }
+        observeTask(task: task, size: dataToUpload.count)
     }
     
-    @available(iOS 11.0, macOS 10.13, *)
     func observeTask(task: URLSessionUploadTask, size: Int) {
         let targetRange = self.range ?? 0..<size
         let uploaded = metaData.uploadedRange?.count ?? 0

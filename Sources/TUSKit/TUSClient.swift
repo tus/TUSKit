@@ -79,6 +79,8 @@ public final class TUSClient {
     private var _backgroundClient: Any?
     
     @available(iOS 13.0, *)
+    /// Lazy properties are considered as stored properties in Swift 5.7, so they can no longer be marked as unavailable. Hence
+    /// the computed property backed by storage var.
     private var backgroundClient: TUSBackground? {
         if _backgroundClient == nil {
             _backgroundClient = TUSBackground(api: api, files: files, chunkSize: chunkSize)

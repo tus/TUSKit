@@ -104,6 +104,11 @@ final class TUSAPI {
             if let mimeType = metaData.mimeType, !mimeType.isEmpty {
                 metaDataDict["filetype"] = mimeType
             }
+            
+            if let context = metaData.context {
+                metaDataDict = metaDataDict.merging(context) { _, new in new }
+            }
+            
             return metaDataDict
         }
        

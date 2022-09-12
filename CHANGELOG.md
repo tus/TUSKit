@@ -1,3 +1,7 @@
+# 3.1.4
+## Fixed
+- Fix compile error Xcode 14
+
 # 3.1.3
 ## Fixed
 - Added `supportedExtensions` to client

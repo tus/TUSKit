@@ -3,7 +3,7 @@
   However to keep things clean and neat we ask you follow these small guidelines to help ensure everything runs smoothly.
 
 ## Pull Requests
-  Please direct all Pull Requests to the `swift-development` branch of the repo, to ensure that master will always match with the CocoaPod.
+  Please direct all Pull Requests to the `master` branch of the repo.
   
   Also please
   

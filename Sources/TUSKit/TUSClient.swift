@@ -155,9 +155,11 @@ public final class TUSClient {
     /// If data can not be found at a location, it will attempt to locate the data by prefixing the path with file://
     /// - Parameters:
     ///   - filePath: The path to a file on a local filesystem
-    ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url from the config. Will call the `create` on this custom url to get the definitive upload url.
+    ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url from the config. Will
+    ///     call the `create` on this custom url to get the definitive upload url.
     ///   - customHeaders: Any headers you want to add to an upload
-    ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload. Don't put sensitive information in here! Since a context will be stored to the disk.
+    ///   - context: Custom metadata you want to associate with the upload. The data will be stored to the disk and is included as key-value pair
+    ///     in the `Upload-Metadata` HTTP header for in the creation request. The keys must not be empty and must not include spaces or commas.
     /// - Returns: An identifier.
     /// - Throws: TUSClientError
     @discardableResult
@@ -181,8 +183,9 @@ public final class TUSClient {
     ///   - preferredFileExtension: A file extension to add when saving the file. E.g. You can add ".JPG" to raw data that's being saved. This will help the uploader's metadata.
     ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url. Will call the `create` on this custom url to get the definitive upload url.
     ///   - customHeaders: The headers to upload.
-    ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload. Don't put sensitive information in here! Since a context will be stored to the disk.
-    /// - Returns: An id
+    ///   - context: Custom metadata you want to associate with the upload. The data will be stored to the disk and is included as key-value pair
+    ///     in the `Upload-Metadata` HTTP header for in the creation request. The keys must not be empty and must not include spaces or commas.
+    /// - Returns: An identifier.
     /// - Throws: TUSClientError
     @discardableResult
     public func upload(data: Data, preferredFileExtension: String? = nil, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> UUID {

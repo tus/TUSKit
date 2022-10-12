@@ -103,6 +103,41 @@ final class TUSClient_ContextTests: XCTestCase {
         XCTAssert(tusDelegate.receivedContexts.contains(expectedContext))
     }
     
+    func testContextIsIncludedInUploadMetadata() throws {
+        let key = "SomeKey"
+        let value = "SomeValue"
+        let context = [key: value]
+        
+        // Store file
+        let documentDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        func storeFileInDocumentsDir() throws -> URL {
+            let targetLocation = documentDir.appendingPathComponent("myfile.txt")
+            try data.write(to: targetLocation)
+            return targetLocation
+        }
+        
+        let location = try storeFileInDocumentsDir()
+        
+        let startedExpectation = expectation(description: "Waiting for uploads to start")
+        tusDelegate.startUploadExpectation = startedExpectation
+        
+        try client.uploadFileAt(filePath: location, context: context)
+        wait(for: [startedExpectation], timeout: 5)
+        
+        // Validate
+        let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
+        
+        for request in createRequests {
+            let headers = try XCTUnwrap(request.allHTTPHeaderFields)
+            let metadata = try XCTUnwrap(headers["Upload-Metadata"])
+                .components(separatedBy: CharacterSet([" ", ","]))
+                .filter { !$0.isEmpty }
+            
+            XCTAssert(metadata.contains(key))
+            XCTAssert(metadata.contains(value.toBase64()))
+        }
+    }
+    
     // MARK: - Private helper methods for uploading
 
     private func waitForUploadsToFinish(_ amount: Int = 1) {

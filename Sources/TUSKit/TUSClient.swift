@@ -158,7 +158,7 @@ public final class TUSClient {
     ///   - uploadURL: A custom URL to upload to. For if you don't want to use the default server url from the config. Will call the `create` on this custom url to get the definitive upload url.
     ///   - customHeaders: Any headers you want to add to an upload
     ///   - context: Add a custom context when uploading files that you will receive back in a later stage. Useful for custom metadata you want to associate with the upload. Don't put sensitive information in here! Since a context will be stored to the disk.
-    /// - Returns: ANn id
+    /// - Returns: An identifier.
     /// - Throws: TUSClientError
     @discardableResult
     public func uploadFileAt(filePath: URL, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> UUID {

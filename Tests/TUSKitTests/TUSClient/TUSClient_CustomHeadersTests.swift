@@ -73,39 +73,6 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
             XCTAssert(headers[key] == value, "Expected custom header '\(key)' to exist on headers with value: '\(value)'")
         }
     }
-    
-    // TODO: Decide if we want to keep this.
-//    func testUploadingWithCustomHeadersForData() throws {
-//        // Make sure client adds custom headers
-//
-//        let createRequestsFirst = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
-//        XCTAssert(createRequestsFirst.isEmpty)
-//
-//        // Expected values
-//        let key = "TUSKit"
-//        let value = "TransloaditKit"
-//        let customHeaders = [key: value]
-//
-//        let finishedExpectation = expectation(description: "Waiting for uploads to start")
-//        finishedExpectation.expectedFulfillmentCount = 2
-//        tusDelegate.finishUploadExpectation = finishedExpectation
-//
-//        try client.uploadMultiple(dataFiles: [data, data], customHeaders: customHeaders)
-//        wait(for: [finishedExpectation], timeout: 5)
-//
-//        // Validate
-//        let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
-//        XCTAssertFalse(createRequests.isEmpty)
-//
-//        for request in createRequests {
-//            let headers = try XCTUnwrap(request.allHTTPHeaderFields)
-//            let metaDataString = try XCTUnwrap(headers["Upload-Metadata"])
-//            for (key, value) in customHeaders {
-//                XCTAssert(metaDataString.contains(key), "Expected \(metaDataString) to contain \(key)")
-//                XCTAssert(metaDataString.contains(value.toBase64()), "Expected \(metaDataString) to contain base 64 value for \(value)")
-//            }
-//        }
-//    }
      
 
 }

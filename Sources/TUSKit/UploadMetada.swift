@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by Tjeerd in ‘t Veen on 16/09/2021.
 //
@@ -26,7 +26,7 @@ final class UploadMetadata: Codable {
         case customHeaders
         case size
         case errorCount
-        
+        case responseHeaders
     }
     
     var isFinished: Bool {
@@ -112,7 +112,9 @@ final class UploadMetadata: Codable {
         }
     }
     
-    init(id: UUID, filePath: URL, uploadURL: URL, size: Int, customHeaders: [String: String]? = nil, mimeType: String? = nil, context: [String: String]? = nil) {
+    var responseHeaders: [String: String]?
+    
+    init(id: UUID, filePath: URL, uploadURL: URL, responseHeaders: [String: String]? = nil, size: Int, customHeaders: [String: String]? = nil, mimeType: String? = nil, context: [String: String]? = nil) {
         self._id = id
         self._filePath = filePath
         self.uploadURL = uploadURL
@@ -122,6 +124,7 @@ final class UploadMetadata: Codable {
         self.version = 1 // Can't make default property because of Codable
         self.context = context
         self._errorCount = 0
+        self.responseHeaders = responseHeaders
     }
     
     init(from decoder: Decoder) throws {
@@ -137,6 +140,7 @@ final class UploadMetadata: Codable {
         customHeaders = try values.decode([String: String]?.self, forKey: .customHeaders)
         size = try values.decode(Int.self, forKey: .size)
         _errorCount = try values.decode(Int.self, forKey: .errorCount)
+        responseHeaders = try values.decode([String: String].self, forKey: .responseHeaders)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -152,6 +156,7 @@ final class UploadMetadata: Codable {
         try container.encode(customHeaders, forKey: .customHeaders)
         try container.encode(size, forKey: .size)
         try container.encode(_errorCount, forKey: .errorCount)
+        try container.encode(responseHeaders, forKey: .responseHeaders)
     }
     
 }

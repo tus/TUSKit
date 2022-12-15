@@ -101,9 +101,10 @@ final class UploadDataTask: NSObject, IdentifiableTask {
                 let progressDelegate = self.progressDelegate
                 
                 do {
-                    let receivedOffset = try result.get()
+                    let (receivedOffset, responseHeaders) = try result.get()
                     let currentOffset = metaData.uploadedRange?.upperBound ?? 0
                     metaData.uploadedRange = 0..<receivedOffset
+                    metaData.responseHeaders = responseHeaders
                     
                     let hasFinishedUploading = receivedOffset == metaData.size
                     if hasFinishedUploading {

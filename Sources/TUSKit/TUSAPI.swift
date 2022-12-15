@@ -1,6 +1,6 @@
 //
 //  TUSAPI.swift
-//  
+//
 //
 //  Created by Tjeerd in ‘t Veen on 13/09/2021.
 //
@@ -147,7 +147,7 @@ final class TUSAPI {
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
     @discardableResult
-    func upload(data: Data, range: Range<Int>?, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
+    func upload(data: Data, range: Range<Int>?, location: URL, metaData: UploadMetadata, completion: @escaping (Result<(Int, responseHeaders: [String : String]?), TUSAPIError>) -> Void) -> URLSessionUploadTask {
         let offset: Int
         let length: Int
         if let range = range {
@@ -178,7 +178,16 @@ final class TUSAPI {
                       let offset = Int(offsetStr) else {
                     throw TUSAPIError.couldNotRetrieveOffset
                 }
-                return offset
+                
+                var headers: [String: String] = [:]
+                for header in response.allHeaderFields {
+                    let key1 = String(describing: header.key)
+                    let value1 = String(describing: header.value)
+                    headers[key1] = value1
+                }
+                
+                // Passing whole header fields to extract values from headers
+                return (offset, headers)
                 
             }
         }

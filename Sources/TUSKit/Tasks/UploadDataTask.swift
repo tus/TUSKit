@@ -91,6 +91,8 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         }
         
         let task = api.upload(data: dataToUpload, range: range, location: remoteDestination, metaData: self.metaData) { [weak self] result in
+            self?.observation?.invalidate()
+
             self?.queue.async {
                 guard let self = self else { return }
                 // Getting rid of needing .self inside this closure

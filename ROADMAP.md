@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Release version with latest changes (changes: https://github.com/tus/TUSKit/compare/3.1.4...master, relevant issues: https://github.com/tus/TUSKit/issues/141 and https://community.transloadit.com/t/ios-tus-client-version-update/16395/3)
+- [ ] Release version with latest changes (changes: https://github.com/tus/TUSKit/compare/3.1.4...main, relevant issues: https://github.com/tus/TUSKit/issues/141 and https://community.transloadit.com/t/ios-tus-client-version-update/16395/3)
 - [ ] Create a documentation describing the release process
 - [ ] Create an example app where TUSKit is used in (would show you how to use the client from a customer’s point of view. Should help evolve the API)
   - [ ] Add pause / resume functionality

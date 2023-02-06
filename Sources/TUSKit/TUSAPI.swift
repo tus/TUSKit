@@ -119,7 +119,7 @@ final class TUSAPI {
             for (key, value) in dict {
                 let appendingStr: String
                 if !str.isEmpty {
-                    str += ", "
+                    str += ","
                 }
                 appendingStr = "\(key) \(value.toBase64())"
                 str = str + appendingStr

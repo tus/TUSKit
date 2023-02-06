@@ -1,3 +1,7 @@
+# 3.1.5
+## Fixed
+- Fixed issue with missing custom headers.
+
 # 3.1.4
 ## Fixed
 - Fix compile error Xcode 14

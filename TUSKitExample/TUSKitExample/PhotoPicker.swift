@@ -50,8 +50,12 @@ struct PhotoPicker: UIViewControllerRepresentable {
         
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             var images = [Data]()
-            for result in results {
+            results.forEach { result in
+                let semaphore = DispatchSemaphore(value: 0)
                 result.itemProvider.loadObject(ofClass: UIImage.self, completionHandler: { [weak self] (object, error) in
+                    defer {
+                        semaphore.signal()
+                    }
                     guard let self = self else { return }
                     if let image = object as? UIImage {
                         
@@ -71,10 +75,15 @@ struct PhotoPicker: UIViewControllerRepresentable {
                         }
                         
                     } else {
-                        print(object)
-                        print(error)
+                        if let object {
+                            print(object)
+                        }
+                        if let error {
+                            print(error)
+                        }
                     }
                 })
+                semaphore.wait()
             }
             parent.presentationMode.wrappedValue.dismiss()
         }

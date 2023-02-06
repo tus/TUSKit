@@ -67,6 +67,15 @@ final class Files {
     }
     
     static private var documentsDirectory: URL {
+#if os(macOS)
+        guard ProcessInfo.processInfo.inSandboxContainer else {
+            var directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            if let bundleId = Bundle.main.bundleIdentifier {
+                directory = directory.appendingPathComponent(bundleId)
+            }
+            return directory
+        }
+#endif
         return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
     
@@ -80,7 +89,6 @@ final class Files {
     /// - Returns: An array of UploadMetadata types
     func loadAllMetadata() throws -> [UploadMetadata] {
         try queue.sync {
-
             let directoryContents = try FileManager.default.contentsOfDirectory(at: storageDirectory, includingPropertiesForKeys: nil)
             
             // if you want to filter the directory contents you can do like this:
@@ -153,11 +161,17 @@ final class Files {
     /// - Throws: Any error from FileManager when removing a file.
     func removeFileAndMetadata(_ metaData: UploadMetadata) throws {
         let filePath = metaData.filePath
-        let metaDataPath = metaData.filePath.appendingPathExtension("plist")
+        let fileName = filePath.lastPathComponent
+        let metaDataPath = storageDirectory.appendingPathComponent(fileName).appendingPathExtension("plist")
         
         try queue.sync {
-            try FileManager.default.removeItem(at: filePath)
             try FileManager.default.removeItem(at: metaDataPath)
+#if os(macOS)
+            guard ProcessInfo.processInfo.inSandboxContainer else {
+                return
+            }
+#endif
+            try FileManager.default.removeItem(at: filePath)
         }
     }
     
@@ -174,8 +188,8 @@ final class Files {
                 // Could not find the file that's related to this metadata.
                 throw FilesError.relatedFileNotFound
             }
-            
-            let targetLocation = metaData.filePath.appendingPathExtension("plist")
+            let fileName = metaData.filePath.lastPathComponent
+            let targetLocation = storageDirectory.appendingPathComponent(fileName).appendingPathExtension("plist")
             try self.makeDirectoryIfNeeded()
             
             let encoder = PropertyListEncoder()

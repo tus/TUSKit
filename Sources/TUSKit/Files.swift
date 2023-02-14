@@ -68,15 +68,15 @@ final class Files {
     
     static private var documentsDirectory: URL {
 #if os(macOS)
-        guard ProcessInfo.processInfo.inSandboxContainer else {
-            var directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            if let bundleId = Bundle.main.bundleIdentifier {
-                directory = directory.appendingPathComponent(bundleId)
-            }
-            return directory
+        var directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        if let bundleId = Bundle.main.bundleIdentifier {
+            directory = directory.appendingPathComponent(bundleId)
         }
-#endif
+        return directory
+#else
         return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+#endif
+        
     }
     
     /// Loads all metadata (decoded plist files) from the target directory.
@@ -166,12 +166,9 @@ final class Files {
         
         try queue.sync {
             try FileManager.default.removeItem(at: metaDataPath)
-#if os(macOS)
-            guard ProcessInfo.processInfo.inSandboxContainer else {
-                return
-            }
-#endif
+#if os(iOS)
             try FileManager.default.removeItem(at: filePath)
+#endif
         }
     }
     

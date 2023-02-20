@@ -167,7 +167,11 @@ public final class TUSClient {
         didStopAndCancel = false
         do {
             let id = UUID()
+            #if os(macOS)
+            let destinationFilePath = filePath
+            #elseif os(iOS)
             let destinationFilePath = try files.copy(from: filePath, id: id)
+            #endif
             try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
             return id
         } catch let error as TUSClientError {

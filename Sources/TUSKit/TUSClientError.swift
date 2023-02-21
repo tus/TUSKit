@@ -11,6 +11,7 @@ public enum TUSClientError: Error {
     case couldNotCreateFileOnServer
     case couldNotUploadFile
     case couldNotGetFileStatus
+    case couldNotFetchServerInfo
     case fileSizeMismatchWithServer
     case couldNotDeleteFile(underlyingError: Error)
     case uploadIsAlreadyFinished

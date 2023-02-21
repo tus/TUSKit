@@ -101,8 +101,9 @@ final class Files {
                     
                     // The documentsDirectory can change between restarts (at least during testing). So we update the filePath to match the existing plist again. To avoid getting an out of sync situation where the filePath still points to a dir in a different directory than the plist.
                     // (The plist and file to upload should always be in the same dir together).
+                    #if !os(macOS)
                     metaData?.filePath = url.deletingPathExtension()
-                    
+                    #endif
                     return metaData
                 }
                 

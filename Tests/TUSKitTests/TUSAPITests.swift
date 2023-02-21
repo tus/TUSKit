@@ -30,6 +30,43 @@ final class TUSAPITests: XCTestCase {
         MockURLProtocol.receivedRequests = []
     }
     
+    func testServerInfo() throws {
+        let tusVersion = ["1.0.0"]
+        let tusResumable = "1.0.0"
+        let tusMaxSize = 128849018880
+        let tusChecksumAlgorithms = ["md5", "sha1", "crc32"]
+        let extensions: [TUSProtocolExtension] = [.creation, .creationWithUpload, .termination, .concatenation, .creationDeferLength, .checksum]
+        
+        MockURLProtocol.prepareResponse(for: "OPTIONS") { _ in
+            MockURLProtocol.Response(status: 200, headers: [
+                "Tus-Extension": String("creation,creation-with-upload,termination,concatenation,creation-defer-length,checksum"),
+                "Tus-Checksum-Algorithm": String("md5,sha1,crc32"),
+                "Tus-Max-Size": String("128849018880"),
+                "Tus-Resumable": String("1.0.0"),
+                "Tus-Version": String("1.0.0"),
+            ], data: nil)
+        }
+        
+        let serverURL = URL(string: "https://tus.io/myfile")!
+        let serverInfoExpectation = expectation(description: "Call api.serverInfo()")
+        api.serverInfo(server: serverURL, completion:{ result in
+            do {
+                let values = try result.get()
+                XCTAssertEqual(tusVersion, values.supportedVersions)
+                XCTAssertEqual(tusResumable, values.version)
+                XCTAssertEqual(tusMaxSize, values.maxSize)
+                
+                XCTAssertEqual(extensions, values.extensions)
+                XCTAssertEqual(tusChecksumAlgorithms, values.supportedChecksumAlgorithms)
+                
+                serverInfoExpectation.fulfill()
+            } catch {
+                XCTFail("Expected this call to succeed")
+            }
+        })
+        waitForExpectations(timeout: 10, handler: nil)
+    }
+    
     func testStatus() throws {
         let length = 3000
         let offset = 20
@@ -45,7 +82,7 @@ final class TUSAPITests: XCTestCase {
                                               uploadURL: URL(string: "io.tus")!,
                                               size: length)
         
-        api.status(remoteDestination: remoteFileURL, headers:  metaData.customHeaders, completion: { result in
+        api.status(remoteDestination: remoteFileURL, headers: metaData.customHeaders, completion: { result in
             do {
                 let values = try result.get()
                 XCTAssertEqual(length, values.length)

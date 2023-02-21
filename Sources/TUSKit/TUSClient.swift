@@ -59,7 +59,7 @@ public final class TUSClient {
     }
     public let sessionIdentifier: String
     public weak var delegate: TUSClientDelegate?
-    public let supportedExtensions: [TUSProtocolExtension]
+    public var supportedExtensions: [TUSProtocolExtension]?
     
     // MARK: - Private Properties
     
@@ -103,7 +103,7 @@ public final class TUSClient {
     /// - Important: The client assumes by default that your server implements the Creation TUS protocol extension. If your server does not support that,
     ///   make sure that you provide an empty array in the `supportExtensions` parameter.
     /// - Throws: File related errors when it can't make a directory at the designated path.
-    public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024, supportedExtensions: [TUSProtocolExtension] = [.creation]) throws {
+    public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024, supportedExtensions: [TUSProtocolExtension]? = nil) throws {
         self.sessionIdentifier = sessionIdentifier
         self.api = TUSAPI(session: session)
         self.files = try Files(storageDirectory: storageDirectory)
@@ -359,12 +359,14 @@ public final class TUSClient {
             let url = uploadURL ?? serverURL
 
             let metadata = UploadMetadata(id: id, filePath: filePath, uploadURL: url, size: size, customHeaders: customHeaders, mimeType: filePath.mimeType.nonEmpty, context: context)
-
+            metadata.supportedExtensions = supportedExtensions
+            
             // If Creation isn't supported, we will use the provided url as the upload destination and assume the file has already been created by the server
-            if !supportedExtensions.contains(.creation) {
-                metadata.remoteDestination = url
+            if let supportedExtensions {
+                if !supportedExtensions.contains(.creation) {
+                    metadata.remoteDestination = url
+                }
             }
-
             return metadata
         }
         
@@ -374,7 +376,7 @@ public final class TUSClient {
             uploads[id] = metaData
         }
         
-        guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, progressDelegate: self) else {
+        guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, supportedExtensions: supportedExtensions, progressDelegate: self) else {
             assertionFailure("Could not find a task for metaData \(metaData)")
             return
         }
@@ -420,7 +422,7 @@ public final class TUSClient {
     /// Schedule a single task if needed. Will decide what task to schedule for the metaData.
     /// - Parameter metaData:The metaData the schedule.
     private func scheduleTask(for metaData: UploadMetadata) throws {
-        guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, progressDelegate: self) else {
+        guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, supportedExtensions: metaData.supportedExtensions, progressDelegate: self) else {
             throw TUSClientError.uploadIsAlreadyFinished
         }
         uploads[metaData.id] = metaData
@@ -438,9 +440,15 @@ extension TUSClient: SchedulerDelegate {
             handleFinishedStatusTask(task)
         case let task as CreationTask:
             handleCreationTask(task)
+        case let task as ServerInfoTask:
+            handleServerInfoTask(task)
         default:
             break
         }
+    }
+    
+    func handleServerInfoTask(_ serverInfoTask: ServerInfoTask) {
+        serverInfoTask.metaData.errorCount = 0
     }
     
     func handleCreationTask(_ creationTask: CreationTask) {
@@ -485,6 +493,8 @@ extension TUSClient: SchedulerDelegate {
     func onError(error: Error, task: ScheduledTask, scheduler: Scheduler) {
         func getMetaData() -> UploadMetadata? {
             switch task {
+            case let task as ServerInfoTask:
+                return task.metaData
             case let task as CreationTask:
                 return task.metaData
             case let task as UploadDataTask:
@@ -538,7 +548,7 @@ private extension String {
 /// Decide which task to create based on metaData.
 /// - Parameter metaData: The `UploadMetadata` for which to create a `Task`.
 /// - Returns: The task that has to be performed for the relevant metaData. Will return nil if metaData's file is already uploaded / finished. (no task needed).
-func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int, progressDelegate: ProgressDelegate? = nil) throws -> ScheduledTask? {
+func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int, supportedExtensions: [TUSProtocolExtension]? = nil, progressDelegate: ProgressDelegate? = nil) throws -> ScheduledTask? {
     guard !metaData.isFinished else {
         return nil
     }
@@ -547,11 +557,22 @@ func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int
         let statusTask = StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData, files: files, chunkSize: chunkSize)
         statusTask.progressDelegate = progressDelegate
         return statusTask
-    } else {
-        let creationTask = try CreationTask(metaData: metaData, api: api, files: files, chunkSize: chunkSize)
-        creationTask.progressDelegate = progressDelegate
-        return creationTask
     }
+    
+    if let supportedExtensions {
+        if supportedExtensions.contains(.creation) {
+            let creationTask = try CreationTask(metaData: metaData, api: api, files: files, chunkSize: chunkSize)
+            creationTask.progressDelegate = progressDelegate
+            return creationTask
+        } else {
+            let statusTask = StatusTask(api: api, remoteDestination: metaData.uploadURL, metaData: metaData, files: files, chunkSize: chunkSize)
+            statusTask.progressDelegate = progressDelegate
+            return statusTask
+        }
+    }
+    let serverInfoTask = try ServerInfoTask(metaData: metaData, api: api, files: files, chunkSize: chunkSize)
+    serverInfoTask.progressDelegate = progressDelegate
+    return serverInfoTask
 }
 
 extension TUSClient: ProgressDelegate {

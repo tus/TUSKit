@@ -88,6 +88,18 @@ final class UploadMetadata: Codable {
         }
     }
     
+    private var _supportedExtensions: [TUSProtocolExtension]?
+    var supportedExtensions: [TUSProtocolExtension]? {
+        get {
+            queue.sync {
+                self._supportedExtensions
+            }
+        } set {
+            queue.async {
+                self._supportedExtensions = newValue
+            }
+        }
+    }
     
     let version: Int
     

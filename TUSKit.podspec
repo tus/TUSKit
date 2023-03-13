@@ -24,7 +24,7 @@ Swift client for https://tus.io called TUSKit. Mac and iOS compatible.
 
   s.homepage         = 'https://github.com/tus/tus-ios-client'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'Tjeerd in t Veen' => 'tjeerd@twinapps.co' }
+  s.author           = 'Transloadit'
   s.source           = { :git => 'https://github.com/tus/tus-ios-client.git', :tag => s.version.to_s }
   s.platform         = :ios
 

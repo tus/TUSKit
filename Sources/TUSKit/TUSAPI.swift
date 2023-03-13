@@ -25,7 +25,7 @@ struct Status {
 
 /// The Uploader's responsibility is to perform work related to uploading.
 /// This includes: Making requests, handling requests, handling errors.
-final class TUSAPI {
+final class TUSAPI: NSObject {
     enum HTTPMethod: String {
         case head = "HEAD"
         case post = "POST"
@@ -35,10 +35,19 @@ final class TUSAPI {
         case delete = "DELETE"
     }
     
-    let session: URLSession
-
+    var session: URLSession!
+    private var backgroundHandler: (() -> Void)? = nil
+    private var callbacks: [String: (Result<HTTPURLResponse, Error>) -> Void] = [:]
+    private var queue = DispatchQueue(label: "com.tus.TUSAPI")
+    
     init(session: URLSession) {
+        super.init()
         self.session = session
+    }
+    
+    init(sessionConfiguration: URLSessionConfiguration) {
+        super.init()
+        self.session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
     }
     
     @discardableResult
@@ -47,7 +56,7 @@ final class TUSAPI {
         let task = session.dataTask(request: request) { result in
             processResult(completion: completion) {
                 let (_, response) = try result.get()
-                    
+                
                 guard response.statusCode == 200 || response.statusCode == 204 else {
                     throw TUSAPIError.couldNotFetchServerInfo
                 }
@@ -90,25 +99,30 @@ final class TUSAPI {
     @discardableResult
     func status(remoteDestination: URL, headers: [String: String]?, completion: @escaping (Result<Status, TUSAPIError>) -> Void) -> URLSessionDataTask {
         let request = makeRequest(url: remoteDestination, method: .head, headers: headers ?? [:])
-        let task = session.dataTask(request: request) { result in
-            processResult(completion: completion) {
-                let (_, response) =  try result.get()
-                
-                guard (200...299).contains(response.statusCode) else {
-                    throw TUSAPIError.failedRequest(response)
+        let identifier = UUID().uuidString
+        
+        let task = session.dataTask(with: request)
+        task.taskDescription = identifier
+        
+        queue.sync {
+            callbacks[identifier] = { result in
+                processResult(completion: completion) {
+                    let response =  try result.get()
+                    
+                    guard (200...299).contains(response.statusCode) else {
+                        throw TUSAPIError.failedRequest(response)
+                    }
+                    
+                    guard let lengthStr = response.allHeaderFields[caseInsensitive: "upload-Length"] as? String,
+                          let length = Int(lengthStr),
+                          let offsetStr = response.allHeaderFields[caseInsensitive: "upload-Offset"] as? String,
+                          let offset = Int(offsetStr) else {
+                        throw TUSAPIError.couldNotFetchStatus
+                    }
+                    return Status(length: length, offset: offset)
                 }
-                
-                guard let lengthStr = response.allHeaderFields[caseInsensitive: "upload-Length"] as? String,
-                      let length = Int(lengthStr),
-                      let offsetStr = response.allHeaderFields[caseInsensitive: "upload-Offset"] as? String,
-                      let offset = Int(offsetStr) else {
-                          throw TUSAPIError.couldNotFetchStatus
-                      }
-
-                return Status(length: length, offset: offset)
             }
         }
-        
         task.resume()
         return task
     }
@@ -122,20 +136,26 @@ final class TUSAPI {
     @discardableResult
     func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) -> URLSessionDataTask {
         let request = makeCreateRequest(metaData: metaData)
-        let task = session.dataTask(request: request) { (result: Result<(Data?, HTTPURLResponse), Error>) in
-            processResult(completion: completion) {
-                let (_, response) = try result.get()
-                
-                guard (200...299).contains(response.statusCode) else {
-                    throw TUSAPIError.failedRequest(response)
-                }
+        let identifier = UUID().uuidString
+        let task = session.dataTask(with: request)
+        task.taskDescription = identifier
+        
+        queue.sync {
+            callbacks[identifier] =  { result in
+                processResult(completion: completion) {
+                    let response = try result.get()
+                    
+                    guard (200...299).contains(response.statusCode) else {
+                        throw TUSAPIError.failedRequest(response)
+                    }
 
-                guard let location = response.allHeaderFields[caseInsensitive: "location"] as? String,
-                      let locationURL = URL(string: location, relativeTo: metaData.uploadURL) else {
-                    throw TUSAPIError.couldNotRetrieveLocation
-                }
+                    guard let location = response.allHeaderFields[caseInsensitive: "location"] as? String,
+                          let locationURL = URL(string: location, relativeTo: metaData.uploadURL) else {
+                        throw TUSAPIError.couldNotRetrieveLocation
+                    }
 
-                return locationURL
+                    return locationURL
+                }
             }
         }
         
@@ -220,26 +240,99 @@ final class TUSAPI {
         let headersWithCustom = headers.merging(metaData.customHeaders ?? [:]) { _, new in new }
         
         let request = makeRequest(url: location, method: .patch, headers: headersWithCustom)
+        let task = session.uploadTask(with: request, from: data)
+        task.taskDescription = metaData.id.uuidString
         
-        let task = session.uploadTask(request: request, data: data) { result in
-            processResult(completion: completion) {
-                let (_, response) = try result.get()
-                
-                guard (200...299).contains(response.statusCode) else {
-                    throw TUSAPIError.failedRequest(response)
+        queue.sync {
+            callbacks[metaData.id.uuidString] = { result in
+                processResult(completion: completion) {
+                    let response = try result.get()
+                    
+                    guard (200...299).contains(response.statusCode) else {
+                        throw TUSAPIError.failedRequest(response)
+                    }
+                    
+                    guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
+                          let offset = Int(offsetStr) else {
+                        throw TUSAPIError.couldNotRetrieveOffset
+                    }
+                    return offset
                 }
-                
-                guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
-                      let offset = Int(offsetStr) else {
-                    throw TUSAPIError.couldNotRetrieveOffset
-                }
-                return offset
-                
             }
         }
+        
         task.resume()
         
         return task
+    }
+    
+    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
+        let length: Int
+        if let fileAttributes = try? FileManager.default.attributesOfItem(atPath: file.path) {
+            if let bytes = fileAttributes[.size] as? Int64 {
+                length = Int(bytes)
+            } else {
+                length = 0
+            }
+        } else {
+            length = 0
+        }
+        
+        let headers = [
+            "Content-Type": "application/offset+octet-stream",
+            "Upload-Offset": String(offset),
+            "Content-Length": String(length)
+        ]
+        
+        /// Attach all headers from customHeader property
+        let headersWithCustom = headers.merging(metaData.customHeaders ?? [:]) { _, new in new }
+        
+        let request = makeRequest(url: location, method: .patch, headers: headersWithCustom)
+        let task = session.uploadTask(with: request, fromFile: file)
+        task.taskDescription = metaData.id.uuidString
+        queue.sync {
+            self.callbacks[metaData.id.uuidString] = { result in
+                processResult(completion: completion) {
+                    let response = try result.get()
+                    guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
+                          let offset = Int(offsetStr) else {
+                        throw TUSAPIError.couldNotRetrieveOffset
+                    }
+                    return offset
+                }
+            }
+        }
+        task.resume()
+        return task
+    }
+    
+    func registerCallback(_ completion: @escaping (Result<Int, TUSAPIError>) -> Void, forMetadata metadata: UploadMetadata) {
+        queue.sync {
+            self.callbacks[metadata.id.uuidString] = { result in
+                processResult(completion: completion) {
+                    let response = try result.get()
+                    guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
+                          let offset = Int(offsetStr) else {
+                        throw TUSAPIError.couldNotRetrieveOffset
+                    }
+                    return offset
+                }
+            }
+        }
+    }
+    
+    func registerBackgroundHandler(_ handler: @escaping () -> Void) {
+        backgroundHandler = handler
+    }
+    
+    func checkTaskExists(for metadata: UploadMetadata, completion: @escaping (Bool) -> Void) {
+        session.getAllTasks(completionHandler: { tasks in
+            let hasTask = tasks.contains(where: { task in
+                return task.taskDescription == metadata.id.uuidString
+            })
+            
+            completion(hasTask)
+        })
     }
     
     /// A factory to make requests with sane defaults.
@@ -300,3 +393,43 @@ extension Dictionary {
         return nil
     }
 }
+
+extension TUSAPI: URLSessionDataDelegate {
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        queue.sync {
+            guard let identifier = task.taskDescription else {
+                return
+            }
+            
+            defer {
+                callbacks.removeValue(forKey: identifier)
+            }
+            
+            guard let completion = callbacks[identifier] else {
+                return
+            }
+            
+            if let error = error {
+                completion(.failure(TUSAPIError.underlyingError(error)))
+                return
+            }
+            
+            guard let response = task.response as? HTTPURLResponse else {
+                completion(.failure(TUSAPIError.underlyingError(NetworkError.noHTTPURLResponse)))
+                return
+            }
+            
+            completion(.success(response))
+        }
+    }
+    
+    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        if let backgroundHandler {
+            DispatchQueue.main.async {
+                backgroundHandler()
+                self.backgroundHandler = nil
+            }
+        }
+    }
+}
+

@@ -67,9 +67,12 @@ final class TUSAPI {
                 
                 var extensions: [TUSProtocolExtension] = []
                 if let tusExtension = response.allHeaderFields[caseInsensitive: "tus-extension"] as? String {
-                    extensions = tusExtension.components(separatedBy: ",").map { TUSProtocolExtension(rawValue: $0) ?? .creation }
+                    extensions = tusExtension.components(separatedBy: ",").reduce(into: [TUSProtocolExtension](), { partialResult, item in
+                        if let ext = TUSProtocolExtension(rawValue: item) {
+                            partialResult.append(ext)
+                        }
+                    })
                 }
-                
                 return TusServerInfo(version: version, maxSize: maxSize, extensions: extensions, supportedVersions: supportedVersions, supportedChecksumAlgorithms: supportedAlgorithms)
             }
         }

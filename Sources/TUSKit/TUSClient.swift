@@ -103,7 +103,7 @@ public final class TUSClient {
     /// - Important: The client assumes by default that your server implements the Creation TUS protocol extension. If your server does not support that,
     ///   make sure that you provide an empty array in the `supportExtensions` parameter.
     /// - Throws: File related errors when it can't make a directory at the designated path.
-    public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024, supportedExtensions: [TUSProtocolExtension]? = nil) throws {
+    public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024, supportedExtensions: [TUSProtocolExtension] = []) throws {
         self.sessionIdentifier = sessionIdentifier
         self.api = TUSAPI(session: session)
         self.files = try Files(storageDirectory: storageDirectory)

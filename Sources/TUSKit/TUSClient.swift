@@ -320,6 +320,15 @@ public final class TUSClient {
         }
     }
     
+    /// Return the all the previous uploads. Good to check after launch or after background processing for example, to handle them at a later stage.
+    /// - Returns: A PreviousUpload array of all previous uploads.
+    public func findPreviousUploads() throws -> [PreviousUpload] {
+        try files.loadAllMetadata().compactMap { metaData in
+            return PreviousUpload(id: metaData.id, uploadURL: metaData.uploadURL, filePath: metaData.filePath, remoteDestination: metaData.remoteDestination, context: metaData.context, uploadedRange: metaData.uploadedRange, mimeType: metaData.mimeType, customHeaders: metaData.customHeaders, size: metaData.size)
+        }
+    }
+    
+    
     // MARK: - Private
     
     /// Check for any uploads that are finished and remove them from the cache.

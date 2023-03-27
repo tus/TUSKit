@@ -90,6 +90,14 @@ final class TUSClientTests: XCTestCase {
         XCTAssertEqual(0, client.remainingUploads)
     }
     
+    func testFindPreviousUploads() throws {
+        let taskIDtoCancel = try client.upload(data: data)
+        try client.cancel(id: taskIDtoCancel)
+        let prevUploads = try client.findPreviousUploads()
+
+        XCTAssert(prevUploads.contains(where: { $0.id == taskIDtoCancel }))
+    }
+    
     // MARK: - Supported Extensions
     
     func testClientExcludesCreationStep() throws {

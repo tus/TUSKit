@@ -42,6 +42,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 // ...alternatively, you can delete them too
                 // tusClient.removeCacheFor(id: id)
             }
+
+
+            /*
+              // You can get previous uploads with tusClient.findPreviousUploads()
+              let previousUploads = try tusClient.findPreviousUploads()
+              for previousUpload in previousUploads {
+                 print("\(previousUpload) Previous upload")
+              }
+             */
         } catch {
             assertionFailure("Could not fetch failed id's from disk, or could not instantiate TUSClient \(error)")
         }

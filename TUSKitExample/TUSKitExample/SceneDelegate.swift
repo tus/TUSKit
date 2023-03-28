@@ -45,10 +45,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 
             /*
-              // You can get previous uploads with tusClient.findPreviousUploads()
-              let previousUploads = try tusClient.findPreviousUploads()
-              for previousUpload in previousUploads {
-                 print("\(previousUpload) Previous upload")
+            
+              // You can get stored uploads with tusClient.getStoredUploads()
+              let storedUploads = try tusClient.getStoredUploads()
+              for storedUpload in storedUploads {
+                 print("\(storedUpload) Stored upload")
               }
              */
         } catch {

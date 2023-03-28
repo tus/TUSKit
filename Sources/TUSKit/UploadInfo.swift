@@ -8,7 +8,7 @@
 import Foundation
 
 
-public struct PreviousUpload {
+public struct UploadInfo {
     public var id: UUID
     public var uploadURL: URL
     public var filePath: URL

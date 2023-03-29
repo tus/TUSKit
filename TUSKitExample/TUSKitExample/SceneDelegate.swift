@@ -42,6 +42,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 // ...alternatively, you can delete them too
                 // tusClient.removeCacheFor(id: id)
             }
+
+
+            /*
+            
+              // You can get stored uploads with tusClient.getStoredUploads()
+              let storedUploads = try tusClient.getStoredUploads()
+              for storedUpload in storedUploads {
+                 print("\(storedUpload) Stored upload")
+              }
+             */
         } catch {
             assertionFailure("Could not fetch failed id's from disk, or could not instantiate TUSClient \(error)")
         }

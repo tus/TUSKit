@@ -1,3 +1,8 @@
+# 3.1.6
+
+# Enhancements
+- Added ability to fetch in progress / current uploads using `getStoredUploads()` on a `TUSClient` instance.
+
 # 3.1.5
 ## Fixed
 - Fixed issue with missing custom headers.

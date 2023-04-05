@@ -1,7 +1,8 @@
 # TUSKit Release checklist
 
 * Update [CHANGELOG.md](http://CHANGELOG.md)
-* Update TUSKit.podspec with new version nr. and commit
+* Update TUSKit.podspec with new version nr. 
+* Make a commit
 * Tag update commit
 * Make sure to push commits _and_ tag
 * Publish updated podspec `pod trunk push TUSKit.podspec`

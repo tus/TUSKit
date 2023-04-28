@@ -8,11 +8,12 @@
 import Foundation
 
 /// The errors a TUSAPI can return
-enum TUSAPIError: Error {
+public enum TUSAPIError: Error {
     case underlyingError(Error)
     case couldNotFetchStatus
     case couldNotRetrieveOffset
     case couldNotRetrieveLocation
+    case failedRequest(HTTPURLResponse)
 }
 
 /// The status of an upload.
@@ -51,6 +52,10 @@ final class TUSAPI {
             processResult(completion: completion) {
                 let (_, response) =  try result.get()
                 
+                guard (200...299).contains(response.statusCode) else {
+                    throw TUSAPIError.failedRequest(response)
+                }
+                
                 guard let lengthStr = response.allHeaderFields[caseInsensitive: "upload-Length"] as? String,
                       let length = Int(lengthStr),
                       let offsetStr = response.allHeaderFields[caseInsensitive: "upload-Offset"] as? String,
@@ -78,6 +83,10 @@ final class TUSAPI {
         let task = session.dataTask(request: request) { (result: Result<(Data?, HTTPURLResponse), Error>) in
             processResult(completion: completion) {
                 let (_, response) = try result.get()
+                
+                guard (200...299).contains(response.statusCode) else {
+                    throw TUSAPIError.failedRequest(response)
+                }
 
                 guard let location = response.allHeaderFields[caseInsensitive: "location"] as? String,
                       let locationURL = URL(string: location, relativeTo: metaData.uploadURL) else {
@@ -173,6 +182,10 @@ final class TUSAPI {
         let task = session.uploadTask(request: request, data: data) { result in
             processResult(completion: completion) {
                 let (_, response) = try result.get()
+                
+                guard (200...299).contains(response.statusCode) else {
+                    throw TUSAPIError.failedRequest(response)
+                }
                 
                 guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
                       let offset = Int(offsetStr) else {

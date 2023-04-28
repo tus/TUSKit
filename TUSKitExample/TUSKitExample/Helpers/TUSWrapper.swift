@@ -72,6 +72,11 @@ class TUSWrapper: TUSClientDelegate, ObservableObject {
     func uploadFailed(id: UUID, error: Error, context: [String : String]?, client: TUSClient) {
         Task { @MainActor in
             uploads[id] = .failed(error: error)
+            
+            if case TUSClientError.couldNotUploadFile(underlyingError: let underlyingError) = error,
+               case TUSAPIError.failedRequest(let response) = underlyingError {
+                print("upload failed with response \(response)")
+            }
         }
     }
     

@@ -44,19 +44,19 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         if let range = range, range.count == 0 {
             // Improve: Enrich error
             assertionFailure("Ended up with an empty range to upload.")
-            throw TUSClientError.couldNotUploadFile
+            throw TUSClientError.couldNotUploadFile(underlyingError: TUSClientError.emptyUploadRange)
         }
         
         if (range?.count ?? 0) > metaData.size {
             assertionFailure("The range \(String(describing: range?.count)) to upload is larger than the size \(metaData.size)")
-            throw TUSClientError.couldNotUploadFile
+            throw TUSClientError.couldNotUploadFile(underlyingError: TUSClientError.rangeLargerThanFile)
         }
         
         if let destination = metaData.remoteDestination {
             self.metaData.remoteDestination = destination
         } else {
             assertionFailure("No remote destination for upload task")
-            throw TUSClientError.couldNotUploadFile
+            throw TUSClientError.couldNotUploadFile(underlyingError: TUSClientError.missingRemoteDestination)
         }
         self.range = range
     }
@@ -140,7 +140,7 @@ final class UploadDataTask: NSObject, IdentifiableTask {
                 } catch let error as TUSClientError {
                     completed(.failure(error))
                 } catch {
-                    completed(.failure(TUSClientError.couldNotUploadFile))
+                    completed(.failure(TUSClientError.couldNotUploadFile(underlyingError: error)))
                 }
                 
             }

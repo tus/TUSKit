@@ -1,3 +1,21 @@
+# 3.1.7
+
+# Enhancements
+- It's now possible to inspect the status code for failed uploads that did not have a 200 OK HTTP status code. See the following example from the sample app:
+
+```swift
+func uploadFailed(id: UUID, error: Error, context: [String : String]?, client: TUSClient) {
+    Task { @MainActor in
+        uploads[id] = .failed(error: error)
+        
+        if case TUSClientError.couldNotUploadFile(underlyingError: let underlyingError) = error,
+           case TUSAPIError.failedRequest(let response) = underlyingError {
+            print("upload failed with response \(response)")
+        }
+    }
+}
+```
+
 # 3.1.6
 
 # Enhancements

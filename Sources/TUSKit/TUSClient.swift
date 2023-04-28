@@ -304,7 +304,7 @@ public final class TUSClient {
 #if os(iOS)
     @available(iOS 13.0, *)
     public func scheduleBackgroundTasks() {
-        backgroundClient?.scheduleBackgroundTasks()
+        //backgroundClient?.scheduleBackgroundTasks()
     }
 #endif
     

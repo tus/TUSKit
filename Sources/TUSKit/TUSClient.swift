@@ -69,9 +69,9 @@ public final class TUSClient {
     private let files: Files
     private var didStopAndCancel = false
     private let serverURL: URL
-    private let scheduler = Scheduler()
+    private let scheduler: Scheduler
     private let api: TUSAPI
-    private let chunkSize: Int
+    private let chunkSize: Int?
     /// Keep track of uploads and their id's
     private var uploads = [UUID: UploadMetadata]()
     
@@ -83,17 +83,54 @@ public final class TUSClient {
     /// the computed property backed by storage var.
     private var backgroundClient: TUSBackground? {
         if _backgroundClient == nil {
-            _backgroundClient = TUSBackground(api: api, files: files, chunkSize: chunkSize)
+            _backgroundClient = TUSBackground(api: api, files: files, chunkSize: chunkSize ?? 0)
         }
         
         return _backgroundClient as? TUSBackground
     }
 #endif
     
+    /// Initialize a TUSClient with support for background URLSessions and uploads
+    /// - Parameters:
+    ///   - server: The URL of the server where you want to upload to.
+    ///   - sessionIdentifier: An identifier to know which TUSClient calls delegate methods.
+    ///   - sessionConfiguration: The URLSession configuration to use for TUSClient. We recommend passing URLSessionConfiguration.background so the SDK can support background uploads.
+    ///   - storageDirectory: A directory to store local files for uploading and continuing uploads. Leave nil to use the documents dir. Pass a relative path (e.g. "TUS" or "/TUS" or "/Uploads/TUS") for a relative directory inside the documents directory.
+    ///   You can also pass an absolute path, e.g. "file://uploads/TUS"
+    ///   - chunkSize: The amount of bytes the data to upload will be chunked by. Defaults to 512 kB.
+    ///   - supportedExtensions: The TUS protocol extensions that the client should use. For now, the available supported extensions are `.creation`. Defaults to `[.creation]`.
+    ///
+    /// - Important: The client assumes by default that your server implements the Creation TUS protocol extension. If your server does not support that,
+    ///   make sure that you provide an empty array in the `supportExtensions` parameter.
+    /// - Throws: File related errors when it can't make a directory at the designated path.
+    public init(server: URL, sessionIdentifier: String, sessionConfiguration: URLSessionConfiguration,
+                storageDirectory: URL? = nil, chunkSize: Int = 500 * 1024,
+                supportedExtensions: [TUSProtocolExtension] = [.creation]) throws {
+        
+        if sessionConfiguration.sessionSendsLaunchEvents == false {
+            print("TUSClient warning: initializing with a session configuration that's not suited for background uploads.")
+        }
+        
+        let scheduler = Scheduler()
+        self.sessionIdentifier = sessionIdentifier
+        self.api = TUSAPI(sessionConfiguration: sessionConfiguration)
+        self.files = try Files(storageDirectory: storageDirectory)
+        self.serverURL = server
+        if chunkSize > 0 {
+            self.chunkSize = chunkSize
+        } else {
+            self.chunkSize = nil
+        }
+        self.supportedExtensions = supportedExtensions
+        self.scheduler = scheduler
+        scheduler.delegate = self
+        reregisterCallbacks()
+    }
+    
     /// Initialize a TUSClient
     /// - Parameters:
     ///   - server: The URL of the server where you want to upload to.
-    ///   - sessionIdentifier: An identifier to know which TUSClient calls delegate methods, also used for URLSession configurations.
+    ///   - sessionIdentifier: An identifier to know which TUSClient calls delegate methods.
     ///   - storageDirectory: A directory to store local files for uploading and continuing uploads. Leave nil to use the documents dir. Pass a relative path (e.g. "TUS" or "/TUS" or "/Uploads/TUS") for a relative directory inside the documents directory.
     ///   You can also pass an absolute path, e.g. "file://uploads/TUS"
     ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
@@ -103,15 +140,24 @@ public final class TUSClient {
     /// - Important: The client assumes by default that your server implements the Creation TUS protocol extension. If your server does not support that,
     ///   make sure that you provide an empty array in the `supportExtensions` parameter.
     /// - Throws: File related errors when it can't make a directory at the designated path.
-    public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil, session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024, supportedExtensions: [TUSProtocolExtension] = [.creation]) throws {
+    @available(*, deprecated, message: "Use the init(server:sessionIdentifier:sessionConfiguration:storageDirectory:chunkSize:supportedExtension) initializer instead.")
+    public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil,
+                session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024,
+                supportedExtensions: [TUSProtocolExtension] = [.creation]) throws {
         self.sessionIdentifier = sessionIdentifier
         self.api = TUSAPI(session: session)
         self.files = try Files(storageDirectory: storageDirectory)
         self.serverURL = server
-        self.chunkSize = chunkSize
+        if chunkSize > 0 {
+            self.chunkSize = chunkSize
+        } else {
+            self.chunkSize = nil
+        }
         self.supportedExtensions = supportedExtensions
+        self.scheduler = Scheduler()
         scheduler.delegate = self
         removeFinishedUploads()
+        reregisterCallbacks()
     }
     
     // MARK: - Starting and stopping
@@ -125,6 +171,10 @@ public final class TUSClient {
         return metaData.map { metaData in
             (metaData.id, metaData.context)
         }
+    }
+    
+    public func cleanup() {
+        removeFinishedUploads()
     }
     
     /// Stops the ongoing sessions, keeps the cache intact so you can continue uploading at a later stage.
@@ -298,6 +348,20 @@ public final class TUSClient {
         }
     }
     
+    // MARK: - Background uploads
+    
+    /// Call this method from your AppDelegate's application(_: handleEventsForBackgroundURLSession:completionHandler:) method so TUSClient can call the handler after processing all URLSession messages.
+    /// - Parameters:
+    ///   - handler: The closure you've received in your app delegate. Will be called by TUSClient when all URLSession related calls are received in the background.
+    ///   - sessionIdentifier: The session identifier provided by AppDelegate. TUSClient will use this identifier to make sure we don't call the handler for other URLSessions.
+    public func registerBackgroundHandler(_ handler: @escaping () -> Void, forSession sessionIdentifier: String) {
+        guard sessionIdentifier == api.session.configuration.identifier else {
+            return
+        }
+        
+        api.registerBackgroundHandler(handler)
+    }
+    
     /// When your app moves to the background, you can call this method to schedule background tasks to perform.
     /// This will signal the OS to upload files when appropriate (e.g. when a phone is on a charger and on Wifi).
     /// Note that the OS decides when uploading begins.
@@ -365,6 +429,29 @@ public final class TUSClient {
         }
     }
     
+    /// reregisters callbacks on the TUSApi so they can be called when the app is notified of uploads that completed while the app wasn't in memory
+    private func reregisterCallbacks() {
+        guard let allMetadata = try? files.loadAllMetadata() else {
+            return
+        }
+        
+        for metadata in allMetadata {
+            api.checkTaskExists(for: metadata) { [weak self] taskExists in
+                guard let self else {
+                    return
+                }
+                guard taskExists,
+                      let task = try? UploadDataTask(api: api, metaData: metadata, files: files) else {
+                    return
+                }
+                
+                api.registerCallback({ result in
+                    task.taskCompleted(result: result, completed: { _ in })
+                }, forMetadata: metadata)
+            }
+        }
+    }
+    
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
     private func scheduleTask(for storedFilePath: URL, id: UUID, uploadURL: URL?, customHeaders: [String: String], context: [String: String]?) throws {
@@ -428,11 +515,22 @@ public final class TUSClient {
         do {
             let metaDataItems = try files.loadAllMetadata().filter({ metaData in
                 // Only allow uploads where errors are below an amount
-                metaData.errorCount <= retryCount && !metaData.isFinished
+                let acceptableErrorCount = metaData.errorCount <= retryCount
+                let unFinished = !metaData.isFinished
+                
+                return acceptableErrorCount && unFinished
             })
             
             for metaData in metaDataItems {
-                try scheduleTask(for: metaData)
+                api.checkTaskExists(for: metaData) { taskExists in
+                    if !taskExists {
+                        do {
+                            try self.scheduleTask(for: metaData)
+                        } catch {
+                            //...
+                        }
+                    }
+                }
             }
             
             return metaDataItems
@@ -564,7 +662,7 @@ private extension String {
 /// Decide which task to create based on metaData.
 /// - Parameter metaData: The `UploadMetadata` for which to create a `Task`.
 /// - Returns: The task that has to be performed for the relevant metaData. Will return nil if metaData's file is already uploaded / finished. (no task needed).
-func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int, progressDelegate: ProgressDelegate? = nil) throws -> ScheduledTask? {
+func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int?, progressDelegate: ProgressDelegate? = nil) throws -> ScheduledTask? {
     guard !metaData.isFinished else {
         return nil
     }

@@ -15,49 +15,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var tusClient: TUSClient!
     var wrapper: TUSWrapper!
-
+    
     @State var isPresented = false
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         
-        do {
-            tusClient = try TUSClient(server: URL(string: "https://tusd.tusdemo.net/files")!, sessionIdentifier: "TUS DEMO", storageDirectory: URL(string: "/TUS")!, chunkSize: 100 * 1024 * 1024)
-            wrapper = TUSWrapper(client: tusClient)
-            let remainingUploads = tusClient.start()
-            switch remainingUploads.count {
-            case 0:
-                print("No files to upload")
-            case 1:
-                print("Continuing uploading single file")
-            case let nr:
-                print("Continuing uploading \(nr) file(s)")
-            }
-            
-            // When starting, you can retrieve the locally stored uploads that are marked as failure, and handle those.
-            // E.g. Maybe some uploads failed from a last session, or failed from a background upload.
-            let ids = try tusClient.failedUploadIDs()
-            for id in ids {
-                // You can either retry a failed upload...
-                try tusClient.retry(id: id)
-                // ...alternatively, you can delete them too
-                // tusClient.removeCacheFor(id: id)
-            }
-
-
-            /*
-            
-              // You can get stored uploads with tusClient.getStoredUploads()
-              let storedUploads = try tusClient.getStoredUploads()
-              for storedUpload in storedUploads {
-                 print("\(storedUpload) Stored upload")
-              }
-             */
-        } catch {
-            assertionFailure("Could not fetch failed id's from disk, or could not instantiate TUSClient \(error)")
-        }
         
+        wrapper = TUSWrapper(client: AppDelegate.tusClient)
         let contentView = ContentView(tusWrapper: wrapper)
-
+        
         // Use a UIHostingController as window root view controller.
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
@@ -67,6 +33,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
         
         // We can already trigger background tasks. Once the background-scheduler runs, the tasks will upload.
-        tusClient.scheduleBackgroundTasks()
+        //tusClient.scheduleBackgroundTasks()
     }
 }

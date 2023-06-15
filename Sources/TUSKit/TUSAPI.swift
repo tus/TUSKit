@@ -1,6 +1,6 @@
 //
 //  TUSAPI.swift
-//  
+//
 //
 //  Created by Tjeerd in ‘t Veen on 13/09/2021.
 //
@@ -11,6 +11,7 @@ import Foundation
 public enum TUSAPIError: Error {
     case underlyingError(Error)
     case couldNotFetchStatus
+    case couldNotFetchServerInfo
     case couldNotRetrieveOffset
     case couldNotRetrieveLocation
     case failedRequest(HTTPURLResponse)
@@ -30,6 +31,7 @@ final class TUSAPI {
         case post = "POST"
         case get = "GET"
         case patch = "PATCH"
+        case options = "OPTIONS"
         case delete = "DELETE"
     }
     
@@ -37,6 +39,46 @@ final class TUSAPI {
 
     init(session: URLSession) {
         self.session = session
+    }
+    
+    @discardableResult
+    func serverInfo(server: URL, completion: @escaping (Result<TusServerInfo, TUSAPIError>) -> Void) -> URLSessionDataTask {
+        let request = makeRequest(url: server, method: .options, headers: [:])
+        let task = session.dataTask(request: request) { result in
+            processResult(completion: completion) {
+                let (_, response) = try result.get()
+                    
+                guard response.statusCode == 200 || response.statusCode == 204 else {
+                    throw TUSAPIError.couldNotFetchServerInfo
+                }
+                    
+                var supportedAlgorithms: [String] = []
+                if let algorithms = response.allHeaderFields[caseInsensitive: "tus-checksum-algorithm"] as? String {
+                    supportedAlgorithms = algorithms.components(separatedBy: ",")
+                }
+                var supportedVersions: [String] = []
+                if let tusVersions = response.allHeaderFields[caseInsensitive: "tus-version"] as? String {
+                    supportedVersions = tusVersions.components(separatedBy: ",")
+                }
+                var maxSize: Int?
+                if let maxSizeStr = response.allHeaderFields[caseInsensitive: "tus-max-size"] as? String {
+                    maxSize = Int(maxSizeStr)
+                }
+                let version = response.allHeaderFields[caseInsensitive: "tus-resumable"] as? String ?? ""
+                    
+                var extensions: [TUSProtocolExtension] = []
+                if let tusExtension = response.allHeaderFields[caseInsensitive: "tus-extension"] as? String {
+                    extensions = tusExtension.components(separatedBy: ",").reduce(into: [TUSProtocolExtension]()) { partialResult, item in
+                        if let ext = TUSProtocolExtension(rawValue: item) {
+                            partialResult.append(ext)
+                        }
+                    }
+                }
+                return TusServerInfo(version: version, maxSize: maxSize, extensions: extensions, supportedVersions: supportedVersions, supportedChecksumAlgorithms: supportedAlgorithms)
+            }
+        }
+        task.resume()
+        return task
     }
     
     /// Fetch the status of an upload if an upload is not finished (e.g. interrupted).

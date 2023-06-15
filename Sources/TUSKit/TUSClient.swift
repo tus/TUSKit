@@ -328,6 +328,23 @@ public final class TUSClient {
         }
     }
     
+    // MARK: - Server
+    
+    public func getServerInfo() throws -> TusServerInfo {
+        let semaphore = DispatchSemaphore(value: 0)
+        var serverInfoResult: Result<TusServerInfo, TUSAPIError>?
+        _ = api.serverInfo(server: serverURL) { result in
+            defer {
+                semaphore.signal()
+            }
+            serverInfoResult = result
+        }
+        semaphore.wait()
+        guard let serverInfoResult else {
+            throw TUSAPIError.couldNotFetchServerInfo
+        }
+        return try serverInfoResult.get()
+    }
     
     // MARK: - Private
     

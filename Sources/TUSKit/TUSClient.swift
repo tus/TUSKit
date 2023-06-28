@@ -107,9 +107,14 @@ public final class TUSClient {
                 storageDirectory: URL? = nil, chunkSize: Int = 500 * 1024,
                 supportedExtensions: [TUSProtocolExtension] = [.creation]) throws {
         
-        if sessionConfiguration.sessionSendsLaunchEvents == false {
+        if #available(iOS 7.0, macOS 11.0, *) {
+          if sessionConfiguration.sessionSendsLaunchEvents == false {
             print("TUSClient warning: initializing with a session configuration that's not suited for background uploads.")
+          }
+        } else {
+          print("TUSClient warning: Cannot verify URLSession background configuration; Background sessions are most likely not supported on your target OS.")
         }
+        
         
         let scheduler = Scheduler()
         self.sessionIdentifier = sessionIdentifier

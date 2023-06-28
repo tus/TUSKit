@@ -1,6 +1,12 @@
+# 3.2
+
+## Enhancements
+
+- TUSKit can now leverage Background URLSession to allow uploads to continue while an app is backgrounded. See the README.md for instructions on migrating to leverage this functionality.
+
 # 3.1.7
 
-# Enhancements
+## Enhancements
 - It's now possible to inspect the status code for failed uploads that did not have a 200 OK HTTP status code. See the following example from the sample app:
 
 ```swift
@@ -18,7 +24,7 @@ func uploadFailed(id: UUID, error: Error, context: [String : String]?, client: T
 
 # 3.1.6
 
-# Enhancements
+## Enhancements
 - Added ability to fetch in progress / current uploads using `getStoredUploads()` on a `TUSClient` instance.
 
 # 3.1.5

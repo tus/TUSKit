@@ -22,6 +22,9 @@ extension URLSession {
         return uploadTask(with: request, from: data, completionHandler: makeCompletion(completion: completion))
     }
     
+    func uploadTask(with request: URLRequest, fromFile file: URL, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> URLSessionUploadTask {
+        return uploadTask(with: request, fromFile: file, completionHandler: makeCompletion(completion: completion))
+    }
 }
 
 /// Convenience method to turn a URLSession completion handler into a modern Result version. It also checks if response is a HTTPURLResponse

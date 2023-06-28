@@ -21,11 +21,11 @@ final class StatusTask: IdentifiableTask {
     let files: Files
     let remoteDestination: URL
     let metaData: UploadMetadata
-    let chunkSize: Int
+    let chunkSize: Int?
     private var didCancel: Bool = false
     weak var sessionTask: URLSessionDataTask?
     
-    init(api: TUSAPI, remoteDestination: URL, metaData: UploadMetadata, files: Files, chunkSize: Int) {
+    init(api: TUSAPI, remoteDestination: URL, metaData: UploadMetadata, files: Files, chunkSize: Int?) {
         self.api = api
         self.remoteDestination = remoteDestination
         self.metaData = metaData
@@ -70,7 +70,12 @@ final class StatusTask: IdentifiableTask {
                         return
                     }
                     
-                    let nextRange = offset..<min((offset + chunkSize), metaData.size)
+                    let nextRange: Range<Int>
+                    if let chunkSize {
+                       nextRange  = offset..<min((offset + chunkSize), metaData.size)
+                    } else {
+                        nextRange = offset..<metaData.size
+                    }
                     
                     let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
                     task.progressDelegate = progressDelegate

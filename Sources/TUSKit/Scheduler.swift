@@ -41,7 +41,7 @@ final class Scheduler {
     // Tasks are processed in background
     let queue = DispatchQueue(label: "com.TUSKit.Scheduler")
 
-    /// Add multiple tasks. Note that these are independent tasks. If you want multiple tasks that are related in one way or another, use addGroupedTasks
+    /// Add multiple tasks. Note that these are independent tasks.
     /// - Parameter tasks: The tasks to add
     func addTasks(tasks: [ScheduledTask]) {
         queue.async {
@@ -126,7 +126,7 @@ final class Scheduler {
             }
             
         }
-    }
+    }    
     
     /// Get first available task, removes it from current tasks
     /// - Returns: First next task, or nil if tasks are empty

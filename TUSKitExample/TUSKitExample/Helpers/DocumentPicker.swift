@@ -68,7 +68,7 @@ struct DocumentPicker: UIViewControllerRepresentable {
             
             do {
                 try self.tusClient.uploadMultiple(dataFiles: files)
-                tusClient.scheduleBackgroundTasks()
+                //tusClient.scheduleBackgroundTasks()
             } catch {
                 print(error)
             }

@@ -152,7 +152,7 @@ do {
 
 ## Background uploading
 
-When you incorporate background-uploading, we strongly recommend you to inspect any failed uploads that may have occured in the background. Please refer to [Starting a new Session](#Starting a new Session) for more information.
+When you incorporate background-uploading, we strongly recommend you to inspect any failed uploads that may have occured in the background. Please refer to [Starting a new Session](#starting-a-new-session) for more information.
 
 iOS can leverage a background URLSession to enable background uploads that continue when a user leaves your app or locks their device. For more information, take a look at Apple's docs on [background URLSession](https://developer.apple.com/documentation/foundation/url_loading_system/downloading_files_in_the_background). The docs focus on downloads but uploads follow pretty much the exact same principles.
 
@@ -176,15 +176,7 @@ The easiest way to set everything up is to pass a `URLSession.background` config
 
 Because TUSKit can now have uploads running while your app is no longer actively in memory, you should always use the `getStoredUpload` method on `TUSClient` on app launch to retrieve all stored uploads and extract information about which uploads are currently completed. Afterwards you can call `cleanup` to allow `TUSClient` to remove metadata for completed items. See the sample app for more details.
 
-**IMPORTANT**  
-You **must** call `TUSClient.registerBackgroundHandler(_:)` for your `AppDelegate`'s `application(_: handleEventsForBackgroundURLSession:completionHandler:)` method when you want to support background uploads. This method takes a callback which should always call the `completionHandler` that was passed to `handleEventsForBackgroundURLSession`. It's okay to pass the completion handler directly.
-
-Below is an example:
-```swift
-
-```
-
-### Warning: information below is deprecated in TUSKit 3.1.8.
+### Warning: information below is deprecated in TUSKit 3.2.0.
 Available from iOS13, you can schedule uploads to be performed in the background using the `scheduleBackgroundTasks()` method on `TUSClient`. 
 
 Scheduled tasks are handled by iOS. Which means that each device will decide when it's best to upload in the background. Such as when it has a wifi connection and late at night.

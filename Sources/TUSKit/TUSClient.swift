@@ -446,11 +446,11 @@ public final class TUSClient {
                     return
                 }
                 guard taskExists,
-                      let task = try? UploadDataTask(api: api, metaData: metadata, files: files) else {
+                      let task = try? UploadDataTask(api: self.api, metaData: metadata, files: self.files) else {
                     return
                 }
                 
-                api.registerCallback({ result in
+                self.api.registerCallback({ result in
                     task.taskCompleted(result: result, completed: { _ in })
                 }, forMetadata: metadata)
             }

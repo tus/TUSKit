@@ -17,6 +17,10 @@
 		2EB9149F26F09D7800548562 /* TUSKitExampleUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB9149E26F09D7800548562 /* TUSKitExampleUITests.swift */; };
 		2EB914B826F0A2CE00548562 /* TUSKit in Frameworks */ = {isa = PBXBuildFile; productRef = 2EB914B726F0A2CE00548562 /* TUSKit */; };
 		2EB914BA26F0B11C00548562 /* PhotoPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB914B926F0B11C00548562 /* PhotoPicker.swift */; };
+		978A729D29ACE487002A9440 /* UploadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 978A729C29ACE487002A9440 /* UploadsView.swift */; };
+		978A729F29ACE4D2002A9440 /* FilePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 978A729E29ACE4D2002A9440 /* FilePickerView.swift */; };
+		978A72A229ACE5F7002A9440 /* TUSWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 978A72A129ACE5F7002A9440 /* TUSWrapper.swift */; };
+		97B438502987C770001C802F /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B4384F2987C770001C802F /* DocumentPicker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +57,10 @@
 		2EB914A026F09D7800548562 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2EB914B626F0A29E00548562 /* TUSKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TUSKit; path = ..; sourceTree = "<group>"; };
 		2EB914B926F0B11C00548562 /* PhotoPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPicker.swift; sourceTree = "<group>"; };
+		978A729C29ACE487002A9440 /* UploadsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadsView.swift; sourceTree = "<group>"; };
+		978A729E29ACE4D2002A9440 /* FilePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePickerView.swift; sourceTree = "<group>"; };
+		978A72A129ACE5F7002A9440 /* TUSWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TUSWrapper.swift; sourceTree = "<group>"; };
+		97B4384F2987C770001C802F /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,10 +114,10 @@
 		2EB9147B26F09D7600548562 /* TUSKitExample */ = {
 			isa = PBXGroup;
 			children = (
+				978A72A029ACE5DB002A9440 /* Helpers */,
+				978A729B29ACE471002A9440 /* Screens */,
 				2EB9147C26F09D7600548562 /* AppDelegate.swift */,
-				2EB914B926F0B11C00548562 /* PhotoPicker.swift */,
 				2EB9147E26F09D7600548562 /* SceneDelegate.swift */,
-				2EB9148026F09D7600548562 /* ContentView.swift */,
 				2EB9148226F09D7800548562 /* Assets.xcassets */,
 				2EB9148726F09D7800548562 /* LaunchScreen.storyboard */,
 				2EB9148A26F09D7800548562 /* Info.plist */,
@@ -149,6 +157,26 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		978A729B29ACE471002A9440 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				2EB9148026F09D7600548562 /* ContentView.swift */,
+				978A729C29ACE487002A9440 /* UploadsView.swift */,
+				978A729E29ACE4D2002A9440 /* FilePickerView.swift */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
+		978A72A029ACE5DB002A9440 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				2EB914B926F0B11C00548562 /* PhotoPicker.swift */,
+				97B4384F2987C770001C802F /* DocumentPicker.swift */,
+				978A72A129ACE5F7002A9440 /* TUSWrapper.swift */,
+			);
+			path = Helpers;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -286,9 +314,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				978A72A229ACE5F7002A9440 /* TUSWrapper.swift in Sources */,
 				2EB914BA26F0B11C00548562 /* PhotoPicker.swift in Sources */,
 				2EB9147D26F09D7600548562 /* AppDelegate.swift in Sources */,
 				2EB9147F26F09D7600548562 /* SceneDelegate.swift in Sources */,
+				978A729D29ACE487002A9440 /* UploadsView.swift in Sources */,
+				978A729F29ACE4D2002A9440 /* FilePickerView.swift in Sources */,
+				97B438502987C770001C802F /* DocumentPicker.swift in Sources */,
 				2EB9148126F09D7600548562 /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -459,6 +491,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"TUSKitExample/Preview Content\"";
+				DEVELOPMENT_TEAM = 4JMM8JMG3H;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = TUSKitExample/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
@@ -480,6 +513,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"TUSKitExample/Preview Content\"";
+				DEVELOPMENT_TEAM = 4JMM8JMG3H;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = TUSKitExample/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;

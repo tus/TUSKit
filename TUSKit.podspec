@@ -7,7 +7,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'TUSKit'
-  s.version          = '3.1.4'
+  s.version          = '3.2.0'
   s.summary          = 'TUSKit client in Swift'
   s.swift_version = '5.0'
 
@@ -22,14 +22,14 @@ Pod::Spec.new do |s|
 Swift client for https://tus.io called TUSKit. Mac and iOS compatible.
                        DESC
 
-  s.homepage         = 'https://github.com/tus/tus-ios-client'
+  s.homepage         = 'https://github.com/tus/TUSKit'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'Tjeerd in t Veen' => 'tjeerd@twinapps.co' }
-  s.source           = { :git => 'https://github.com/tus/tus-ios-client.git', :tag => s.version.to_s }
+  s.author           = 'Transloadit'
+  s.source           = { :git => 'https://github.com/tus/TUSKit.git', :tag => s.version.to_s }
   s.platform         = :ios
 
-  s.ios.deployment_target = '9.0'
-  s.osx.deployment_target  = '10.9'
+  s.ios.deployment_target = '10.0'
+  s.osx.deployment_target  = '10.11'
 
   s.source_files = 'Sources/TUSKit/**/*'
 

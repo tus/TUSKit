@@ -7,6 +7,8 @@
 
 import Foundation
 
+typealias UploadTaskResult = (Result<(Int, responseHeaders: [String : String]?), TUSAPIError>)
+
 /// The upload task will upload to data a destination.
 /// Will spawn more UploadDataTasks if an upload isn't complete.
 final class UploadDataTask: NSObject, IdentifiableTask {
@@ -44,19 +46,19 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         if let range = range, range.count == 0 {
             // Improve: Enrich error
             assertionFailure("Ended up with an empty range to upload.")
-            throw TUSClientError.couldNotUploadFile
+            throw TUSClientError.couldNotUploadFile(underlyingError: TUSClientError.emptyUploadRange)
         }
         
         if (range?.count ?? 0) > metaData.size {
             assertionFailure("The range \(String(describing: range?.count)) to upload is larger than the size \(metaData.size)")
-            throw TUSClientError.couldNotUploadFile
+            throw TUSClientError.couldNotUploadFile(underlyingError: TUSClientError.rangeLargerThanFile)
         }
         
         if let destination = metaData.remoteDestination {
             self.metaData.remoteDestination = destination
         } else {
             assertionFailure("No remote destination for upload task")
-            throw TUSClientError.couldNotUploadFile
+            throw TUSClientError.couldNotUploadFile(underlyingError: TUSClientError.missingRemoteDestination)
         }
         self.range = range
     }
@@ -77,8 +79,10 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         }
         
         let dataToUpload: Data
+        let file: URL
         do {
             dataToUpload = try loadData()
+            file = try prepareUploadFile()
         } catch let error {
             let tusError = TUSClientError.couldNotLoadData(underlyingError: error)
             completed(Result.failure(tusError))
@@ -90,60 +94,14 @@ final class UploadDataTask: NSObject, IdentifiableTask {
             return
         }
         
-        let task = api.upload(data: dataToUpload, range: range, location: remoteDestination, metaData: self.metaData) { [weak self] result in
-            self?.queue.async {
-                guard let self = self else { return }
-                // Getting rid of needing .self inside this closure
-                let metaData = self.metaData
-                let files = self.files
-                let range = self.range
-                let api = self.api
-                let progressDelegate = self.progressDelegate
-                
-                do {
-                    let (receivedOffset, responseHeaders) = try result.get()
-                    let currentOffset = metaData.uploadedRange?.upperBound ?? 0
-                    metaData.uploadedRange = 0..<receivedOffset
-                    metaData.responseHeaders = responseHeaders
-                    
-                    let hasFinishedUploading = receivedOffset == metaData.size
-                    if hasFinishedUploading {
-                        try files.encodeAndStore(metaData: metaData)
-                        completed(.success([]))
-                        return
-                    } else if receivedOffset == currentOffset {
-                        //                improvement: log this instead
-                        //                    assertionFailure("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
-                        throw TUSClientError.receivedUnexpectedOffset
-                    }
-                    
-                    try files.encodeAndStore(metaData: metaData)
-                    
-                    // If the task has been canceled
-                    // we don't continue to create subsequent UploadDataTasks
-                    if self.isCanceled {
-                        return
-                    }
-                    
-                    let nextRange: Range<Int>?
-                    if let range = range {
-                        let chunkSize = range.count
-                        nextRange = receivedOffset..<min((receivedOffset + chunkSize), metaData.size)
-                    } else {
-                        nextRange = nil
-                    }
-                    
-                    let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
-                    task.progressDelegate = progressDelegate
-                    completed(.success([task]))
-                } catch let error as TUSClientError {
-                    completed(.failure(error))
-                } catch {
-                    completed(.failure(TUSClientError.couldNotUploadFile))
-                }
-                
-            }
+        let task = api.upload(fromFile: file, offset: range?.lowerBound ?? 0, location: remoteDestination, metaData: self.metaData) { [weak self] result in
+            self?.observation?.invalidate()
+
+            self?.taskCompleted(result: result, completed: completed)
         }
+        
+        task.taskDescription = "\(metaData.id)"
+        task.resume()
         
         sessionTask = task
         
@@ -152,9 +110,55 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         }
     }
     
+    func taskCompleted(result: UploadTaskResult, completed: @escaping TaskCompletion) {
+        queue.async { [self] in
+            do {
+                let (receivedOffset, responseHeaders) = try result.get()
+                let currentOffset = metaData.uploadedRange?.upperBound ?? 0
+                metaData.uploadedRange = 0..<receivedOffset
+                metaData.responseHeaders = responseHeaders
+                
+                let hasFinishedUploading = receivedOffset == metaData.size
+                if hasFinishedUploading {
+                    try files.encodeAndStore(metaData: metaData)
+                    completed(.success([]))
+                    return
+                } else if receivedOffset == currentOffset {
+                    //                improvement: log this instead
+                    //                    assertionFailure("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
+                    throw TUSClientError.receivedUnexpectedOffset
+                }
+                
+                try files.encodeAndStore(metaData: metaData)
+                
+                // If the task has been canceled
+                // we don't continue to create subsequent UploadDataTasks
+                if self.isCanceled {
+                    return
+                }
+                
+                let nextRange: Range<Int>?
+                if let range = range {
+                    let chunkSize = range.count
+                    nextRange = receivedOffset..<min((receivedOffset + chunkSize), metaData.size)
+                } else {
+                    nextRange = nil
+                }
+                
+                let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
+                task.progressDelegate = progressDelegate
+                completed(.success([task]))
+            } catch let error as TUSClientError {
+                completed(.failure(error))
+            } catch {
+                completed(.failure(TUSClientError.couldNotUploadFile(underlyingError: error)))
+            }
+        }
+    }
+    
     @available(iOS 11.0, macOS 10.13, *)
     func observeTask(task: URLSessionUploadTask, size: Int) {
-        let targetRange = self.range ?? 0..<size
+        let targetRange = 0..<size
         let uploaded = metaData.uploadedRange?.count ?? 0
         
         observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
@@ -167,6 +171,33 @@ final class UploadDataTask: NSObject, IdentifiableTask {
                 self.progressDelegate?.progressUpdatedFor(metaData: self.metaData, totalUploadedBytes: totalUploaded)
             }
         }
+    }
+    
+    func prepareUploadFile() throws -> URL {
+        let fileHandle = try FileHandle(forReadingFrom: metaData.filePath)
+        
+        defer {
+            fileHandle.closeFile()
+        }
+        
+        // Can't use switch with #available :'(
+        let data: Data
+        if let range = self.range, #available(iOS 13.0, macOS 10.15, *) { // Has range, for newer versions
+            try fileHandle.seek(toOffset: UInt64(range.startIndex))
+            data = fileHandle.readData(ofLength: range.count)
+        } else if let range = self.range { // Has range, for older versions
+            fileHandle.seek(toFileOffset: UInt64(range.startIndex))
+            data = fileHandle.readData(ofLength: range.count)
+            /*
+             } else if #available(iOS 13.4, macOS 10.15, *) { // No range, newer versions.
+             Note that compiler and api says that readToEnd is available on macOS 10.15.4 and higher, but yet github actions of 10.15.7 fails to find the member.
+             return try fileHandle.readToEnd()
+             */
+        } else { // No range, older versions
+            data = fileHandle.readDataToEndOfFile()
+        }
+        
+        return try files.store(data: data, id: metaData.id, preferredFileExtension: "uploadData")
     }
     
     /// Load data based on range (if there). Uses FileHandle to be able to handle large files
@@ -206,4 +237,3 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         observation?.invalidate()
     }
 }
-

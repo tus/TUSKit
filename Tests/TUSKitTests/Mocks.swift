@@ -36,7 +36,7 @@ final class TUSMockDelegate: TUSClientDelegate {
         }
     }
     
-    func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient) {
+    func didFinishUpload(id: UUID, url: URL, responseHeaders: [String: String]?, context: [String: String]?, client: TUSClient) {
         finishedUploads.append((id, url))
         finishUploadExpectation?.fulfill()
         if let context = context {

@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         os: ["macos-latest"]
-        swift: ["5.5"]
+        swift: ["5"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Extract Branch Name
@@ -19,9 +19,3 @@ jobs:
         run: swift build -Xswiftc --disable-experimental-concurrency
       - name: Run tests
         run: swift test -Xswiftc --disable-experimental-concurrency
-      - uses: 8398a7/action-slack@v3
-        if: failure() && env.BRANCH == 'master'
-        with:
-          status: failure
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

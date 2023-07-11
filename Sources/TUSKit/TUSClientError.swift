@@ -9,7 +9,7 @@ public enum TUSClientError: Error {
     case couldNotLoadData(underlyingError: Error)
     case couldNotStoreFileMetadata(underlyingError: Error)
     case couldNotCreateFileOnServer
-    case couldNotUploadFile
+    case couldNotUploadFile(underlyingError: Error)
     case couldNotGetFileStatus
     case fileSizeMismatchWithServer
     case couldNotDeleteFile(underlyingError: Error)
@@ -18,4 +18,6 @@ public enum TUSClientError: Error {
     case couldnotRemoveFinishedUploads(underlyingError: Error)
     case receivedUnexpectedOffset
     case missingRemoteDestination
+    case emptyUploadRange
+    case rangeLargerThanFile
 }

@@ -17,6 +17,8 @@ public protocol TUSClientDelegate: AnyObject {
     func didStartUpload(id: UUID, context: [String: String]?, client: TUSClient)
     /// `TUSClient` just finished an upload, returns the URL of the uploaded file.
     func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient)
+    /// `TUSClient` just finished an upload, returns the URL of the uploaded file along with `responseHeaders` from server.
+    func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient, responseHeaders: [String: String]?)
     /// An upload failed. Returns an error. Could either be a TUSClientError or a networking related error.
     func uploadFailed(id: UUID, error: Error, context: [String: String]?, client: TUSClient)
     

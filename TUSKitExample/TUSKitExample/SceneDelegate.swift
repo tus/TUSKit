@@ -22,6 +22,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         
         wrapper = TUSWrapper(client: AppDelegate.tusClient)
+        /// Set this to begin with mock data in uploads list screen
+//        wrapper.setMockUploadRecords()
         let contentView = ContentView(tusWrapper: wrapper)
         
         // Use a UIHostingController as window root view controller.

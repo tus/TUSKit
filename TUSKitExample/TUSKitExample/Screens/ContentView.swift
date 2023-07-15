@@ -23,7 +23,7 @@ struct ContentView: View {
             )
             .tabItem {
                 VStack {
-                    Image(systemName: "square.and.arrow.up")
+                    Image(systemName: Icon.uploadFile.rawValue)
                     Text("Upload files")
                 }
             }.tag(0)
@@ -36,7 +36,7 @@ struct ContentView: View {
             }
             .tabItem {
                 VStack {
-                    Image(systemName: "list.bullet")
+                    Image(systemName: Icon.uploadList.rawValue)
                     Text("Uploads")
                 }
             }.tag(1)

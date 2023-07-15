@@ -14,6 +14,13 @@ enum Icon: String {
     case trash  = "trash"
     case clear  = "xmark.circle"
     
+    case uploadFile = "square.and.arrow.up"
+    case uploadFileFilled = "square.and.arrow.up.fill"
+    case uploadList = "list.bullet"
+    
+    case options    = "ellipsis.circle"
+    case checkmark  = "checkmark.circle"
+    
     var color: Color {
         switch self {
             case .resume:
@@ -24,6 +31,8 @@ enum Icon: String {
                 return TusColor.delete
             case .clear:
                 return TusColor.remove
+            default:
+                return .clear
         }
     }
 }

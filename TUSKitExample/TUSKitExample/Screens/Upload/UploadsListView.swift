@@ -26,10 +26,10 @@ enum UploadCategory: CaseIterable {
     
     var noRecoredMessage: String {
         switch self {
-            case .all:          return "No upload items\nUpload files for Upload files tab"
+            case .all:          return "No upload items"
             case .uploaded:     return "No uploaded items"
             case .failed:       return "No failed items"
-            case .uploading:    return "No active items"
+            case .uploading:    return "No uploading items"
             case .paused:       return "No paused items"
         }
     }
@@ -91,13 +91,18 @@ extension UploadsListView {
     
     @ViewBuilder
     private func noUploadRecordsView() -> some View {
-        Spacer()
-        Text(uploadCategory.noRecoredMessage)
-            .multilineTextAlignment(.center)
-            .font(.footnote)
-            .foregroundColor(.gray)
-            .padding(.horizontal, 15)
-        Spacer()
+        VStack {
+            Spacer()
+            Text(uploadCategory.noRecoredMessage)
+            if uploadCategory == .all {
+                (Text("Upload files for ") + (Text("Upload files ") + Text(Image(systemName: Icon.uploadFileFilled.rawValue))).foregroundColor(.blue) + Text(" tab"))
+            }
+            Spacer()
+        }
+        .multilineTextAlignment(.center)
+        .font(.footnote)
+        .foregroundColor(.gray)
+        .padding(.horizontal, 15)
     }
     
     
@@ -135,7 +140,7 @@ extension UploadsListView {
     @available(iOS 15.0, *)
     @ViewBuilder
     private func navBarRightItem() -> some View {
-        let checkmark = "checkmark.circle"
+        let checkmark = Icon.checkmark.rawValue
         Menu {
             Section("Filter records") {
                 ForEach(UploadCategory.allCases, id: \.self) { kind in
@@ -163,7 +168,7 @@ extension UploadsListView {
         } label: {
             HStack {
                 Text(uploadCategory.title)
-                Image(systemName: "ellipsis.circle")
+                Image(systemName: Icon.options.rawValue)
             }
             .animation(nil, value: UUID())
         }

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum UploadCategory: CaseIterable {
+enum UploadListCategory: CaseIterable {
     case all
     case uploaded
     case failed
@@ -21,6 +21,16 @@ enum UploadCategory: CaseIterable {
             case .failed:       return "Failed"
             case .uploading:    return "Uploading"
             case .paused:       return "Paused"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+            case .all:          return .clear
+            case .uploaded:     return .green
+            case .failed:       return .red
+            case .uploading:    return .purple
+            case .paused:       return .gray
         }
     }
     
@@ -51,7 +61,7 @@ struct UploadsListView: View {
     @EnvironmentObject var tusWrapper: TUSWrapper
     
     // Upload record items
-    @State var uploadCategory: UploadCategory = .all
+    @State var uploadCategory: UploadListCategory = .all
     private var filteredUploads: [UUID: UploadStatus] {
         withAnimation {
             return tusWrapper.uploads.filter { return uploadCategory.isSameKind(status: $0.value) }
@@ -118,9 +128,9 @@ extension UploadsListView {
                     Group {
                         switch idx.value {
                             case .uploading(let bytesUploaded, let totalBytes):
-                                UploadingRowView(key: idx.key, bytesUploaded: bytesUploaded, totalBytes: totalBytes)
+                                ProgressRowView(key: idx.key, bytesUploaded: bytesUploaded, totalBytes: totalBytes, category: .uploading)
                             case .paused(let bytesUploaded, let totalBytes):
-                                PausedRowView(key: idx.key, bytesUploaded: bytesUploaded, totalBytes: totalBytes)
+                                ProgressRowView(key: idx.key, bytesUploaded: bytesUploaded, totalBytes: totalBytes, category: .paused)
                             case .uploaded(let url):
                                 UploadedRowView(key: idx.key, url: url)
                             case .failed(let error):
@@ -143,7 +153,7 @@ extension UploadsListView {
         let checkmark = Icon.checkmark.rawValue
         Menu {
             Section("Filter records") {
-                ForEach(UploadCategory.allCases, id: \.self) { kind in
+                ForEach(UploadListCategory.allCases, id: \.self) { kind in
                     Button {
                         uploadCategory = kind
                     } label: {

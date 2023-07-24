@@ -16,11 +16,11 @@ struct UploadedRowView: View {
     
     var body: some View {
         HStack(spacing: 8) {
-            UploadStatusIndicator(color: TusColor.uploaded)
+            UploadStatusIndicator(color: UploadListCategory.uploaded.color)
             
             VStack(alignment: .leading) {
-                Text(UploadCategory.uploaded.title)
-                    .foregroundColor(TusColor.uploaded)
+                Text(UploadListCategory.uploaded.title)
+                    .foregroundColor(UploadListCategory.uploaded.color)
                     .font(.subheadline)
                     .bold()
                 

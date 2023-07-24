@@ -16,15 +16,17 @@ struct FailedRowView: View {
     
     var body: some View {
         HStack(spacing: 8) {
-            UploadStatusIndicator(color: TusColor.failed)
+            UploadStatusIndicator(color: UploadListCategory.failed.color)
+            
             VStack(alignment: .leading) {
-                Text(UploadCategory.failed.title)
-                    .foregroundColor(TusColor.failed)
+                Text(UploadListCategory.failed.title)
+                    .foregroundColor(UploadListCategory.failed.color)
                     .font(.subheadline)
                     .bold()
                 
                 Text("ID - \(key)")
                     .font(.caption)
+                
                 Text("Error - \(error.localizedDescription)")
                     .font(.caption)
                     .foregroundColor(.gray)

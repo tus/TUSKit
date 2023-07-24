@@ -24,11 +24,10 @@
 		E54341542A6122DC00EC3B28 /* Assets.swift in Sources */ = {isa = PBXBuildFile; fileRef = E54341532A6122DC00EC3B28 /* Assets.swift */; };
 		E54341562A617A2D00EC3B28 /* UploadActionImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E54341552A617A2D00EC3B28 /* UploadActionImage.swift */; };
 		E543415A2A62784200EC3B28 /* UploadsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E54341592A62784200EC3B28 /* UploadsListView.swift */; };
-		E543415D2A62A74B00EC3B28 /* UploadingRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E543415C2A62A74B00EC3B28 /* UploadingRowView.swift */; };
-		E543415F2A62A85600EC3B28 /* PausedRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E543415E2A62A85600EC3B28 /* PausedRowView.swift */; };
 		E54341612A62A8C300EC3B28 /* UploadedRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E54341602A62A8C300EC3B28 /* UploadedRowView.swift */; };
 		E54341632A62A93C00EC3B28 /* FailedRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E54341622A62A93C00EC3B28 /* FailedRowView.swift */; };
 		E54341662A62AC8E00EC3B28 /* DestructiveButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = E54341652A62AC8E00EC3B28 /* DestructiveButton.swift */; };
+		E57FD3E52A6D705C00FBB84A /* ProgressRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E57FD3E42A6D705C00FBB84A /* ProgressRowView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,11 +71,10 @@
 		E54341532A6122DC00EC3B28 /* Assets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assets.swift; sourceTree = "<group>"; };
 		E54341552A617A2D00EC3B28 /* UploadActionImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadActionImage.swift; sourceTree = "<group>"; };
 		E54341592A62784200EC3B28 /* UploadsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadsListView.swift; sourceTree = "<group>"; };
-		E543415C2A62A74B00EC3B28 /* UploadingRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadingRowView.swift; sourceTree = "<group>"; };
-		E543415E2A62A85600EC3B28 /* PausedRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PausedRowView.swift; sourceTree = "<group>"; };
 		E54341602A62A8C300EC3B28 /* UploadedRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadedRowView.swift; sourceTree = "<group>"; };
 		E54341622A62A93C00EC3B28 /* FailedRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FailedRowView.swift; sourceTree = "<group>"; };
 		E54341652A62AC8E00EC3B28 /* DestructiveButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestructiveButton.swift; sourceTree = "<group>"; };
+		E57FD3E42A6D705C00FBB84A /* ProgressRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRowView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -209,10 +207,9 @@
 		E543415B2A62A73500EC3B28 /* RowViews */ = {
 			isa = PBXGroup;
 			children = (
-				E543415C2A62A74B00EC3B28 /* UploadingRowView.swift */,
-				E543415E2A62A85600EC3B28 /* PausedRowView.swift */,
 				E54341602A62A8C300EC3B28 /* UploadedRowView.swift */,
 				E54341622A62A93C00EC3B28 /* FailedRowView.swift */,
+				E57FD3E42A6D705C00FBB84A /* ProgressRowView.swift */,
 			);
 			path = RowViews;
 			sourceTree = "<group>";
@@ -364,10 +361,8 @@
 			files = (
 				E54341662A62AC8E00EC3B28 /* DestructiveButton.swift in Sources */,
 				978A72A229ACE5F7002A9440 /* TUSWrapper.swift in Sources */,
-				E543415F2A62A85600EC3B28 /* PausedRowView.swift in Sources */,
 				E543415A2A62784200EC3B28 /* UploadsListView.swift in Sources */,
 				2EB914BA26F0B11C00548562 /* PhotoPicker.swift in Sources */,
-				E543415D2A62A74B00EC3B28 /* UploadingRowView.swift in Sources */,
 				2EB9147D26F09D7600548562 /* AppDelegate.swift in Sources */,
 				2EB9147F26F09D7600548562 /* SceneDelegate.swift in Sources */,
 				E54341522A611F2900EC3B28 /* UploadStatusIndicator.swift in Sources */,
@@ -377,6 +372,7 @@
 				E54341562A617A2D00EC3B28 /* UploadActionImage.swift in Sources */,
 				E54341542A6122DC00EC3B28 /* Assets.swift in Sources */,
 				97B438502987C770001C802F /* DocumentPicker.swift in Sources */,
+				E57FD3E52A6D705C00FBB84A /* ProgressRowView.swift in Sources */,
 				2EB9148126F09D7600548562 /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

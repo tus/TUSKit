@@ -34,6 +34,7 @@ struct ContentView: View {
                     .navigationTitle("Uploads")
                     .navigationBarTitleDisplayMode(.inline)
             }
+            .navigationViewStyle(.stack)
             .tabItem {
                 VStack {
                     Image(systemName: Icon.uploadList.rawValue)
@@ -41,7 +42,6 @@ struct ContentView: View {
                 }
             }.tag(1)
         }
-        .environmentObject(tusWrapper)
     }
 }
 

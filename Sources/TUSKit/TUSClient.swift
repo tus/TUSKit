@@ -337,7 +337,7 @@ public final class TUSClient {
     @discardableResult
     public func retry(id: UUID) throws -> Bool {
         do {
-            guard uploads[id] != nil else { return false }
+            guard uploads[id] == nil else { return false }
             guard let metaData = try files.findMetadata(id: id) else {
                 return false
             }

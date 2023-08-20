@@ -112,8 +112,7 @@ final class TUSClientTests: XCTestCase {
         // Assert (ensure that the create HTTP request has not been called)
         XCTAssertFalse(MockURLProtocol.receivedRequests.contains(where: {
             $0.httpMethod == "POST" &&
-            $0.url?.absoluteString == "https://tusd.tusdemo.net/files" &&
-            $0.allHTTPHeaderFields?["Upload-Extension"] == "creation"
+            $0.url?.absoluteString == "https://tusd.tusdemo.net/files"
         }))
     }
     
@@ -129,8 +128,7 @@ final class TUSClientTests: XCTestCase {
         // Assert (ensure that the create HTTP request has not been called)
         XCTAssert(MockURLProtocol.receivedRequests.contains(where: {
             $0.httpMethod == "POST" &&
-            $0.url?.absoluteString == "https://tusd.tusdemo.net/files" &&
-            $0.allHTTPHeaderFields?["Upload-Extension"] == "creation"
+            $0.url?.absoluteString == "https://tusd.tusdemo.net/files"
         }))
     }
     

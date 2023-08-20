@@ -88,7 +88,6 @@ final class TUSAPITests: XCTestCase {
         let expectedHeaders: [String: String] =
             [
                 "TUS-Resumable": "1.0.0",
-                "Upload-Extension": "creation",
                 "Upload-Length": String(size),
                 "Upload-Metadata": "filename \(expectedFileName)"
             ]
@@ -127,7 +126,6 @@ final class TUSAPITests: XCTestCase {
         let expectedHeaders: [String: String] =
             [
                 "TUS-Resumable": "1.0.0",
-                "Upload-Extension": "creation",
                 "Upload-Length": String(size),
                 "Upload-Metadata": "filename \(expectedFileName)"
             ]

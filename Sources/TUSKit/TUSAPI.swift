@@ -198,8 +198,7 @@ final class TUSAPI: NSObject {
             return str
         }
         
-        var defaultHeaders = ["Upload-Extension": "creation",
-                              "Upload-Length": String(metaData.size)]
+        var defaultHeaders = ["Upload-Length": String(metaData.size)]
         
         if let encodedMetadata = encode(makeUploadMetaHeader())  {
             defaultHeaders["Upload-Metadata"] = encodedMetadata

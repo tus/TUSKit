@@ -113,7 +113,9 @@
 				2EB914B126F09F7800548562 /* Frameworks */,
 				2EB914B626F0A29E00548562 /* TUSKit */,
 			);
+			indentWidth = 4;
 			sourceTree = "<group>";
+			tabWidth = 4;
 		};
 		2EB9147A26F09D7600548562 /* Products */ = {
 			isa = PBXGroup;

@@ -332,12 +332,15 @@ public final class TUSClient {
     /// Retry a failed upload. Note that `TUSClient` already has an internal retry mechanic before it reports an upload as failure.
     /// If however, you like to retry an upload at a later stage, you can use this method to trigger the upload again.
     /// - Parameter id: The id of an upload. Received when starting an upload, or via the `TUSClientDelegate`.
-    /// - Returns: True if the id is found. False if it's not found
+    /// - Returns: False if the id is found. True if it's not found
     /// - Throws: `TUSClientError.couldNotRetryUpload` if it can't load an the file. Or file related errors.
     @discardableResult
     public func retry(id: UUID) throws -> Bool {
         do {
-            guard uploads[id] != nil else { return false }
+            guard uploads[id] == nil else {
+              return false
+            }
+          
             guard let metaData = try files.findMetadata(id: id) else {
                 return false
             }
@@ -352,6 +355,29 @@ public final class TUSClient {
             throw TUSClientError.couldNotRetryUpload
         }
     }
+  
+  /// Resumes a paused upload.
+  /// - Parameter id: The id of an upload. Received when starting an upload, or via the `TUSClientDelegate`.
+  /// - Returns: True if the id is found and the upload was resumed. False if it's not found
+  /// - Throws: `TUSClientError.couldNotResumeUpload` if it can't load an the file. Or file related errors.
+  @discardableResult
+  public func resume(id: UUID) throws -> Bool {
+      do {
+          guard uploads[id] != nil else { return false }
+          guard let metaData = try files.findMetadata(id: id) else {
+              return false
+          }
+          
+          metaData.errorCount = 0
+          
+          try scheduleTask(for: metaData)
+          return true
+      } catch let error as TUSClientError {
+          throw error
+      } catch {
+          throw TUSClientError.couldNotResumeUpload
+      }
+  }
     
     // MARK: - Background uploads
     

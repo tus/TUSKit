@@ -40,7 +40,7 @@ class TUSWrapper: ObservableObject {
     
     @MainActor
     func resumeUpload(id: UUID) {
-        _ = try? client.retry(id: id)
+        _ = try? client.resume(id: id)
         
         if case let .paused(bytesUploaded, totalBytes) = uploads[id] {
             withAnimation {

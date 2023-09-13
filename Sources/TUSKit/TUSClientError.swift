@@ -15,6 +15,7 @@ public enum TUSClientError: Error {
     case couldNotDeleteFile(underlyingError: Error)
     case uploadIsAlreadyFinished
     case couldNotRetryUpload
+    case couldNotResumeUpload
     case couldnotRemoveFinishedUploads(underlyingError: Error)
     case receivedUnexpectedOffset
     case missingRemoteDestination

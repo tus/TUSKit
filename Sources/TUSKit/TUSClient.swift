@@ -631,8 +631,9 @@ extension TUSClient: SchedulerDelegate {
     
     func didStartTask(task: ScheduledTask, scheduler: Scheduler) {
         guard let task = task as? UploadDataTask else { return }
+        let isUploadRangeEmpty = task.metaData.uploadedRange?.isEmpty ?? true
         
-        if task.metaData.uploadedRange == nil && task.metaData.errorCount == 0 {
+        if isUploadRangeEmpty && task.metaData.errorCount == 0 {
             delegate?.didStartUpload(id: task.metaData.id, context: task.metaData.context, client: self)
         }
     }

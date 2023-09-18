@@ -1,3 +1,14 @@
+# 3.2.1
+
+## Enhancements
+
+- Improved UI for the TUSKit example app. Thanks, [@srvarma7](https://github.com/srvarma7)
+- TUSKit no longer sends unneeded Upload-Extension header on creation. Thanks, [@BradPatras](https://github.com/BradPatras)
+
+## Bugfix
+- Fixed `didStartUpload` delegate method not being called. Thanks, [@dmtrpetrov](https://github.com/dmtrpetrov)
+- Retrying uploads didn't work properly, retry and resume are now seperate methods. Thanks, [@liyoung47](https://github.com/liyoung47) for reporting.
+
 # 3.2
 
 ## Enhancements

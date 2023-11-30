@@ -152,7 +152,7 @@ do {
 
 ## Background uploading
 
-When you incorporate background-uploading, we strongly recommend you to inspect any failed uploads that may have occured in the background. Please refer to [Starting a new Session](#starting-a-new-session) for more information.
+When you incorporate background uploading, we strongly recommend you to inspect any failed uploads that may have occured in the background. Please refer to [Starting a new Session](#starting-a-new-session) for more information.
 
 iOS can leverage a background URLSession to enable background uploads that continue when a user leaves your app or locks their device. For more information, take a look at Apple's docs on [background URLSession](https://developer.apple.com/documentation/foundation/url_loading_system/downloading_files_in_the_background). The docs focus on downloads but uploads follow pretty much the exact same principles.
 
@@ -175,6 +175,18 @@ do {
 The easiest way to set everything up is to pass a `URLSession.background` configuration to the `TUSClient`. If you require a different configuration or don't want any background support at all, you're free to pass a different configuration.
 
 Because TUSKit can now have uploads running while your app is no longer actively in memory, you should always use the `getStoredUpload` method on `TUSClient` on app launch to retrieve all stored uploads and extract information about which uploads are currently completed. Afterwards you can call `cleanup` to allow `TUSClient` to remove metadata for completed items. See the sample app for more details.
+
+### Limitations and constraints for background uploads on iOS
+
+The primary source for information on how background uploads work will always be [Apple's own documentation](https://developer.apple.com/documentation/foundation/url_loading_system/downloading_files_in_the_background) on performing network calls in the background. TUSKit is limited and bound by what's possible and allowed by the system.
+
+In practice, this means that you should always schedule all of your uploads while the app is in the foreground. Scheduling more uploads while an app is in the background is not allowed and will result in the system deprioritizing your requests. 
+
+For this reason, chunking is strongly discouraged when you intend to leverage background uploads since you would have to make several network calls, one after the other, to complete your upload.
+
+It's also important to understand that iOS will automatically wait for your user to have a network connection before attempting to start your upload. This means your uploads might take a while to start. If a network connection drops _while_ an upload is in progress, iOS will attempt to re-upload your file automatically.
+
+By default, iOS will retry the full upload instead of resuming where the upload has left off. Unfortunately we haven't found a way to prevent iOS from doing this. On iOS 17 Apple has adde support for resumable uploads. We're currently exploring how we can integrate TUSKit with this feature since both iOS and TUSKit rely on the same protocols.
 
 ### Warning: information below is deprecated in TUSKit 3.2.0.
 Available from iOS13, you can schedule uploads to be performed in the background using the `scheduleBackgroundTasks()` method on `TUSClient`. 

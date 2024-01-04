@@ -1,6 +1,6 @@
 //
 //  Files.swift
-//  
+//
 //
 //  Created by Tjeerd in ‘t Veen on 15/09/2021.
 //
@@ -17,7 +17,6 @@ enum FilesError: Error {
 /// It makes sure that files (that are to be uploaded) are properly stored, together with their metaData.
 /// Underwater it uses `FileManager.default`.
 final class Files {
-    
     let storageDirectory: URL
     
     private let queue = DispatchQueue(label: "com.tuskit.files")
@@ -66,7 +65,7 @@ final class Files {
         try makeDirectoryIfNeeded()
     }
     
-    static private var documentsDirectory: URL {
+    private static var documentsDirectory: URL {
 #if os(macOS)
         var directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         if let bundleId = Bundle.main.bundleIdentifier {
@@ -76,7 +75,6 @@ final class Files {
 #else
         return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
 #endif
-        
     }
     
     /// Loads all metadata (decoded plist files) from the target directory.
@@ -92,7 +90,7 @@ final class Files {
             let directoryContents = try FileManager.default.contentsOfDirectory(at: storageDirectory, includingPropertiesForKeys: nil)
             
             // if you want to filter the directory contents you can do like this:
-            let files = directoryContents.filter{ $0.pathExtension == "plist" }
+            let files = directoryContents.filter { $0.pathExtension == "plist" }
             let decoder = PropertyListDecoder()
             
             let metaData: [UploadMetadata] = files.compactMap { url in
@@ -164,9 +162,13 @@ final class Files {
         let filePath = metaData.filePath
         let fileName = filePath.lastPathComponent
         let metaDataPath = storageDirectory.appendingPathComponent(fileName).appendingPathExtension("plist")
+        let metaDataCachePath = storageDirectory.appendingPathComponent("\(metaData.id)uploadData")
         
         try queue.sync {
             try FileManager.default.removeItem(at: metaDataPath)
+            if FileManager.default.fileExists(atPath: metaDataCachePath.path) {
+                try FileManager.default.removeItem(at: metaDataCachePath)
+            }
 #if os(iOS)
             try FileManager.default.removeItem(at: filePath)
 #endif
@@ -223,6 +225,4 @@ final class Files {
             try FileManager.default.removeItem(at: storageDirectory)
         }
     }
-    
 }
-

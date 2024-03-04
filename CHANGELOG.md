@@ -1,3 +1,14 @@
+# 3.3
+
+## Enhancements
+
+- Updated documentation around background uploads
+
+## Bugfix
+- Fixed an issu with macOS not having a correct path when resuming uploads. Thanks, [@MartinLau7](https://github.com/MartinLau7)
+- Fixed a metadta issue on iOS. Thanks, [@MartinLau7](https://github.com/MartinLau7)
+- Fixed some issues with metadata not alwasy being cleaned up properly for all platforms. Thanks, [@MartinLau7](https://github.com/MartinLau7)
+  
 # 3.2.1
 
 ## Enhancements

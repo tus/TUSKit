@@ -17,6 +17,8 @@ public protocol TUSClientDelegate: AnyObject {
     func didStartUpload(id: UUID, context: [String: String]?, client: TUSClient)
     /// `TUSClient` just finished an upload, returns the URL of the uploaded file.
     func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient)
+    /// `TUSClient` just finished an upload, returns the URL of the uploaded file along with `responseHeaders` from server.
+    func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient, responseHeaders: [String: String]?)
     /// An upload failed. Returns an error. Could either be a TUSClientError or a networking related error.
     func uploadFailed(id: UUID, error: Error, context: [String: String]?, client: TUSClient)
     
@@ -38,6 +40,11 @@ public protocol TUSClientDelegate: AnyObject {
 
 public extension TUSClientDelegate {
     func progressFor(id: UUID, context: [String: String]?, progress: Float, client: TUSClient) {
+        // Optional
+    }
+    
+    /// `TUSClient` just finished an upload, returns the URL of the uploaded file along with `responseHeaders` from server.
+    func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient, responseHeaders: [String: String]?) {
         // Optional
     }
 }
@@ -626,7 +633,12 @@ extension TUSClient: SchedulerDelegate {
         }
         
         uploads[uploadTask.metaData.id] = nil
-        delegate?.didFinishUpload(id: uploadTask.metaData.id, url: url, context: uploadTask.metaData.context, client: self)
+        didFinishUpload(id: uploadTask.metaData.id, url: url, context: uploadTask.metaData.context, client: self, responseHeaders: uploadTask.metaData.responseHeaders)
+    }
+    
+    private func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient, responseHeaders: [String: String]?) {
+        delegate?.didFinishUpload(id: id, url: url, context: context, client: self)
+        delegate?.didFinishUpload(id: id, url: url, context: context, client: self, responseHeaders: responseHeaders)
     }
     
     func didStartTask(task: ScheduledTask, scheduler: Scheduler) {

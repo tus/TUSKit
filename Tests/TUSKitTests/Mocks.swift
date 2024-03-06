@@ -20,10 +20,12 @@ final class TUSMockDelegate: TUSClientDelegate {
     var totalProgressReceived = [Int]()
     
     var receivedContexts = [[String: String]]()
+//    var receivedResponseHeaders = [[String: String]]()
     
     var activityCount: Int { finishedUploads.count + startedUploads.count + failedUploads.count + fileErrors.count }
     
     var finishUploadExpectation: XCTestExpectation?
+//    var finishUploadWithHeadersExpectation: XCTestExpectation?
     var startUploadExpectation: XCTestExpectation?
     var fileErrorExpectation: XCTestExpectation?
     var uploadFailedExpectation: XCTestExpectation?
@@ -43,6 +45,17 @@ final class TUSMockDelegate: TUSClientDelegate {
             receivedContexts.append(context)
         }
     }
+    
+//    func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient, responseHeaders: [String: String]?) {
+//        finishedUploads.append((id, url))
+//        finishUploadWithHeadersExpectation?.fulfill()
+//        if let context = context {
+//            receivedContexts.append(context)
+//        }
+//        if let responseHeaders = responseHeaders {
+//            receivedResponseHeaders.append(responseHeaders)
+//        }
+//    }
     
     func fileError(error: TUSClientError, client: TUSClient) {
         fileErrors.append(error)

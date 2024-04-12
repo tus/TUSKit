@@ -48,7 +48,7 @@ struct DocumentPicker: UIViewControllerRepresentable {
         }
         
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-            var files = [Data]()
+            var files = [(Data, String)]()
             for url in urls {
                 guard url.startAccessingSecurityScopedResource() else {
                     continue
@@ -60,14 +60,16 @@ struct DocumentPicker: UIViewControllerRepresentable {
                 
                 do {
                     let data = try Data(contentsOf: url)
-                    files.append(data)
+                    files.append((data, url.pathExtension))
                 } catch {
                     print(error)
                 }
             }
             
             do {
-                try self.tusClient.uploadMultiple(dataFiles: files)
+                for file in files {
+                    try self.tusClient.upload(data: file.0, preferredFileExtension: ".\(file.1)")
+                }
                 //tusClient.scheduleBackgroundTasks()
             } catch {
                 print(error)

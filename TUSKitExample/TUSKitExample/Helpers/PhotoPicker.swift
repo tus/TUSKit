@@ -68,7 +68,7 @@ struct PhotoPicker: UIViewControllerRepresentable {
                         if results.count == images.count {
                             print("Received \(images.count) images")
                             do {
-                                try self.tusClient.uploadMultiple(dataFiles: images)
+                                try self.tusClient.uploadMultiple(dataFiles: images, preferredFileExtension: ".jpg")
                             } catch {
                                 print("Error is \(error)")
                             }

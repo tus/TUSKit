@@ -25,7 +25,7 @@ struct Status {
 
 /// The Uploader's responsibility is to perform work related to uploading.
 /// This includes: Making requests, handling requests, handling errors.
-final class TUSAPI: NSObject {
+final class TUSAPI {
     enum HTTPMethod: String {
         case head = "HEAD"
         case post = "POST"
@@ -40,14 +40,18 @@ final class TUSAPI: NSObject {
     private var callbacks: [String: (Result<HTTPURLResponse, Error>) -> Void] = [:]
     private var queue = DispatchQueue(label: "com.tus.TUSAPI")
     
+    deinit {
+        if session.delegate is SessionDataDelegate {
+            session.finishTasksAndInvalidate()
+        }
+    }
+    
     init(session: URLSession) {
-        super.init()
         self.session = session
     }
     
     init(sessionConfiguration: URLSessionConfiguration) {
-        super.init()
-        self.session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
+        self.session = URLSession(configuration: sessionConfiguration, delegate: SessionDataDelegate(api: self), delegateQueue: nil)
     }
     
     @discardableResult
@@ -393,8 +397,24 @@ extension Dictionary {
     }
 }
 
-extension TUSAPI: URLSessionDataDelegate {
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+private extension TUSAPI {
+    final class SessionDataDelegate: NSObject, URLSessionDataDelegate {
+        private weak var api: TUSAPI?
+        
+        init(api: TUSAPI) {
+            self.api = api
+        }
+        
+        func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+            api?.handleCompletionOfTask(task, withError: error)
+        }
+        
+        func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+            api?.handleFinishOfBackgroundURLSessionEvents()
+        }
+    }
+    
+    func handleCompletionOfTask(_ task: URLSessionTask, withError error: Error?) {
         queue.sync {
             guard let identifier = task.taskDescription else {
                 return
@@ -422,7 +442,7 @@ extension TUSAPI: URLSessionDataDelegate {
         }
     }
     
-    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+    func handleFinishOfBackgroundURLSessionEvents() {
         if let backgroundHandler {
             DispatchQueue.main.async {
                 backgroundHandler()

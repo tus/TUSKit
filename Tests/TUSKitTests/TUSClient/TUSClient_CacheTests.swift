@@ -93,6 +93,8 @@ final class TUSClient_CacheTests: XCTestCase {
         let storagePath = URL(string: "DELETE_ME")!
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let fullStoragePath = docDir.appendingPathComponent(storagePath.absoluteString)
+        
+        clearDirectory(dir: fullStoragePath)
 
         client = makeClient(storagePath: storagePath)
         tusDelegate = TUSMockDelegate()

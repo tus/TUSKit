@@ -60,7 +60,7 @@ final class TUSClientInternalTests: XCTestCase {
     }
         
     
-    func testClientDoesNotDeleteUploadedFilesOnStartup() throws {
+    func testClientDoesNotRemoveUnfinishedUploadsOnStartup() throws {
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssert(contents.isEmpty)
         
@@ -71,10 +71,10 @@ final class TUSClientInternalTests: XCTestCase {
         
         client = makeClient(storagePath: fullStoragePath)
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssertFalse(contents.isEmpty, "Expected client to NOT clear unfinished uploaded metadata")
+        XCTAssertFalse(contents.isEmpty, "The client is expected to NOT remove unfinished uploads on startup")
     }
     
-    func testClientDeletesUploadedFilesOnStartup() throws {
+    func testClientDoesNotRemoveFinishedUploadsOnStartup() throws {
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssert(contents.isEmpty)
         
@@ -87,6 +87,6 @@ final class TUSClientInternalTests: XCTestCase {
         
         client = makeClient(storagePath: fullStoragePath)
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty, "Expected client to clear finished uploaded metadata")
+        XCTAssertFalse(contents.isEmpty, "The client is expected to NOT remove finished uploads on startup")
     }
 }

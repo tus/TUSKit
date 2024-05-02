@@ -39,8 +39,8 @@ func makeClient(storagePath: URL?, supportedExtensions: [TUSProtocolExtension] =
     do {
         let client = try TUSClient(server: liveDemoPath,
                                    sessionIdentifier: "TEST",
+                                   sessionConfiguration: configuration,
                                    storageDirectory: storagePath,
-                                   session: URLSession.init(configuration: configuration),
                                    supportedExtensions: supportedExtensions)
         return client
     } catch {

@@ -108,12 +108,13 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         }
     }
     
-    func taskCompleted(result: Result<Int, TUSAPIError>, completed: @escaping TaskCompletion) {
+    func taskCompleted(result: UploadTaskCompletion, completed: @escaping TaskCompletion) {
         queue.async { [self] in
             do {
-                let receivedOffset = try result.get()
+                let (receivedOffset, responseHeaders) = try result.get()
                 let currentOffset = metaData.uploadedRange?.upperBound ?? 0
                 metaData.uploadedRange = 0..<receivedOffset
+                metaData.responseHeaders = responseHeaders
                 
                 let hasFinishedUploading = receivedOffset == metaData.size
                 if hasFinishedUploading {

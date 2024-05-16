@@ -23,6 +23,8 @@ struct Status {
     let offset: Int
 }
 
+typealias UploadTaskCompletion = (Result<(Int, responseHeaders: [String : String]?), TUSAPIError>)
+
 /// The Uploader's responsibility is to perform work related to uploading.
 /// This includes: Making requests, handling requests, handling errors.
 final class TUSAPI {
@@ -221,7 +223,7 @@ final class TUSAPI {
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
     @discardableResult
-    func upload(data: Data, range: Range<Int>?, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
+    func upload(data: Data, range: Range<Int>?, location: URL, metaData: UploadMetadata, completion: @escaping (UploadTaskCompletion) -> Void) -> URLSessionUploadTask {
         let offset: Int
         let length: Int
         if let range = range {
@@ -259,7 +261,8 @@ final class TUSAPI {
                           let offset = Int(offsetStr) else {
                         throw TUSAPIError.couldNotRetrieveOffset
                     }
-                    return offset
+                    
+                    return (offset, response.extractHeaders())
                 }
             }
         }
@@ -269,7 +272,7 @@ final class TUSAPI {
         return task
     }
     
-    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
+    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata, completion: @escaping (UploadTaskCompletion) -> Void) -> URLSessionUploadTask {
         let length: Int
         if let fileAttributes = try? FileManager.default.attributesOfItem(atPath: file.path) {
             if let bytes = fileAttributes[.size] as? Int64 {
@@ -301,7 +304,7 @@ final class TUSAPI {
                           let offset = Int(offsetStr) else {
                         throw TUSAPIError.couldNotRetrieveOffset
                     }
-                    return offset
+                    return (offset, response.extractHeaders())
                 }
             }
         }
@@ -309,7 +312,7 @@ final class TUSAPI {
         return task
     }
     
-    func registerCallback(_ completion: @escaping (Result<Int, TUSAPIError>) -> Void, forMetadata metadata: UploadMetadata) {
+    func registerCallback(_ completion: @escaping (UploadTaskCompletion) -> Void, forMetadata metadata: UploadMetadata) {
         queue.sync {
             self.callbacks[metadata.id.uuidString] = { result in
                 processResult(completion: completion) {
@@ -318,7 +321,7 @@ final class TUSAPI {
                           let offset = Int(offsetStr) else {
                         throw TUSAPIError.couldNotRetrieveOffset
                     }
-                    return offset
+                    return (offset, response.extractHeaders())
                 }
             }
         }

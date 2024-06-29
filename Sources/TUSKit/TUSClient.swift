@@ -129,7 +129,9 @@ public final class TUSClient {
         self.supportedExtensions = supportedExtensions
         self.scheduler = scheduler
         scheduler.delegate = self
-        reregisterCallbacks()
+        Task {
+            await reregisterCallbacks()
+        }
     }
     
     /// Initialize a TUSClient
@@ -162,7 +164,9 @@ public final class TUSClient {
         self.scheduler = Scheduler()
         scheduler.delegate = self
         removeFinishedUploads()
-        reregisterCallbacks()
+        Task {
+            await reregisterCallbacks()
+        }
     }
     
     // MARK: - Starting and stopping
@@ -170,9 +174,9 @@ public final class TUSClient {
     /// Kick off the client to start uploading any locally stored files.
     /// - Returns: The pre-existing id's and contexts that are going to be uploaded. You can use this to continue former progress.
     @discardableResult
-    public func start() -> [(UUID, [String: String]?)] {
+    public func start() async -> [(UUID, [String: String]?)] {
         didStopAndCancel = false
-        let metaData = scheduleStoredTasks()
+        let metaData = await scheduleStoredTasks()
         return metaData.map { metaData in
             (metaData.id, metaData.context)
         }
@@ -424,10 +428,10 @@ public final class TUSClient {
     }
     
     // MARK: - Server
-    
-    public func getServerInfo() throws -> TusServerInfo {
+    public func getServerInfo() async throws -> TusServerInfo {
         let semaphore = DispatchSemaphore(value: 0)
         var serverInfoResult: Result<TusServerInfo, TUSAPIError>?
+        let info = try await api.serverInfo(server: serverURL)
         _ = api.serverInfo(server: serverURL) { result in
             defer {
                 semaphore.signal()
@@ -461,25 +465,22 @@ public final class TUSClient {
     }
     
     /// reregisters callbacks on the TUSApi so they can be called when the app is notified of uploads that completed while the app wasn't in memory
-    private func reregisterCallbacks() {
+    private func reregisterCallbacks() async {
         guard let allMetadata = try? files.loadAllMetadata() else {
             return
         }
         
         for metadata in allMetadata {
-            api.checkTaskExists(for: metadata) { [weak self] taskExists in
-                guard let self else {
-                    return
-                }
-                guard taskExists,
-                      let task = try? UploadDataTask(api: self.api, metaData: metadata, files: self.files) else {
-                    return
-                }
-                
-                self.api.registerCallback({ result in
-                    task.taskCompleted(result: result, completed: { _ in })
-                }, forMetadata: metadata)
+            let taskExists = await api.checkTaskExists(for: metadata)
+            
+            guard taskExists,
+                  let task = try? UploadDataTask(api: self.api, metaData: metadata, files: self.files) else {
+                return
             }
+            
+            self.api.registerCallback({ result in
+                task.taskCompleted(result: result, completed: { _ in })
+            }, forMetadata: metadata)
         }
     }
     
@@ -542,7 +543,7 @@ public final class TUSClient {
     }
     
     /// Check which uploads aren't finished. Load them from a store and turn these into tasks.
-    private func scheduleStoredTasks() -> [UploadMetadata] {
+    private func scheduleStoredTasks() async -> [UploadMetadata] {
         do {
             let metaDataItems = try files.loadAllMetadata().filter({ metaData in
                 // Only allow uploads where errors are below an amount
@@ -553,13 +554,12 @@ public final class TUSClient {
             })
             
             for metaData in metaDataItems {
-                api.checkTaskExists(for: metaData) { taskExists in
-                    if !taskExists {
-                        do {
-                            try self.scheduleTask(for: metaData)
-                        } catch {
-                            //...
-                        }
+                let taskExists = await api.checkTaskExists(for: metaData)
+                if !taskExists {
+                    do {
+                        try self.scheduleTask(for: metaData)
+                    } catch {
+                        //...
                     }
                 }
             }

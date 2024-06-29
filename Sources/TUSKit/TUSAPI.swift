@@ -54,7 +54,42 @@ final class TUSAPI {
         self.session = URLSession(configuration: sessionConfiguration, delegate: SessionDataDelegate(api: self), delegateQueue: nil)
     }
     
+    func serverInfo(server: URL) async throws -> TusServerInfo {
+        let request = makeRequest(url: server, method: .options, headers: [:])
+        let (_, response) = try await session.data(request: request)
+        
+        guard response.statusCode == 200 || response.statusCode == 204 else {
+            throw TUSAPIError.couldNotFetchServerInfo
+        }
+        
+        var supportedAlgorithms: [String] = []
+        if let algorithms = response.allHeaderFields[caseInsensitive: "tus-checksum-algorithm"] as? String {
+            supportedAlgorithms = algorithms.components(separatedBy: ",")
+        }
+        var supportedVersions: [String] = []
+        if let tusVersions = response.allHeaderFields[caseInsensitive: "tus-version"] as? String {
+            supportedVersions = tusVersions.components(separatedBy: ",")
+        }
+        var maxSize: Int?
+        if let maxSizeStr = response.allHeaderFields[caseInsensitive: "tus-max-size"] as? String {
+            maxSize = Int(maxSizeStr)
+        }
+        let version = response.allHeaderFields[caseInsensitive: "tus-resumable"] as? String ?? ""
+            
+        var extensions: [TUSProtocolExtension] = []
+        if let tusExtension = response.allHeaderFields[caseInsensitive: "tus-extension"] as? String {
+            extensions = tusExtension.components(separatedBy: ",").reduce(into: [TUSProtocolExtension]()) { partialResult, item in
+                if let ext = TUSProtocolExtension(rawValue: item) {
+                    partialResult.append(ext)
+                }
+            }
+        }
+        
+        return TusServerInfo(version: version, maxSize: maxSize, extensions: extensions, supportedVersions: supportedVersions, supportedChecksumAlgorithms: supportedAlgorithms)
+    }
+    
     @discardableResult
+    @available(*, deprecated, message: "Use async serverInfo(server:) instead")
     func serverInfo(server: URL, completion: @escaping (Result<TusServerInfo, TUSAPIError>) -> Void) -> URLSessionDataTask {
         let request = makeRequest(url: server, method: .options, headers: [:])
         let task = session.dataTask(request: request) { result in
@@ -99,8 +134,22 @@ final class TUSAPI {
     /// - Parameters:
     ///   - remoteDestination: A URL to retrieve the status from (received from the create call)
     ///   - headers: Request headers.
+    func status(remoteDestination: URL, headers: [String: String]?) async throws -> Status {
+        return try await withCheckedThrowingContinuation({ cont in
+            self.status(remoteDestination: remoteDestination, headers: headers) { result in
+                cont.resume(with: result)
+            }
+        })
+    }
+    
+    /// Fetch the status of an upload if an upload is not finished (e.g. interrupted).
+    /// By retrieving the status,  we know where to continue when we upload again.
+    /// - Parameters:
+    ///   - remoteDestination: A URL to retrieve the status from (received from the create call)
+    ///   - headers: Request headers.
     ///   - completion: A completion giving us the `Status` of an upload.
     @discardableResult
+    @available(*, deprecated, message: "Use async status method instead")
     func status(remoteDestination: URL, headers: [String: String]?, completion: @escaping (Result<Status, TUSAPIError>) -> Void) -> URLSessionDataTask {
         let request = makeRequest(url: remoteDestination, method: .head, headers: headers ?? [:])
         let identifier = UUID().uuidString
@@ -136,8 +185,22 @@ final class TUSAPI {
     /// Use file metadata to enrich the information so the server knows what filetype something is.
     /// - Parameters:
     ///   - metaData: The file metadata.
+    func create(metaData: UploadMetadata) async throws -> URL {
+        return try await withCheckedThrowingContinuation({ cont in
+            create(metaData: metaData) { result in
+                cont.resume(with: result)
+            }
+        })
+    }
+    
+    /// The create step of an upload. In this step, we tell the server we are about to upload data.
+    /// The server returns a URL to upload to, we can use the `create` call for this.
+    /// Use file metadata to enrich the information so the server knows what filetype something is.
+    /// - Parameters:
+    ///   - metaData: The file metadata.
     ///   - completion: Completes with a result that gives a URL to upload to.
     @discardableResult
+    @available(*, deprecated, message: "Use async create method instead")
     func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) -> URLSessionDataTask {
         let request = makeCreateRequest(metaData: metaData)
         let identifier = UUID().uuidString
@@ -219,8 +282,22 @@ final class TUSAPI {
     ///   - data: The data to upload. The data will not be chunked by this method! You must supply chunked data.
     ///   - range: The range of which to upload. Leave empty to upload the entire data in one piece.
     ///   - location: The location of where to upload to.
+    func upload(data: Data, range: Range<Int>?, location: URL, metaData: UploadMetadata) async throws -> Int {
+        return try await withCheckedThrowingContinuation({ cont in
+            upload(data: data, range: range, location: location, metaData: metaData) { result in
+                cont.resume(with: result)
+            }
+        })
+    }
+    
+    /// Uploads data
+    /// - Parameters:
+    ///   - data: The data to upload. The data will not be chunked by this method! You must supply chunked data.
+    ///   - range: The range of which to upload. Leave empty to upload the entire data in one piece.
+    ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
     @discardableResult
+    @available(*, deprecated, message: "Use async upload method instead")
     func upload(data: Data, range: Range<Int>?, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
         let offset: Int
         let length: Int
@@ -267,6 +344,14 @@ final class TUSAPI {
         task.resume()
         
         return task
+    }
+    
+    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata) async throws -> Int {
+        return try await withCheckedThrowingContinuation({ cont in
+            upload(fromFile: file, offset: offset, location: location, metaData: metaData) { result in
+                cont.resume(with: result)
+            }
+        })
     }
     
     func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
@@ -328,14 +413,17 @@ final class TUSAPI {
         backgroundHandler = handler
     }
     
-    func checkTaskExists(for metadata: UploadMetadata, completion: @escaping (Bool) -> Void) {
-        session.getAllTasks(completionHandler: { tasks in
-            let hasTask = tasks.contains(where: { task in
-                return task.taskDescription == metadata.id.uuidString
+    func checkTaskExists(for metadata: UploadMetadata) async -> Bool {
+        return await withCheckedContinuation({ cont in
+            session.getAllTasks(completionHandler: { tasks in
+                let hasTask = tasks.contains(where: { task in
+                    return task.taskDescription == metadata.id.uuidString
+                })
+                
+                cont.resume(returning: hasTask)
             })
-            
-            completion(hasTask)
         })
+        
     }
     
     /// A factory to make requests with sane defaults.

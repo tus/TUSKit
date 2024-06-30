@@ -51,11 +51,12 @@ final class TUSBackground {
                 tusTask.cancel()
             }
             
-            tusTask.run { result in
-                switch result {
-                case .success:
+            #warning("needs validation?")
+            Task {
+                do {
+                    let _ = try await tusTask.run()
                     backgroundTask.setTaskCompleted(success: true)
-                case .failure:
+                } catch {
                     backgroundTask.setTaskCompleted(success: false)
                 }
             }

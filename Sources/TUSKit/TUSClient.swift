@@ -188,22 +188,22 @@ public final class TUSClient {
     
     /// Stops the ongoing sessions, keeps the cache intact so you can continue uploading at a later stage.
     /// - Important: This method is `not` destructive. It only stops the client from running. If you want to avoid uploads to run again. Then please refer to `reset()` or `clearAllCache()`.
-    public func stopAndCancelAll() {
+    public func stopAndCancelAll() async {
         didStopAndCancel = true
-        scheduler.cancelAll()
+        await scheduler.cancelAll()
     }
     
-    public func cancel(id: UUID) throws {
-        let tasksToCancel = scheduler.allTasks.filter { ($0 as? IdentifiableTask)?.id == id }
-        scheduler.cancelTasks(tasksToCancel)
+    public func cancel(id: UUID) async {
+        let tasksToCancel = await scheduler.allTasks.filter { ($0 as? IdentifiableTask)?.id == id }
+        await scheduler.cancelTasks(tasksToCancel)
     }
     
     /// This will cancel all running uploads and clear the local cache.
     /// Expect errors passed to the delegate for canceled tasks.
     /// - Warning: This method is destructive and will remove any stored cache.
     /// - Throws: File related errors
-    public func reset() throws {
-        stopAndCancelAll()
+    public func reset() async throws {
+        await stopAndCancelAll()
         try clearAllCache()
         uploads = [:]
     }
@@ -222,7 +222,7 @@ public final class TUSClient {
     /// - Returns: An identifier.
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadFileAt(filePath: URL, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> UUID {
+    public func uploadFileAt(filePath: URL, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) async throws -> UUID {
         didStopAndCancel = false
         do {
             let id = UUID()
@@ -231,7 +231,7 @@ public final class TUSClient {
             #elseif os(iOS)
             let destinationFilePath = try files.copy(from: filePath, id: id)
             #endif
-            try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
+            try await scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
             return id
         } catch let error as TUSClientError {
             throw error
@@ -251,12 +251,12 @@ public final class TUSClient {
     /// - Returns: An identifier.
     /// - Throws: TUSClientError
     @discardableResult
-    public func upload(data: Data, preferredFileExtension: String? = nil, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> UUID {
+    public func upload(data: Data, preferredFileExtension: String? = nil, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) async throws -> UUID {
         didStopAndCancel = false
         do {
             let id = UUID()
             let filePath = try files.store(data: data, id: id, preferredFileExtension: preferredFileExtension)
-            try scheduleTask(for: filePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
+            try await scheduleTask(for: filePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
             return id
         } catch let error as TUSClientError {
             throw error
@@ -277,9 +277,25 @@ public final class TUSClient {
     /// - Returns: An array of ids
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadFiles(filePaths: [URL], uploadURL:URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> [UUID] {
-        try filePaths.map { filePath in
-            try uploadFileAt(filePath: filePath, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
+    public func uploadFiles(filePaths: [URL], uploadURL:URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) async throws -> [UUID] {
+    
+        return try await withThrowingTaskGroup(of: UUID.self) { group in
+            for filePath in filePaths {
+                group.addTask { [self] in
+                    return try await uploadFileAt(
+                        filePath: filePath,
+                        uploadURL: uploadURL,
+                        customHeaders: customHeaders,
+                        context: context
+                    )
+                }
+            }
+            
+            var out = [UUID]()
+            for try await uuid in group {
+                out.append(uuid)
+            }
+            return out
         }
     }
     
@@ -294,9 +310,26 @@ public final class TUSClient {
     /// - Returns: An array of ids
     /// - Throws: TUSClientError
     @discardableResult
-    public func uploadMultiple(dataFiles: [Data], preferredFileExtension: String? = nil, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) throws -> [UUID] {
-        try dataFiles.map { data in
-            try upload(data: data, preferredFileExtension: preferredFileExtension, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
+    public func uploadMultiple(dataFiles: [Data], preferredFileExtension: String? = nil, uploadURL: URL? = nil, customHeaders: [String: String] = [:], context: [String: String]? = nil) async throws -> [UUID] {
+        
+        return try await withThrowingTaskGroup(of: UUID.self) { group in
+            for data in dataFiles {
+                group.addTask { [self] in
+                    return try await upload(
+                        data: data,
+                        preferredFileExtension: preferredFileExtension,
+                        uploadURL: uploadURL,
+                        customHeaders: customHeaders,
+                        context: context
+                    )
+                }
+            }
+            
+            var out = [UUID]()
+            for try await uuid in group {
+                out.append(uuid)
+            }
+            return out
         }
     }
     
@@ -339,7 +372,7 @@ public final class TUSClient {
     /// - Returns: True if the upload has been scheduled for a new upload attempt. False if the upload id does not correspond to a failed upload. Note that a paused upload should be resumed with `resume(id:)` rather than retried.
     /// - Throws: `TUSClientError.couldNotRetryUpload` if it can't load an the file. Or file related errors.
     @discardableResult
-    public func retry(id: UUID) throws -> Bool {
+    public func retry(id: UUID) async throws -> Bool {
         do {
             guard uploads[id] == nil else {
               return false
@@ -351,7 +384,7 @@ public final class TUSClient {
             
             metaData.errorCount = 0
             
-            try scheduleTask(for: metaData)
+            try await scheduleTask(for: metaData)
             return true
         } catch let error as TUSClientError {
             throw error
@@ -365,7 +398,7 @@ public final class TUSClient {
   /// - Returns: True if the upload has been resumed. False if the upload id was not found or does not correspond to a paused upload.
   /// - Throws: `TUSClientError.couldNotResumeUpload` if it can't load an the file. Or file related errors.
   @discardableResult
-  public func resume(id: UUID) throws -> Bool {
+  public func resume(id: UUID) async throws -> Bool {
       do {
           guard uploads[id] != nil else { return false }
           guard let metaData = try files.findMetadata(id: id) else {
@@ -374,7 +407,7 @@ public final class TUSClient {
           
           metaData.errorCount = 0
           
-          try scheduleTask(for: metaData)
+          try await scheduleTask(for: metaData)
           return true
       } catch let error as TUSClientError {
           throw error
@@ -486,7 +519,7 @@ public final class TUSClient {
     
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
-    private func scheduleTask(for storedFilePath: URL, id: UUID, uploadURL: URL?, customHeaders: [String: String], context: [String: String]?) throws {
+    private func scheduleTask(for storedFilePath: URL, id: UUID, uploadURL: URL?, customHeaders: [String: String], context: [String: String]?) async throws {
         let filePath = storedFilePath
         
         func getSize() throws -> Int {
@@ -527,7 +560,7 @@ public final class TUSClient {
         try store(metaData: metaData)
         trackUpload()
         
-        scheduler.addTask(task: task)
+        await scheduler.addTask(task: task)
     }
     
     /// Store UploadMetadata to disk
@@ -557,7 +590,7 @@ public final class TUSClient {
                 let taskExists = await api.checkTaskExists(for: metaData)
                 if !taskExists {
                     do {
-                        try self.scheduleTask(for: metaData)
+                        try await scheduleTask(for: metaData)
                     } catch {
                         //...
                     }
@@ -574,12 +607,12 @@ public final class TUSClient {
     
     /// Schedule a single task if needed. Will decide what task to schedule for the metaData.
     /// - Parameter metaData:The metaData the schedule.
-    private func scheduleTask(for metaData: UploadMetadata) throws {
+    private func scheduleTask(for metaData: UploadMetadata) async throws {
         guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, progressDelegate: self) else {
             throw TUSClientError.uploadIsAlreadyFinished
         }
         uploads[metaData.id] = metaData
-        scheduler.addTask(task: task)
+        await scheduler.addTask(task: task)
     }
     
 }
@@ -671,7 +704,9 @@ extension TUSClient: SchedulerDelegate {
         
         let canRetry = metaData.errorCount <= retryCount
         if canRetry {
-            scheduler.addTask(task: task)
+            Task {
+                await scheduler.addTask(task: task)
+            }
         } else { // Exhausted all retries, reporting back as failure.
             uploads[metaData.id] = nil
             delegate?.uploadFailed(id: metaData.id, error: error, context: metaData.context, client: self)

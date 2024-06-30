@@ -61,17 +61,25 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         self.range = range
     }
     
+    func run() async throws -> [any ScheduledTask] {
+        return try await withCheckedThrowingContinuation({ cont in
+            self.run(completed: { result in
+                cont.resume(with: result)
+            })
+        })
+    }
+    
     func run(completed: @escaping TaskCompletion) {
         guard !metaData.isFinished else {
-            DispatchQueue.main.async {
-                completed(.failure(TUSClientError.uploadIsAlreadyFinished))
+            Task { @MainActor in
+                await completed(.failure(TUSClientError.uploadIsAlreadyFinished))
             }
             return
         }
         
         guard let remoteDestination = metaData.remoteDestination else {
-            DispatchQueue.main.async {
-                completed(Result.failure(TUSClientError.missingRemoteDestination))
+            Task { @MainActor in
+                await completed(Result.failure(TUSClientError.missingRemoteDestination))
             }
             return
         }
@@ -83,7 +91,9 @@ final class UploadDataTask: NSObject, IdentifiableTask {
             file = try prepareUploadFile()
         } catch let error {
             let tusError = TUSClientError.couldNotLoadData(underlyingError: error)
-            completed(Result.failure(tusError))
+            Task { @MainActor in
+                await completed(Result.failure(tusError))
+            }
             return
         }
         

@@ -33,7 +33,15 @@ final class CreationTask: IdentifiableTask {
         self.chunkSize = chunkSize
     }
     
-    func run(completed: @escaping TaskCompletion) {
+    func run() async throws -> [any ScheduledTask] {
+        return try await withCheckedThrowingContinuation({ cont in
+            self.run(completed: { result in
+                cont.resume(with: result)
+            })
+        })
+    }
+    
+    private func run(completed: @escaping TaskCompletion) {
         
         if didCancel { return }
         sessionTask = api.create(metaData: metaData) { [weak self] result in

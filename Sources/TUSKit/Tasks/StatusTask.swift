@@ -33,6 +33,14 @@ final class StatusTask: IdentifiableTask {
         self.chunkSize = chunkSize
     }
     
+    func run() async throws -> [any ScheduledTask] {
+        return try await withCheckedThrowingContinuation({ cont in
+            self.run(completed: { result in
+                cont.resume(with: result)
+            })
+        })
+    }
+    
     func run(completed: @escaping TaskCompletion) {
         // Improvement: On failure, try uploading from the start. Create creationtask.
         if didCancel { return }

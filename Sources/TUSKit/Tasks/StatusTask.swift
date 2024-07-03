@@ -8,19 +8,19 @@
 import Foundation
 
 /// A `StatusTask` fetches the status of an upload. It fetches the offset from we can continue uploading, and then makes a possible uploadtask.
-final class StatusTask: IdentifiableTask {
+actor StatusTask: IdentifiableTask {
     
     // MARK: - IdentifiableTask
     
-    var id: UUID {
+    nonisolated var id: UUID {
         metaData.id
     }
     
-    weak var progressDelegate: ProgressDelegate?
+    nonisolated(unsafe) weak var progressDelegate: ProgressDelegate?
     let api: TUSAPI
     let files: Files
     let remoteDestination: URL
-    let metaData: UploadMetadata
+    nonisolated let metaData: UploadMetadata
     let chunkSize: Int?
     private var didCancel: Bool = false
     weak var sessionTask: URLSessionDataTask?

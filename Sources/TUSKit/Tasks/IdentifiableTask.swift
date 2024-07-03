@@ -8,5 +8,5 @@
 import Foundation
 
 protocol IdentifiableTask: ScheduledTask {
-    var id: UUID { get }
+    nonisolated var id: UUID { get }
 }

@@ -9,16 +9,16 @@ import Foundation
 
 /// `CreationTask` Prepares the server for a file upload.
 /// The server will return a path to upload to.
-final class CreationTask: IdentifiableTask {
+actor CreationTask: IdentifiableTask {
     
     // MARK: - IdentifiableTask
     
-    var id: UUID {
+    nonisolated var id: UUID {
         metaData.id
     }
     
-    weak var progressDelegate: ProgressDelegate?
-    let metaData: UploadMetadata
+    nonisolated(unsafe) weak var progressDelegate: ProgressDelegate?
+    nonisolated let metaData: UploadMetadata
     
     private let api: TUSAPI
     private let files: Files

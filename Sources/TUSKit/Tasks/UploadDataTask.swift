@@ -9,16 +9,16 @@ import Foundation
 
 /// The upload task will upload to data a destination.
 /// Will spawn more UploadDataTasks if an upload isn't complete.
-final class UploadDataTask: NSObject, IdentifiableTask {
+actor UploadDataTask: NSObject, IdentifiableTask {
     
     // MARK: - IdentifiableTask
     
-    var id: UUID {
+    nonisolated var id: UUID {
         metaData.id
     }
     
-    weak var progressDelegate: ProgressDelegate?
-    let metaData: UploadMetadata
+    nonisolated(unsafe) weak var progressDelegate: ProgressDelegate?
+    nonisolated let metaData: UploadMetadata
     
     let queue = DispatchQueue(label: "com.tuskit.uploadDataTask")
     

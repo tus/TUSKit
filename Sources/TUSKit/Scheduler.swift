@@ -18,7 +18,7 @@ protocol SchedulerDelegate: AnyObject {
 /// A Task is run by the scheduler
 /// Once a Task is finished. It can spawn new tasks that need to be run.
 /// E.g. If a task is to upload a file, then it can spawn into tasks to cut up the file first. Which can then cut up into a task to upload, which can then add a task to delete the files.
-protocol ScheduledTask: AnyObject {
+protocol ScheduledTask: Actor {
     func run() async throws -> [ScheduledTask]
     func cancel()
 }
@@ -51,26 +51,32 @@ final actor Scheduler {
     
     func cancelAll() {
         self.pendingTasks = []
-        self.runningTasks.forEach { $0.cancel() }
+        self.runningTasks.forEach { runningTask in
+            Task {
+                await runningTask.cancel()
+            }
+        }
         self.runningTasks = []
     }
     
     func cancelTasks(_ tasksToCancel: [ScheduledTask]) {
         tasksToCancel.forEach { taskToCancel in
-            if let pendingTaskIndex = self.pendingTasks.firstIndex(where: { pendingTask in
-                pendingTask === taskToCancel
-            }) {
-                let pendingTask = self.pendingTasks[pendingTaskIndex]
-                pendingTask.cancel()
-                self.pendingTasks.remove(at: pendingTaskIndex)
-            }
-            
-            if let runningTaskIndex = self.runningTasks.firstIndex(where: { runningTask in
-                runningTask === taskToCancel
-            }) {
-                let runningTask = self.runningTasks[runningTaskIndex]
-                runningTask.cancel()
-                self.runningTasks.remove(at: runningTaskIndex)
+            Task {
+                if let pendingTaskIndex = self.pendingTasks.firstIndex(where: { pendingTask in
+                    pendingTask === taskToCancel
+                }) {
+                    let pendingTask = self.pendingTasks[pendingTaskIndex]
+                    await pendingTask.cancel()
+                    self.pendingTasks.remove(at: pendingTaskIndex)
+                }
+                
+                if let runningTaskIndex = self.runningTasks.firstIndex(where: { runningTask in
+                    runningTask === taskToCancel
+                }) {
+                    let runningTask = self.runningTasks[runningTaskIndex]
+                    await runningTask.cancel()
+                    self.runningTasks.remove(at: runningTaskIndex)
+                }
             }
         }
     }

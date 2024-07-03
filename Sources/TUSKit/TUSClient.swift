@@ -516,7 +516,9 @@ public final class TUSClient {
                     return
                 }
                 
-                _ = try? task.taskCompleted(receivedOffset: offset)
+                Task {
+                    _ = try? await task.taskCompleted(receivedOffset: offset)
+                }
             }, forMetadata: metadata)
         }
     }

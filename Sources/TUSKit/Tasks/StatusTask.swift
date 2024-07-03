@@ -34,67 +34,53 @@ final class StatusTask: IdentifiableTask {
     }
     
     func run() async throws -> [any ScheduledTask] {
-        return try await withCheckedThrowingContinuation({ cont in
-            self.run(completed: { result in
-                cont.resume(with: result)
-            })
-        })
-    }
-    
-    func run(completed: @escaping TaskCompletion) {
-        // Improvement: On failure, try uploading from the start. Create creationtask.
-        if didCancel { return }
-        sessionTask = api.status(remoteDestination: remoteDestination, headers: self.metaData.customHeaders) { [weak self] result in
-            guard let self = self else { return }
-            // Getting rid of self. in this closure
-            let metaData = self.metaData
-            let files = self.files
-            let chunkSize = self.chunkSize
-            let api = self.api
-            let progressDelegate = self.progressDelegate
+        
+        
+        do {
+#warning("We used to grab a session task here to support cancellation")
+            let status = try await api.status(
+                remoteDestination: remoteDestination,
+                headers: metaData.customHeaders
+            )
             
-            do {
-                let status = try result.get()
-                let length = status.length
-                let offset = status.offset
-                if length != metaData.size {
-                    throw TUSClientError.fileSizeMismatchWithServer
-                }
-                
-                if offset > metaData.size {
-                    throw TUSClientError.fileSizeMismatchWithServer
-                }
-                
-                metaData.uploadedRange = 0..<offset
-                
-                try files.encodeAndStore(metaData: metaData)
-                
-                if offset == metaData.size {
-                    completed(.success([]))
-                } else {
-                    // If the task has been canceled
-                    // we don't continue to create subsequent UploadDataTasks
-                    if self.didCancel {
-                        return
-                    }
-                    
-                    let nextRange: Range<Int>
-                    if let chunkSize {
-                       nextRange  = offset..<min((offset + chunkSize), metaData.size)
-                    } else {
-                        nextRange = offset..<metaData.size
-                    }
-                    
-                    let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
-                    task.progressDelegate = progressDelegate
-                    completed(.success([task]))
-                }
-            } catch let error as TUSClientError {
-                completed(.failure(error))
-            } catch {
-                completed(.failure(TUSClientError.couldNotGetFileStatus))
+            let length = status.length
+            let offset = status.offset
+            if length != metaData.size {
+                throw TUSClientError.fileSizeMismatchWithServer
             }
             
+            if offset > metaData.size {
+                throw TUSClientError.fileSizeMismatchWithServer
+            }
+            
+            metaData.uploadedRange = 0..<offset
+            
+            try files.encodeAndStore(metaData: metaData)
+            
+            if offset == metaData.size {
+                return []
+            } else {
+                // If the task has been canceled
+                // we don't continue to create subsequent UploadDataTasks
+                if self.didCancel {
+                    return []
+                }
+                
+                let nextRange: Range<Int>
+                if let chunkSize {
+                   nextRange  = offset..<min((offset + chunkSize), metaData.size)
+                } else {
+                    nextRange = offset..<metaData.size
+                }
+                
+                let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
+                task.progressDelegate = progressDelegate
+                return [task]
+            }
+        } catch let error as TUSClientError {
+            throw error
+        } catch {
+            throw TUSClientError.couldNotGetFileStatus
         }
     }
     

@@ -62,26 +62,12 @@ final class UploadDataTask: NSObject, IdentifiableTask {
     }
     
     func run() async throws -> [any ScheduledTask] {
-        return try await withCheckedThrowingContinuation({ cont in
-            self.run(completed: { result in
-                cont.resume(with: result)
-            })
-        })
-    }
-    
-    func run(completed: @escaping TaskCompletion) {
         guard !metaData.isFinished else {
-            Task { @MainActor in
-                await completed(.failure(TUSClientError.uploadIsAlreadyFinished))
-            }
-            return
+            throw TUSClientError.uploadIsAlreadyFinished
         }
         
         guard let remoteDestination = metaData.remoteDestination else {
-            Task { @MainActor in
-                await completed(Result.failure(TUSClientError.missingRemoteDestination))
-            }
-            return
+            throw TUSClientError.missingRemoteDestination
         }
         
         let dataToUpload: Data
@@ -91,45 +77,37 @@ final class UploadDataTask: NSObject, IdentifiableTask {
             file = try prepareUploadFile()
         } catch let error {
             let tusError = TUSClientError.couldNotLoadData(underlyingError: error)
-            Task { @MainActor in
-                await completed(Result.failure(tusError))
-            }
-            return
+            throw tusError
         }
         
-        // This check is right before the task is created. In case another thread calls cancel during this loop. Optimization: Add synchronization point (e.g. serial queue or actor).
         if isCanceled {
-            return
+            return []
         }
         
-        let task = api.upload(fromFile: file, offset: range?.lowerBound ?? 0, location: remoteDestination, metaData: self.metaData) { [weak self] result in
-            self?.observation?.invalidate()
-
-            self?.taskCompleted(result: result, completed: completed)
-        }
+        let progress = try await api.upload(fromFile: file, offset: range?.lowerBound ?? 0 , location: remoteDestination, metaData: metaData)
+        observation?.invalidate()
+#warning("This is what we used to do; needs some larger refactoring once everything Sendable to make it work again.")
+        return try taskCompleted(receivedOffset: progress)
+        // self?.taskCompleted(result: result, completed: completed)
         
-        task.taskDescription = "\(metaData.id)"
-        task.resume()
-        
+        /*
         sessionTask = task
         
         if #available(iOS 11.0, macOS 10.13, *) {
             observeTask(task: task, size: dataToUpload.count)
         }
+         */
     }
     
-    func taskCompleted(result: Result<Int, TUSAPIError>, completed: @escaping TaskCompletion) {
-        queue.async { [self] in
+    func taskCompleted(receivedOffset: Int) throws -> [any ScheduledTask] {
             do {
-                let receivedOffset = try result.get()
                 let currentOffset = metaData.uploadedRange?.upperBound ?? 0
                 metaData.uploadedRange = 0..<receivedOffset
                 
                 let hasFinishedUploading = receivedOffset == metaData.size
                 if hasFinishedUploading {
                     try files.encodeAndStore(metaData: metaData)
-                    completed(.success([]))
-                    return
+                    return []
                 } else if receivedOffset == currentOffset {
                     //                improvement: log this instead
                     //                    assertionFailure("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
@@ -141,7 +119,7 @@ final class UploadDataTask: NSObject, IdentifiableTask {
                 // If the task has been canceled
                 // we don't continue to create subsequent UploadDataTasks
                 if self.isCanceled {
-                    return
+                    return []
                 }
                 
                 let nextRange: Range<Int>?
@@ -154,13 +132,12 @@ final class UploadDataTask: NSObject, IdentifiableTask {
                 
                 let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
                 task.progressDelegate = progressDelegate
-                completed(.success([task]))
+                return [task]
             } catch let error as TUSClientError {
-                completed(.failure(error))
+                throw error
             } catch {
-                completed(.failure(TUSClientError.couldNotUploadFile(underlyingError: error)))
+                throw TUSClientError.couldNotUploadFile(underlyingError: error)
             }
-        }
     }
     
     @available(iOS 11.0, macOS 10.13, *)

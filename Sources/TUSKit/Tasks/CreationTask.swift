@@ -34,50 +34,31 @@ final class CreationTask: IdentifiableTask {
     }
     
     func run() async throws -> [any ScheduledTask] {
-        return try await withCheckedThrowingContinuation({ cont in
-            self.run(completed: { result in
-                cont.resume(with: result)
-            })
-        })
-    }
-    
-    private func run(completed: @escaping TaskCompletion) {
+        guard !didCancel else { return [] }
         
-        if didCancel { return }
-        sessionTask = api.create(metaData: metaData) { [weak self] result in
-            guard let self = self else { return }
-            // File is created remotely. Now start first datatask.
+        #warning("We used to grab a session task here to support cancellation")
+        do {
+            let remoteDestination = try await api.create(metaData: metaData)
             
-            // Getting rid of self. in this closure
-            let metaData = self.metaData
-            let files = self.files
-            let chunkSize = self.chunkSize
-            let api = self.api
-            let progressDelegate = self.progressDelegate
-
-            do {
-                let remoteDestination = try result.get()
-                metaData.remoteDestination = remoteDestination
-                try files.encodeAndStore(metaData: metaData)
-                let task: UploadDataTask
-                if let chunkSize = chunkSize {
-                    let newRange = 0..<min(chunkSize, metaData.size)
-                    task = try UploadDataTask(api: api, metaData: metaData, files: files, range: newRange)
-                } else {
-                    task = try UploadDataTask(api: api, metaData: metaData, files: files)
-                }
-                task.progressDelegate = progressDelegate
-                if self.didCancel {
-                    completed(.failure(TUSClientError.couldNotCreateFileOnServer))
-                } else {
-                    completed(.success([task]))
-                }
-            } catch let error as TUSClientError {
-                completed(.failure(error))
-            } catch {
-                completed(.failure(TUSClientError.couldNotCreateFileOnServer))
+            metaData.remoteDestination = remoteDestination
+            try files.encodeAndStore(metaData: metaData)
+            let task: UploadDataTask
+            if let chunkSize = chunkSize {
+                let newRange = 0..<min(chunkSize, metaData.size)
+                task = try UploadDataTask(api: api, metaData: metaData, files: files, range: newRange)
+            } else {
+                task = try UploadDataTask(api: api, metaData: metaData, files: files)
             }
-            
+            task.progressDelegate = progressDelegate
+            if self.didCancel {
+                throw TUSClientError.couldNotCreateFileOnServer
+            } else {
+                return [task]
+            }
+        } catch let error as TUSClientError {
+            throw error
+        } catch {
+            throw TUSClientError.couldNotCreateFileOnServer
         }
     }
     

@@ -512,7 +512,11 @@ public final class TUSClient {
             }
             
             self.api.registerCallback({ result in
-                task.taskCompleted(result: result, completed: { _ in })
+                guard let offset = try? result.get() else {
+                    return
+                }
+                
+                _ = try? task.taskCompleted(receivedOffset: offset)
             }, forMetadata: metadata)
         }
     }

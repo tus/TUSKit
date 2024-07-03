@@ -354,6 +354,7 @@ final class TUSAPI {
         })
     }
     
+#warning("we _need_ access to this task from the outside...")
     func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
         let length: Int
         if let fileAttributes = try? FileManager.default.attributesOfItem(atPath: file.path) {

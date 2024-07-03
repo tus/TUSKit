@@ -16,7 +16,7 @@ enum FilesError: Error {
 /// This type handles the storage for `TUSClient`
 /// It makes sure that files (that are to be uploaded) are properly stored, together with their metaData.
 /// Underwater it uses `FileManager.default`.
-final class Files {
+final class Files: Sendable {
     let storageDirectory: URL
     
     private let queue = DispatchQueue(label: "com.tuskit.files")

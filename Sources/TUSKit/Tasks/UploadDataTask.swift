@@ -146,14 +146,13 @@ actor UploadDataTask: NSObject, IdentifiableTask {
         let uploaded = metaData.uploadedRange?.count ?? 0
         
         observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-            self?.queue.async {
-                guard let self = self else { return }
-                guard progress.fractionCompleted <= 1 else { return }
-                let bytes = progress.fractionCompleted * Double(targetRange.count)
-                
-                let totalUploaded = uploaded + Int(bytes)
-                self.progressDelegate?.progressUpdatedFor(metaData: self.metaData, totalUploadedBytes: totalUploaded)
-            }
+#warning("Used to have queue.async, verify that we didn't break synchronization")
+            guard let self = self else { return }
+            guard progress.fractionCompleted <= 1 else { return }
+            let bytes = progress.fractionCompleted * Double(targetRange.count)
+            
+            let totalUploaded = uploaded + Int(bytes)
+            self.progressDelegate?.progressUpdatedFor(metaData: self.metaData, totalUploadedBytes: totalUploaded)
         }
     }
     

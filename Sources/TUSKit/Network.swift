@@ -26,17 +26,17 @@ extension URLSession {
     }
     
     @available(*, deprecated, message: "use async data(request:) instead")
-    func dataTask(request: URLRequest, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> URLSessionDataTask {
+    func dataTask(request: URLRequest, completion: @escaping @Sendable (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> URLSessionDataTask {
         return dataTask(with: request, completionHandler: makeCompletion(completion: completion))
     }
     
     @available(*, deprecated, message: "use async upload(request:data:) instead")
-    func uploadTask(request: URLRequest, data: Data, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> URLSessionUploadTask {
+    func uploadTask(request: URLRequest, data: Data, completion: @escaping @Sendable (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> URLSessionUploadTask {
         return uploadTask(with: request, from: data, completionHandler: makeCompletion(completion: completion))
     }
     
     @available(*, deprecated, message: "use async upload(request:fromFile:) instead")
-    func uploadTask(with request: URLRequest, fromFile file: URL, completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> URLSessionUploadTask {
+    func uploadTask(with request: URLRequest, fromFile file: URL, completion: @escaping @Sendable (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> URLSessionUploadTask {
         return uploadTask(with: request, fromFile: file, completionHandler: makeCompletion(completion: completion))
     }
 }
@@ -52,7 +52,7 @@ private func validate(_ tuple: (Data, URLResponse)) throws -> (Data, HTTPURLResp
 /// Convenience method to turn a URLSession completion handler into a modern Result version. It also checks if response is a HTTPURLResponse
 /// - Parameter completion: A completionhandler to call
 /// - Returns: A new function that you can pass to URLSession's dataTask
-private func makeCompletion(completion: @escaping (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> (Data?, URLResponse?, Error?) -> Void {
+private func makeCompletion(completion: @escaping @Sendable (Result<(Data?, HTTPURLResponse), Error>) -> Void) -> @Sendable (Data?, URLResponse?, Error?) -> Void {
     return { data, response, error in
         guard let httpResponse = response as? HTTPURLResponse else {
             completion(.failure(NetworkError.noHTTPURLResponse))

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct TusServerInfo {
+public struct TusServerInfo: Sendable {
     public private(set) var version: String?
     
     public private(set) var maxSize: Int?

@@ -25,7 +25,7 @@ struct Status {
 
 /// The Uploader's responsibility is to perform work related to uploading.
 /// This includes: Making requests, handling requests, handling errors.
-final class TUSAPI {
+actor TUSAPI {
     enum HTTPMethod: String {
         case head = "HEAD"
         case post = "POST"
@@ -487,19 +487,23 @@ extension Dictionary {
 }
 
 private extension TUSAPI {
-    final class SessionDataDelegate: NSObject, URLSessionDataDelegate {
+    actor SessionDataDelegate: NSObject, URLSessionDataDelegate {
         private weak var api: TUSAPI?
         
         init(api: TUSAPI) {
             self.api = api
         }
         
-        func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-            api?.handleCompletionOfTask(task, withError: error)
+        nonisolated func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+            Task {
+                await api?.handleCompletionOfTask(task, withError: error)
+            }
         }
         
-        func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-            api?.handleFinishOfBackgroundURLSessionEvents()
+        nonisolated func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+            Task {
+                await api?.handleFinishOfBackgroundURLSessionEvents()
+            }
         }
     }
     

@@ -7,7 +7,7 @@
 
 /// Available [TUS protocol extensions](https://tus.io/protocols/resumable-upload.html#protocol-extensions) that
 /// the client supports.
-public enum TUSProtocolExtension: String, CaseIterable {
+public enum TUSProtocolExtension: String, CaseIterable, Sendable {
     case creation = "creation"
     case creationWithUpload = "creation-with-upload"
     case termination = "termination"

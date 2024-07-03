@@ -422,12 +422,12 @@ public final class TUSClient {
     /// - Parameters:
     ///   - handler: The closure you've received in your app delegate. Will be called by TUSClient when all URLSession related calls are received in the background.
     ///   - sessionIdentifier: The session identifier provided by AppDelegate. TUSClient will use this identifier to make sure we don't call the handler for other URLSessions.
-    public func registerBackgroundHandler(_ handler: @escaping () -> Void, forSession sessionIdentifier: String) {
-        guard sessionIdentifier == api.session.configuration.identifier else {
+    public func registerBackgroundHandler(_ handler: @escaping () -> Void, forSession sessionIdentifier: String) async {
+        guard await sessionIdentifier == api.session.configuration.identifier else {
             return
         }
         
-        api.registerBackgroundHandler(handler)
+        await api.registerBackgroundHandler(handler)
     }
     
     /// When your app moves to the background, you can call this method to schedule background tasks to perform.
@@ -462,20 +462,8 @@ public final class TUSClient {
     
     // MARK: - Server
     public func getServerInfo() async throws -> TusServerInfo {
-        let semaphore = DispatchSemaphore(value: 0)
-        var serverInfoResult: Result<TusServerInfo, TUSAPIError>?
         let info = try await api.serverInfo(server: serverURL)
-        _ = api.serverInfo(server: serverURL) { result in
-            defer {
-                semaphore.signal()
-            }
-            serverInfoResult = result
-        }
-        semaphore.wait()
-        guard let serverInfoResult else {
-            throw TUSAPIError.couldNotFetchServerInfo
-        }
-        return try serverInfoResult.get()
+        return info
     }
     
     // MARK: - Private
@@ -511,7 +499,7 @@ public final class TUSClient {
                 return
             }
             
-            self.api.registerCallback({ result in
+            await self.api.registerCallback({ result in
                 guard let offset = try? result.get() else {
                     return
                 }

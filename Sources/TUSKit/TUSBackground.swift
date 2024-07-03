@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import BackgroundTasks
+@preconcurrency import BackgroundTasks
 
 #if os(iOS)
 @available(iOS 13.0, *)
@@ -48,7 +48,9 @@ final class TUSBackground {
                     
             backgroundTask.expirationHandler = {
                 // Clean up so app won't get terminated and negatively impact iOS'background rating.
-                tusTask.cancel()
+                Task {
+                    await tusTask.cancel()
+                }
             }
             
             #warning("needs validation?")

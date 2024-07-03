@@ -36,7 +36,7 @@ actor TUSAPI {
     }
     
     var session: URLSession!
-    private var backgroundHandler: (() -> Void)? = nil
+    private var backgroundHandler: (@Sendable () -> Void)? = nil
     private var callbacks: [String: (Result<HTTPURLResponse, Error>) -> Void] = [:]
     private var queue = DispatchQueue(label: "com.tus.TUSAPI")
     
@@ -90,7 +90,7 @@ actor TUSAPI {
     
     @discardableResult
     @available(*, deprecated, message: "Use async serverInfo(server:) instead")
-    func serverInfo(server: URL, completion: @escaping (Result<TusServerInfo, TUSAPIError>) -> Void) -> URLSessionDataTask {
+    func serverInfo(server: URL, completion: @escaping @Sendable (Result<TusServerInfo, TUSAPIError>) -> Void) -> URLSessionDataTask {
         let request = makeRequest(url: server, method: .options, headers: [:])
         let task = session.dataTask(request: request) { result in
             processResult(completion: completion) {
@@ -150,7 +150,11 @@ actor TUSAPI {
     ///   - completion: A completion giving us the `Status` of an upload.
     @discardableResult
     @available(*, deprecated, message: "Use async status method instead")
-    func status(remoteDestination: URL, headers: [String: String]?, completion: @escaping (Result<Status, TUSAPIError>) -> Void) -> URLSessionDataTask {
+    func status(
+        remoteDestination: URL,
+        headers: [String: String]?,
+        completion: @escaping @Sendable (Result<Status, TUSAPIError>) -> Void
+    ) -> URLSessionDataTask {
         let request = makeRequest(url: remoteDestination, method: .head, headers: headers ?? [:])
         let identifier = UUID().uuidString
         
@@ -201,7 +205,10 @@ actor TUSAPI {
     ///   - completion: Completes with a result that gives a URL to upload to.
     @discardableResult
     @available(*, deprecated, message: "Use async create method instead")
-    func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) -> URLSessionDataTask {
+    func create(
+        metaData: UploadMetadata,
+        completion: @Sendable @escaping (Result<URL, TUSAPIError>) -> Void
+    ) -> URLSessionDataTask {
         let request = makeCreateRequest(metaData: metaData)
         let identifier = UUID().uuidString
         let task = session.dataTask(with: request)
@@ -298,7 +305,13 @@ actor TUSAPI {
     ///   - completion: Completionhandler for when the upload is finished.
     @discardableResult
     @available(*, deprecated, message: "Use async upload method instead")
-    func upload(data: Data, range: Range<Int>?, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
+    func upload(
+        data: Data,
+        range: Range<Int>?,
+        location: URL,
+        metaData: UploadMetadata,
+        completion: @escaping @Sendable (Result<Int, TUSAPIError>) -> Void
+    ) -> URLSessionUploadTask {
         let offset: Int
         let length: Int
         if let range = range {
@@ -355,7 +368,13 @@ actor TUSAPI {
     }
     
 #warning("we _need_ access to this task from the outside...")
-    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
+    func upload(
+        fromFile file: URL,
+        offset: Int = 0,
+        location: URL,
+        metaData: UploadMetadata,
+        completion: @escaping @Sendable (Result<Int, TUSAPIError>) -> Void
+    ) -> URLSessionUploadTask {
         let length: Int
         if let fileAttributes = try? FileManager.default.attributesOfItem(atPath: file.path) {
             if let bytes = fileAttributes[.size] as? Int64 {
@@ -395,7 +414,10 @@ actor TUSAPI {
         return task
     }
     
-    func registerCallback(_ completion: @escaping (Result<Int, TUSAPIError>) -> Void, forMetadata metadata: UploadMetadata) {
+    func registerCallback(
+        _ completion: @escaping @Sendable (Result<Int, TUSAPIError>) -> Void,
+        forMetadata metadata: UploadMetadata
+    ) {
         queue.sync {
             self.callbacks[metadata.id.uuidString] = { result in
                 processResult(completion: completion) {
@@ -410,7 +432,7 @@ actor TUSAPI {
         }
     }
     
-    func registerBackgroundHandler(_ handler: @escaping () -> Void) {
+    func registerBackgroundHandler(_ handler: @escaping @Sendable () -> Void) {
         backgroundHandler = handler
     }
     
@@ -535,11 +557,15 @@ private extension TUSAPI {
         }
     }
     
+    func setBackgroundHandler(_ newValue: (@Sendable () -> Void)?) {
+        backgroundHandler = newValue
+    }
+    
     func handleFinishOfBackgroundURLSessionEvents() {
         if let backgroundHandler {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 backgroundHandler()
-                self.backgroundHandler = nil
+                await setBackgroundHandler(nil)
             }
         }
     }

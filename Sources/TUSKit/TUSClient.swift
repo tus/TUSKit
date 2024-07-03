@@ -422,7 +422,10 @@ public final class TUSClient {
     /// - Parameters:
     ///   - handler: The closure you've received in your app delegate. Will be called by TUSClient when all URLSession related calls are received in the background.
     ///   - sessionIdentifier: The session identifier provided by AppDelegate. TUSClient will use this identifier to make sure we don't call the handler for other URLSessions.
-    public func registerBackgroundHandler(_ handler: @escaping () -> Void, forSession sessionIdentifier: String) async {
+    public func registerBackgroundHandler(
+        _ handler: @Sendable @escaping () -> Void,
+        forSession sessionIdentifier: String
+    ) async {
         guard await sessionIdentifier == api.session.configuration.identifier else {
             return
         }

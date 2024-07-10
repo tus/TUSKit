@@ -45,8 +45,10 @@ final class FilesTests: XCTestCase {
             }
         }
             
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let cacheDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let documentsDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
+        let cacheDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
         
         let values = [
             (URL(string: "ABC")!, documentsDirectory.appendingPathComponent("ABC")),
@@ -125,7 +127,10 @@ final class FilesTests: XCTestCase {
         // Normally we write to the documents dir. But we explicitly are storing a file in a "wrong dir"
         // To see if retrieving metadata updates its directory.
         func writeDummyFileToCacheDir() throws -> URL {
-            let cacheURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            let cacheURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
+                .appendingPathComponent("TUS")
+            
             let fileURL = cacheURL.appendingPathComponent("abcdefgh.txt")
             return fileURL
         }

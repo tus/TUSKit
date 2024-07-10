@@ -9,8 +9,8 @@ final class TUSClient_IdsTests: XCTestCase {
     var fullStoragePath: URL!
     var data: Data!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         
         relativeStoragePath = URL(string: "TUSTEST")!
         
@@ -25,9 +25,9 @@ final class TUSClient_IdsTests: XCTestCase {
         
         client = makeClient(storagePath: relativeStoragePath)
         tusDelegate = TUSMockDelegate()
-        client.delegate = tusDelegate
+        await client.setDelegate(tusDelegate)
         do {
-            try client.reset()
+            try await client.reset()
         } catch {
             XCTFail("Could not reset \(error)")
         }
@@ -42,11 +42,11 @@ final class TUSClient_IdsTests: XCTestCase {
     
     // MARK: - Testing new client sessions
     
-    func testUploadIdsArePreservedBetweenSessions() throws {
+    func testUploadIdsArePreservedBetweenSessions() async throws {
         // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
         prepareNetworkForErronousResponses()
         
-        let ids = try upload(data: data, amount: 2, customHeaders: [:], shouldSucceed: false)
+        let ids = try await upload(data: data, amount: 2, customHeaders: [:], shouldSucceed: false)
 
         XCTAssert(tusDelegate.finishedUploads.isEmpty)
         XCTAssertEqual(ids.count, tusDelegate.failedUploads.count)
@@ -54,32 +54,32 @@ final class TUSClient_IdsTests: XCTestCase {
         // Reload client
         client = makeClient(storagePath: relativeStoragePath)
         tusDelegate = TUSMockDelegate()
-        client.delegate = tusDelegate
+        await client.setDelegate(tusDelegate)
 
         XCTAssert(tusDelegate.startedUploads.isEmpty)
 
         prepareNetworkForSuccesfulUploads(data: data)
 
         for id in ids {
-            try client.retry(id: id)
+            try await client.retry(id: id)
         }
 
-        waitForUploadsToFinish(ids.count)
+        await waitForUploadsToFinish(ids.count)
 
         XCTAssertEqual(ids.count, tusDelegate.finishedUploads.count, "Delegate has \(tusDelegate.activityCount) items")
     }
     
     // MARK: - Id handling
     
-    func testIdsAreGivenAndReturnedWhenFinished() throws {
+    func testIdsAreGivenAndReturnedWhenFinished() async throws {
         
         // Make sure id's that are given when uploading, are returned when uploads are finished
-        let expectedId = try client.upload(data: data)
+        let expectedId = try await client.upload(data: data)
         
         XCTAssert(tusDelegate.finishedUploads.isEmpty)
         
         tusDelegate.finishUploadExpectation = expectation(description: "Waiting for upload to fail")
-        waitForExpectations(timeout: 3, handler: nil)
+        await fulfillment(of: [tusDelegate.finishUploadExpectation!])
         
         XCTAssert(tusDelegate.failedUploads.isEmpty, "Found a failed uploads, should have been empty. Something went wrong with uploading.")
         XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Upload didn't finish.")
@@ -88,15 +88,15 @@ final class TUSClient_IdsTests: XCTestCase {
         }
     }
     
-    func testCorrectIdsAreGivenOnFailure() throws {
+    func testCorrectIdsAreGivenOnFailure() async throws {
         prepareNetworkForErronousResponses()
                                             
-        let expectedId = try client.upload(data: Data("hello".utf8))
+        let expectedId = try await client.upload(data: Data("hello".utf8))
         
         XCTAssert(tusDelegate.failedUploads.isEmpty)
         
         tusDelegate.uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
-        waitForExpectations(timeout: 3, handler: nil)
+        await fulfillment(of: [tusDelegate.uploadFailedExpectation!])
         XCTAssert(tusDelegate.finishedUploads.isEmpty)
         
         XCTAssertEqual(1, tusDelegate.failedUploads.count)
@@ -109,32 +109,42 @@ final class TUSClient_IdsTests: XCTestCase {
     
     // MARK: - Private helper methods for uploading
 
-    private func waitForUploadsToFinish(_ amount: Int = 1) {
+    private func waitForUploadsToFinish(_ amount: Int = 1) async {
         let uploadExpectation = expectation(description: "Waiting for upload to finished")
         uploadExpectation.expectedFulfillmentCount = amount
         tusDelegate.finishUploadExpectation = uploadExpectation
-        waitForExpectations(timeout: 6, handler: nil)
+        await fulfillment(of: [uploadExpectation], timeout: 6)
     }
     
-    private func waitForUploadsToFail(_ amount: Int = 1) {
+    private func waitForUploadsToFail(_ amount: Int = 1) async {
         let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
         uploadFailedExpectation.expectedFulfillmentCount = amount
         tusDelegate.uploadFailedExpectation = uploadFailedExpectation
-        waitForExpectations(timeout: 6, handler: nil)
+        await fulfillment(of: [uploadFailedExpectation], timeout: 6)
     }
     
     /// Upload data, a certain amount of times, and wait for it to be done.
     /// Can optionally prepare a failing upload too.
     @discardableResult
-    private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) throws -> [UUID] {
-        let ids = try (0..<amount).map { _ -> UUID in
-            return try client.upload(data: data, customHeaders: customHeaders)
+    private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) async throws -> [UUID] {
+        let ids = try await withThrowingTaskGroup(of: UUID.self) { group in
+            for _ in 0..<amount {
+                group.addTask {
+                    try await self.client.upload(data: data, customHeaders: customHeaders)
+                }
+            }
+            
+            var ids = [UUID]()
+            for try await id in group {
+                ids.append(id)
+            }
+            return ids
         }
         
         if shouldSucceed {
-            waitForUploadsToFinish(amount)
+            await waitForUploadsToFinish(amount)
         } else {
-            waitForUploadsToFail(amount)
+            await waitForUploadsToFail(amount)
         }
 
         return ids

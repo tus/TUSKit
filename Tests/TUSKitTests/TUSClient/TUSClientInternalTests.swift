@@ -17,8 +17,8 @@ final class TUSClientInternalTests: XCTestCase {
     var data: Data!
     var files: Files!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         
         do {
             relativeStoragePath = URL(string: "TUSTEST")!
@@ -32,21 +32,21 @@ final class TUSClientInternalTests: XCTestCase {
             
             client = makeClient(storagePath: relativeStoragePath)
             tusDelegate = TUSMockDelegate()
-            client.delegate = tusDelegate
+            await client.setDelegate(tusDelegate)
         } catch {
             XCTFail("Could not instantiate Files \(error)")
         }
         MockURLProtocol.reset()
     }
     
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
         MockURLProtocol.reset()
         clearDirectory(dir: fullStoragePath)
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         clearDirectory(dir: cacheDir)
         do {
-            try client.reset()
+            try await client.reset()
         } catch {
             // Some dirs may not exist, that's fine. We can ignore the error.
         }

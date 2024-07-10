@@ -9,8 +9,8 @@ final class TUSClient_CacheTests: XCTestCase {
     var fullStoragePath: URL!
     var data: Data!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         
         relativeStoragePath = URL(string: "TUSTEST")!
         
@@ -25,9 +25,9 @@ final class TUSClient_CacheTests: XCTestCase {
         
         client = makeClient(storagePath: relativeStoragePath)
         tusDelegate = TUSMockDelegate()
-        client.delegate = tusDelegate
+        await client.setDelegate(tusDelegate)
         do {
-            try client.reset()
+            try await client.reset()
         } catch {
             XCTFail("Could not reset \(error)")
         }
@@ -42,50 +42,50 @@ final class TUSClient_CacheTests: XCTestCase {
 
     // MARK: - Deletions / clearing cache
     
-    func testClearsCacheOfUnfinishedUploads() throws {
+    func testClearsCacheOfUnfinishedUploads() async throws {
         
         verifyTheStorageIsEmpty()
         
         let amount = 2
         for _ in 0..<amount {
-            try client.upload(data: data)
+            try await client.upload(data: data)
         }
         
         verifyTheStorageIsNOTEmpty()
         
-        client.stopAndCancelAll()
+        await client.stopAndCancelAll()
         
-        clearCache()
+        try await clearCache()
 
         verifyTheStorageIsEmpty()
     }
     
-    func testClearingUploadsAndStartingNewUploads () throws {
+    func testClearingUploadsAndStartingNewUploads () async throws {
         // We make sure that once we start uploading, and cancel that.
         // Any new uploads shouldn't be affected by old ones.
-        let firstId = try client.upload(data: data)
-        try client.reset()
+        let firstId = try await client.upload(data: data)
+        try await client.reset()
         
         verifyTheStorageIsEmpty()
         
-        let secondId = try upload(data: data)[0]
+        let secondId = try await upload(data: data)[0]
         XCTAssertEqual(1, tusDelegate.finishedUploads.count)
         XCTAssertNotEqual(firstId, secondId)
     }
     
-    func testDeleteSingleFile() throws {
-        let id = try client.upload(data: data)
+    func testDeleteSingleFile() async throws {
+        let id = try await client.upload(data: data)
         
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssertEqual(2, contents.count, "Prerequisite for tests fails, expected 2 files to exist, the file to upload and metadata")
         
-        try client.removeCacheFor(id: id)
+        try await client.removeCacheFor(id: id)
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         
         XCTAssert(contents.isEmpty, "Expected the client to delete the file")
     }
 
-    func testClientDeletesFilesOnCompletion() throws {
+    func testClientDeletesFilesOnCompletion() async throws {
         // If a file is done uploading (as said by status), but not yet deleted.
         // Then the file can be deleted right after fetching the status.
         
@@ -98,48 +98,58 @@ final class TUSClient_CacheTests: XCTestCase {
 
         client = makeClient(storagePath: storagePath)
         tusDelegate = TUSMockDelegate()
-        client.delegate = tusDelegate
+        await client.setDelegate(tusDelegate)
         
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssert(contents.isEmpty)
         
-        try client.upload(data: data)
+        try await client.upload(data: data)
         
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssertEqual(2, contents.count) // Every upload has a metadata file
 
-        waitForUploadsToFinish(1)
+        await waitForUploadsToFinish(1)
 
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssert(contents.isEmpty)
     }
 
-    private func waitForUploadsToFinish(_ amount: Int = 1) {
+    private func waitForUploadsToFinish(_ amount: Int = 1) async {
         let uploadExpectation = expectation(description: "Waiting for upload to finished")
         uploadExpectation.expectedFulfillmentCount = amount
         tusDelegate.finishUploadExpectation = uploadExpectation
-        waitForExpectations(timeout: 6, handler: nil)
+        await fulfillment(of: [tusDelegate.finishUploadExpectation!], timeout: 6)
     }
     
-    private func waitForUploadsToFail(_ amount: Int = 1) {
+    private func waitForUploadsToFail(_ amount: Int = 1) async {
         let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
         uploadFailedExpectation.expectedFulfillmentCount = amount
         tusDelegate.uploadFailedExpectation = uploadFailedExpectation
-        waitForExpectations(timeout: 6, handler: nil)
+        await fulfillment(of: [tusDelegate.uploadFailedExpectation!], timeout: 6)
     }
     
     /// Upload data, a certain amount of times, and wait for it to be done.
     /// Can optionally prepare a failing upload too.
     @discardableResult
-    private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) throws -> [UUID] {
-        let ids = try (0..<amount).map { _ -> UUID in
-            return try client.upload(data: data, customHeaders: customHeaders)
+    private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) async throws -> [UUID] {
+        let ids = try await withThrowingTaskGroup(of: UUID.self) { group in
+            for _ in 0..<amount {
+                group.addTask {
+                    try await self.client.upload(data: data, customHeaders: customHeaders)
+                }
+            }
+            
+            var ids = [UUID]()
+            for try await id in group {
+                ids.append(id)
+            }
+            return ids
         }
         
         if shouldSucceed {
-            waitForUploadsToFinish(amount)
+            await waitForUploadsToFinish(amount)
         } else {
-            waitForUploadsToFail(amount)
+            await waitForUploadsToFail(amount)
         }
 
         return ids
@@ -165,12 +175,12 @@ final class TUSClient_CacheTests: XCTestCase {
         }
     }
     
-    private func clearCache() {
+    private func clearCache() async throws {
         do {
-            try client.clearAllCache()
+            try await client.clearAllCache()
         } catch {
             // Sometimes we get file permission errors, retry
-            try? client.clearAllCache()
+            try? await client.clearAllCache()
         }
         
     }

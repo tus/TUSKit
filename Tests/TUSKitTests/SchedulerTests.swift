@@ -8,8 +8,8 @@
 import XCTest
 @testable import TUSKit
 
-private final class TestTask: ScheduledTask {
-    func run(completed: @escaping TaskCompletion) {}
+private actor TestTask: ScheduledTask {
+    func run() async throws -> [any ScheduledTask] { return [] }
     func cancel() {}
 }
 
@@ -17,18 +17,21 @@ final class SchedulerTests: XCTestCase {
     
     private let scheduler = Scheduler()
 
-    func testAddTask() {
-        scheduler.addTask(task: TestTask())
-        XCTAssertEqual(scheduler.allTasks.count, 1)
+    func testAddTask() async {
+        await scheduler.addTask(task: TestTask())
+        let taskCount = await scheduler.allTasks.count
+        XCTAssertEqual(taskCount, 1)
     }
     
-    func testCancelTask() {
+    func testCancelTask() async {
         let taskToCancel = TestTask()
-        scheduler.addTask(task: taskToCancel)
-        XCTAssertEqual(scheduler.allTasks.count, 1)
+        await scheduler.addTask(task: taskToCancel)
+        var taskCount = await scheduler.allTasks.count
+        XCTAssertEqual(taskCount, 1)
         
-        scheduler.cancelTasks([taskToCancel])
-        XCTAssertEqual(scheduler.allTasks.count, 0)
+        await scheduler.cancelTasks([taskToCancel])
+        taskCount = await scheduler.allTasks.count
+        XCTAssertEqual(taskCount, 0)
     }
    
 }

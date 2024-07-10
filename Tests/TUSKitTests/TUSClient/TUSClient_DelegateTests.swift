@@ -9,8 +9,8 @@ final class TUSClient_DelegateTests: XCTestCase {
     var fullStoragePath: URL!
     var data: Data!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         
         relativeStoragePath = URL(string: "TUSTEST")!
         
@@ -25,9 +25,10 @@ final class TUSClient_DelegateTests: XCTestCase {
         
         client = makeClient(storagePath: relativeStoragePath)
         tusDelegate = TUSMockDelegate()
-        client.delegate = tusDelegate
+        await client.setDelegate(tusDelegate)
+        
         do {
-            try client.reset()
+            try await client.reset()
         } catch {
             XCTFail("Could not reset \(error)")
         }
@@ -44,53 +45,63 @@ final class TUSClient_DelegateTests: XCTestCase {
 
     // MARK: - Delegate start calls
     
-    func testStartedUploadIsCalledOnceForLargeFile() throws {
+    func testStartedUploadIsCalledOnceForLargeFile() async throws {
         let data = Fixtures.makeLargeData()
         
-        try upload(data: data)
+        try await upload(data: data)
         
         XCTAssertEqual(1, tusDelegate.startedUploads.count, "Expected start to be only called once for a chunked upload")
     }
     
     
-    func testStartedUploadIsCalledOnceForLargeFileWhenUploadFails() throws {
+    func testStartedUploadIsCalledOnceForLargeFileWhenUploadFails() async throws {
         prepareNetworkForFailingUploads()
         // Even when retrying, start should only be called once.
         let data = Fixtures.makeLargeData()
         
-        try upload(data: data, shouldSucceed: false)
+        try await upload(data: data, shouldSucceed: false)
         
         XCTAssertEqual(1, tusDelegate.startedUploads.count, "Expected start to be only called once for a chunked upload with errors")
     }
 
     // MARK: - Private helper methods for uploading
 
-    private func waitForUploadsToFinish(_ amount: Int = 1) {
+    private func waitForUploadsToFinish(_ amount: Int = 1) async {
         let uploadExpectation = expectation(description: "Waiting for upload to finished")
         uploadExpectation.expectedFulfillmentCount = amount
         tusDelegate.finishUploadExpectation = uploadExpectation
-        waitForExpectations(timeout: 6, handler: nil)
+        await fulfillment(of: [uploadExpectation], timeout: 6)
     }
     
-    private func waitForUploadsToFail(_ amount: Int = 1) {
+    private func waitForUploadsToFail(_ amount: Int = 1) async {
         let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
         uploadFailedExpectation.expectedFulfillmentCount = amount
         tusDelegate.uploadFailedExpectation = uploadFailedExpectation
-        waitForExpectations(timeout: 6, handler: nil)
+        await fulfillment(of: [uploadFailedExpectation], timeout: 6)
     }
     
     /// Upload data, a certain amount of times, and wait for it to be done.
     /// Can optionally prepare a failing upload too.
     @discardableResult
-    private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) throws -> [UUID] {
-        let ids = try (0..<amount).map { _ -> UUID in
-            return try client.upload(data: data, customHeaders: customHeaders)
+    private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) async throws -> [UUID] {
+        let ids = try await withThrowingTaskGroup(of: UUID.self) { group in
+            for _ in 0..<amount {
+                group.addTask {
+                    try await self.client.upload(data: data, customHeaders: customHeaders)
+                }
+            }
+            
+            var ids = [UUID]()
+            for try await id in group {
+                ids.append(id)
+            }
+            return ids
         }
         
         if shouldSucceed {
-            waitForUploadsToFinish(amount)
+            await waitForUploadsToFinish(amount)
         } else {
-            waitForUploadsToFail(amount)
+            await waitForUploadsToFail(amount)
         }
 
         return ids

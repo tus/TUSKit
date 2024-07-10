@@ -42,14 +42,14 @@ public extension TUSClientDelegate {
     }
 }
 
-protocol ProgressDelegate: AnyObject {
+protocol ProgressDelegate: Actor {
     @available(iOS 11.0, macOS 10.13, *)
     func progressUpdatedFor(metaData: UploadMetadata, totalUploadedBytes: Int)
 }
 
 /// The TUSKit client.
 /// Please refer to the Readme.md on how to use this type.
-public final class TUSClient {
+public final actor TUSClient {
     
     // MARK: - Public Properties
     
@@ -58,7 +58,7 @@ public final class TUSClient {
         uploads.count
     }
     public let sessionIdentifier: String
-    public weak var delegate: TUSClientDelegate?
+    private weak var delegate: TUSClientDelegate?
     public let supportedExtensions: [TUSProtocolExtension]
     
     // MARK: - Private Properties
@@ -163,8 +163,8 @@ public final class TUSClient {
         self.supportedExtensions = supportedExtensions
         self.scheduler = Scheduler()
         scheduler.delegate = self
-        removeFinishedUploads()
         Task {
+            await removeFinishedUploads()
             await reregisterCallbacks()
         }
     }
@@ -184,6 +184,10 @@ public final class TUSClient {
     
     public func cleanup() {
         removeFinishedUploads()
+    }
+    
+    public func setDelegate(_ delegate: TUSClientDelegate?) {
+        self.delegate = delegate
     }
     
     /// Stops the ongoing sessions, keeps the cache intact so you can continue uploading at a later stage.

@@ -9,7 +9,7 @@ import Foundation
 
 typealias TaskCompletion = (Result<[ScheduledTask], Error>) -> ()
 
-protocol SchedulerDelegate: AnyObject {
+protocol SchedulerDelegate: Actor {
     func didStartTask(task: ScheduledTask, scheduler: Scheduler)
     func didFinishTask(task: ScheduledTask, scheduler: Scheduler)
     func onError(error: Error, task: ScheduledTask, scheduler: Scheduler)
@@ -90,7 +90,7 @@ final actor Scheduler {
         }
         
         self.runningTasks.append(task)
-        self.delegate?.didStartTask(task: task, scheduler: self)
+        await self.delegate?.didStartTask(task: task, scheduler: self)
         
         do {
             let newTasks = try await task.run()
@@ -103,9 +103,9 @@ final actor Scheduler {
             if !newTasks.isEmpty {
                 self.pendingTasks = newTasks + self.pendingTasks // If there are new tasks, perform them first. E.g. After creation of a file, start uploading.
             }
-            self.delegate?.didFinishTask(task: task, scheduler: self)
+            await self.delegate?.didFinishTask(task: task, scheduler: self)
         } catch {
-            self.delegate?.onError(error: error, task: task, scheduler: self)
+            await self.delegate?.onError(error: error, task: task, scheduler: self)
         }
         
         await checkProcessNextTask()

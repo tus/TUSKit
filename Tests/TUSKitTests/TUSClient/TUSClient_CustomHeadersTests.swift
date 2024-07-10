@@ -9,8 +9,8 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
     var fullStoragePath: URL!
     var data: Data!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         
         relativeStoragePath = URL(string: "TUSTEST")!
         
@@ -25,9 +25,9 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
         
         client = makeClient(storagePath: relativeStoragePath)
         tusDelegate = TUSMockDelegate()
-        client.delegate = tusDelegate
+        await client.setDelegate(tusDelegate)
         do {
-            try client.reset()
+            try await client.reset()
         } catch {
             XCTFail("Could not reset \(error)")
         }
@@ -40,7 +40,7 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
         clearDirectory(dir: fullStoragePath)
     }
     
-    func testUploadingWithCustomHeadersForFiles() throws {
+    func testUploadingWithCustomHeadersForFiles() async throws {
         // Make sure client adds custom headers
         
         // Expected values
@@ -62,8 +62,8 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
         let startedExpectation = expectation(description: "Waiting for uploads to start")
         tusDelegate.startUploadExpectation = startedExpectation
         
-        try client.uploadFileAt(filePath: location, customHeaders: customHeaders)
-        wait(for: [startedExpectation], timeout: 5)
+        try await client.uploadFileAt(filePath: location, customHeaders: customHeaders)
+        await fulfillment(of: [startedExpectation], timeout: 5)
         
         // Validate
         let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }

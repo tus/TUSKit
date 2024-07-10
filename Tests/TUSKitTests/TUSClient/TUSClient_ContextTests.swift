@@ -9,8 +9,8 @@ final class TUSClient_ContextTests: XCTestCase {
     var fullStoragePath: URL!
     var data: Data!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         
         relativeStoragePath = URL(string: "TUSTEST")!
         
@@ -25,9 +25,9 @@ final class TUSClient_ContextTests: XCTestCase {
         
         client = makeClient(storagePath: relativeStoragePath)
         tusDelegate = TUSMockDelegate()
-        client.delegate = tusDelegate
+        await client.setDelegate(tusDelegate)
         do {
-            try client.reset()
+            try await client.reset()
         } catch {
             XCTFail("Could not reset \(error)")
         }
@@ -35,59 +35,59 @@ final class TUSClient_ContextTests: XCTestCase {
         prepareNetworkForSuccesfulUploads(data: data)
     }
     
-    override func tearDown() {
-        super.tearDown()
-        client.stopAndCancelAll()
+    override func tearDown() async throws {
+        try await super.tearDown()
+        await client.stopAndCancelAll()
         clearDirectory(dir: fullStoragePath)
     }
     
     // These tests are here to make sure you get the same context back that you passed to upload.
     
-    func testContextIsReturnedAfterUploading() throws {
+    func testContextIsReturnedAfterUploading() async throws {
         let expectedContext = ["I am a key" : "I am a value"]
-        try client.upload(data: data, context: expectedContext)
+        try await client.upload(data: data, context: expectedContext)
         
-        waitForUploadsToFinish()
+        await waitForUploadsToFinish()
         
         XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 2)),  "Expected the context to be returned once an upload is finished")
     }
     
-    func testContextIsReturnedAfterUploadingMultipleFiles() throws {
+    func testContextIsReturnedAfterUploadingMultipleFiles() async throws {
         let expectedContext = ["I am a key" : "I am a value"]
         
-        try client.uploadMultiple(dataFiles: [data, data], context: expectedContext)
+        try await client.uploadMultiple(dataFiles: [data, data], context: expectedContext)
         
-        waitForUploadsToFinish(2)
+        await waitForUploadsToFinish(2)
         
         // Two contexts for start, two for failure
         XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
     }
     
-    func testContextIsReturnedAfterUploadingMultipleFilePaths() throws {
+    func testContextIsReturnedAfterUploadingMultipleFilePaths() async throws {
         let expectedContext = ["I am a key" : "I am a value"]
         
         let path = try Fixtures.makeFilePath()
-        try client.uploadFiles(filePaths: [path, path], context: expectedContext)
-        waitForUploadsToFinish(2)
+        try await client.uploadFiles(filePaths: [path, path], context: expectedContext)
+        await waitForUploadsToFinish(2)
         
         // Four contexts for start, four for failure
         XCTAssertEqual(tusDelegate.receivedContexts, Array(repeatElement(expectedContext, count: 4)), "Expected the context to be returned once an upload is finished")
     }
     
-    func testContextIsGivenOnStart() throws {
+    func testContextIsGivenOnStart() async throws {
         let expectedContext = ["I am a key" : "I am a value"]
         
         let files: [Data] = [data, data]
         let didStartExpectation = expectation(description: "Waiting for upload to start")
         didStartExpectation.expectedFulfillmentCount = files.count
         tusDelegate.startUploadExpectation = didStartExpectation
-        try client.uploadMultiple(dataFiles: files, context: expectedContext)
+        try await client.uploadMultiple(dataFiles: files, context: expectedContext)
         
-        waitForExpectations(timeout: 3, handler: nil)
+        await fulfillment(of: [tusDelegate.startUploadExpectation!])
         XCTAssert(tusDelegate.receivedContexts.contains(expectedContext))
     }
     
-    func testContextIsGivenOnFailure() throws {
+    func testContextIsGivenOnFailure() async throws {
         prepareNetworkForFailingUploads()
         
         let expectedContext = ["I am a key" : "I am a value"]
@@ -96,14 +96,14 @@ final class TUSClient_ContextTests: XCTestCase {
         let didFailExpectation = expectation(description: "Waiting for upload to start")
         didFailExpectation.expectedFulfillmentCount = files.count
         tusDelegate.uploadFailedExpectation = didFailExpectation
-        try client.uploadMultiple(dataFiles: files, context: expectedContext)
+        try await client.uploadMultiple(dataFiles: files, context: expectedContext)
         
-        waitForExpectations(timeout: 5, handler: nil)
+        await fulfillment(of: [tusDelegate.uploadFailedExpectation!])
         // Expected the context 4 times. Two files on start, two files on error.
         XCTAssert(tusDelegate.receivedContexts.contains(expectedContext))
     }
     
-    func testContextIsIncludedInUploadMetadata() throws {
+    func testContextIsIncludedInUploadMetadata() async throws {
         let key = "SomeKey"
         let value = "SomeValue"
         let context = [key: value]
@@ -121,8 +121,8 @@ final class TUSClient_ContextTests: XCTestCase {
         let startedExpectation = expectation(description: "Waiting for uploads to start")
         tusDelegate.startUploadExpectation = startedExpectation
         
-        try client.uploadFileAt(filePath: location, context: context)
-        wait(for: [startedExpectation], timeout: 5)
+        try await client.uploadFileAt(filePath: location, context: context)
+        await fulfillment(of: [startedExpectation], timeout: 5)
         
         // Validate
         let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
@@ -140,32 +140,42 @@ final class TUSClient_ContextTests: XCTestCase {
     
     // MARK: - Private helper methods for uploading
 
-    private func waitForUploadsToFinish(_ amount: Int = 1) {
+    private func waitForUploadsToFinish(_ amount: Int = 1) async {
         let uploadExpectation = expectation(description: "Waiting for upload to finished")
         uploadExpectation.expectedFulfillmentCount = amount
         tusDelegate.finishUploadExpectation = uploadExpectation
-        waitForExpectations(timeout: 6, handler: nil)
+        await fulfillment(of: [uploadExpectation], timeout: 6)
     }
     
-    private func waitForUploadsToFail(_ amount: Int = 1) {
+    private func waitForUploadsToFail(_ amount: Int = 1) async {
         let uploadFailedExpectation = expectation(description: "Waiting for upload to fail")
         uploadFailedExpectation.expectedFulfillmentCount = amount
         tusDelegate.uploadFailedExpectation = uploadFailedExpectation
-        waitForExpectations(timeout: 6, handler: nil)
+        await fulfillment(of: [uploadFailedExpectation], timeout: 6)
     }
     
     /// Upload data, a certain amount of times, and wait for it to be done.
     /// Can optionally prepare a failing upload too.
     @discardableResult
-    private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) throws -> [UUID] {
-        let ids = try (0..<amount).map { _ -> UUID in
-            return try client.upload(data: data, customHeaders: customHeaders)
+    private func upload(data: Data, amount: Int = 1, customHeaders: [String: String] = [:], shouldSucceed: Bool = true) async throws -> [UUID] {
+        let ids = try await withThrowingTaskGroup(of: UUID.self) { group in
+            for _ in 0..<amount {
+                group.addTask {
+                    try await self.client.upload(data: data, customHeaders: customHeaders)
+                }
+            }
+            
+            var ids = [UUID]()
+            for try await id in group {
+                ids.append(id)
+            }
+            return ids
         }
         
         if shouldSucceed {
-            waitForUploadsToFinish(amount)
+            await waitForUploadsToFinish(amount)
         } else {
-            waitForUploadsToFail(amount)
+            await waitForUploadsToFail(amount)
         }
 
         return ids

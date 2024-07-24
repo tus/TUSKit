@@ -16,7 +16,8 @@ final class TUSClient_CacheTests: XCTestCase {
         
         MockURLProtocol.reset()
         
-        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let docDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
         
         clearDirectory(dir: fullStoragePath)
@@ -77,10 +78,13 @@ final class TUSClient_CacheTests: XCTestCase {
         let id = try await client.upload(data: data)
         
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        print(contents)
         XCTAssertEqual(2, contents.count, "Prerequisite for tests fails, expected 2 files to exist, the file to upload and metadata")
         
-        try await client.removeCacheFor(id: id)
+        let didRemove = try await client.removeCacheFor(id: id)
+        XCTAssertTrue(didRemove)
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
+        print(contents)
         
         XCTAssert(contents.isEmpty, "Expected the client to delete the file")
     }
@@ -91,7 +95,8 @@ final class TUSClient_CacheTests: XCTestCase {
         
         // Create isolated dir for this test, in case of parallelism issues.
         let storagePath = URL(string: "DELETE_ME")!
-        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let docDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
         let fullStoragePath = docDir.appendingPathComponent(storagePath.absoluteString)
         
         clearDirectory(dir: fullStoragePath)

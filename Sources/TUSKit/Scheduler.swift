@@ -38,15 +38,19 @@ final actor Scheduler {
 
     /// Add multiple tasks. Note that these are independent tasks.
     /// - Parameter tasks: The tasks to add
-    func addTasks(tasks: [ScheduledTask]) async {
+    func addTasks(tasks: [ScheduledTask]) {
         guard !tasks.isEmpty else { return }
         pendingTasks.append(contentsOf: tasks)
-        await checkProcessNextTask()
+        Task {
+            await checkProcessNextTask()
+        }
     }
         
-    func addTask(task: ScheduledTask) async {
+    func addTask(task: ScheduledTask) {
         pendingTasks.append(task)
-        await checkProcessNextTask()
+        Task {
+            await checkProcessNextTask()
+        }
     }
     
     func cancelAll() {

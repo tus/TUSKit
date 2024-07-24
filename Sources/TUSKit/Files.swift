@@ -164,12 +164,14 @@ final class Files: Sendable {
         let filePath = metaData.filePath
         let fileName = filePath.lastPathComponent
         let metaDataPath = storageDirectory.appendingPathComponent(fileName).appendingPathExtension("plist")
-        let metaDataCachePath = storageDirectory.appendingPathComponent("\(metaData.id)uploadData")
+        let metaDataCachePath = storageDirectory.appendingPathComponent("\(metaData.id)")
         
         try queue.sync {
             try FileManager.default.removeItem(at: metaDataPath)
             if FileManager.default.fileExists(atPath: metaDataCachePath.path) {
                 try FileManager.default.removeItem(at: metaDataCachePath)
+            } else {
+                print(metaDataPath, metaDataCachePath)
             }
 #if os(iOS)
             try FileManager.default.removeItem(at: filePath)

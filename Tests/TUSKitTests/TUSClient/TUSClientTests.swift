@@ -147,7 +147,7 @@ final class TUSClientTests: XCTestCase {
                     try await self.client.upload(data: data, customHeaders: customHeaders)
                 }
             }
-            
+                
             var ids = [UUID]()
             for try await id in group {
                 ids.append(id)

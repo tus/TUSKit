@@ -87,7 +87,7 @@ actor UploadDataTask: NSObject, IdentifiableTask {
         let progress = try await api.upload(fromFile: file, offset: range?.lowerBound ?? 0 , location: remoteDestination, metaData: metaData)
         observation?.invalidate()
 #warning("This is what we used to do; needs some larger refactoring once everything Sendable to make it work again.")
-        return try taskCompleted(receivedOffset: progress)
+        return try taskCompleted(receivedOffset: 0)
         // self?.taskCompleted(result: result, completed: completed)
         
         /*

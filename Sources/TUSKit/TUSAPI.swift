@@ -359,12 +359,14 @@ actor TUSAPI {
         return task
     }
     
-    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata) async throws -> Int {
-        return try await withCheckedThrowingContinuation({ cont in
-            upload(fromFile: file, offset: offset, location: location, metaData: metaData) { result in
-                cont.resume(with: result)
-            }
-        })
+    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata) async throws -> NetworkTask<Int> {
+        var task: NetworkTask<Int>!
+//        
+        let sessionTask = upload(fromFile: file, offset: offset, location: location, metaData: metaData) { result in
+//            task.sendResult(result as! Result<Int, any Error>)
+        }
+//        
+        return NetworkTask(urlsessionTask: sessionTask)
     }
     
 #warning("we _need_ access to this task from the outside...")

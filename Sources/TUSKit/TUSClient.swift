@@ -363,6 +363,8 @@ public final actor TUSClient {
                 return false
             }
             
+            print(metaData)
+            
             try files.removeFileAndMetadata(metaData)
             return true
         } catch let error {

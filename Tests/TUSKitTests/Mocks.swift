@@ -50,6 +50,7 @@ final class TUSMockDelegate: TUSClientDelegate {
     }
     
     func uploadFailed(id: UUID, error: Error, context: [String : String]?, client: TUSClient) {
+        print("receiving,,,", id, error, context)
         failedUploads.append((id, error))
         uploadFailedExpectation?.fulfill()
         if let context = context {

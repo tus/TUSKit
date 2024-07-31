@@ -140,7 +140,9 @@ final class Files: Sendable {
     @discardableResult
     func store(data: Data, id: UUID, preferredFileExtension: String? = nil) throws -> URL {
         try queue.sync {
-            guard !data.isEmpty else { throw FilesError.dataIsEmpty }
+            guard !data.isEmpty else {
+                throw FilesError.dataIsEmpty
+            }
             try makeDirectoryIfNeeded()
             
             let fileName: String

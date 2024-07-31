@@ -7,12 +7,12 @@
 
 import Foundation
 
-actor NetworkTask<Success: Sendable> {
-    private let urlsessionTask: URLSessionTask
+actor NetworkTask<Success: Sendable, SessionTask: URLSessionTask> {
+    let urlsessionTask: SessionTask
     private let stream: AsyncThrowingStream<Success, any Error>
     private let continuation: AsyncThrowingStream<Success, any Error>.Continuation
     
-    init(urlsessionTask: URLSessionTask) {
+    init(urlsessionTask: SessionTask) {
         self.urlsessionTask = urlsessionTask
         
         let (stream, continuation) = AsyncThrowingStream<Success, any Error>.makeStream()

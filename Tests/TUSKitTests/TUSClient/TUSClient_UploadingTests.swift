@@ -16,7 +16,8 @@ final class TUSClient_UploadingTests: XCTestCase {
         
         MockURLProtocol.reset()
         
-        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let docDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
         
         clearDirectory(dir: fullStoragePath)

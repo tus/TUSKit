@@ -28,7 +28,9 @@ func prepareNetworkForWrongOffset(data: Data) {
 }
 
 func prepareNetworkForSuccesfulUploads(data: Data, lowerCasedKeysInResponses: Bool = false) {
+    print("prepareing for succesful upload")
     MockURLProtocol.prepareResponse(for: "POST") { _ in
+        print("returning a response for post")
         let key: String
         if lowerCasedKeysInResponses {
             key = "location"
@@ -38,9 +40,10 @@ func prepareNetworkForSuccesfulUploads(data: Data, lowerCasedKeysInResponses: Bo
         return MockURLProtocol.Response(status: 200, headers: [key: "www.somefakelocation.com"], data: nil)
     }
     
+    print("prepareing for succesful patch")
     // Mimick chunk uploading with offsets
     MockURLProtocol.prepareResponse(for: "PATCH") { headers in
-        
+        print("returning a response for patch")
         guard let headers = headers,
               let strOffset = headers["Upload-Offset"],
               let offset = Int(strOffset),
@@ -77,17 +80,21 @@ func prepareNetworkForErronousResponses() {
 }
 
 func prepareNetworkForSuccesfulStatusCall(data: Data) {
+    print("Network prepared for successful status")
     MockURLProtocol.prepareResponse(for: "HEAD") { _ in
-        MockURLProtocol.Response(status: 200, headers: ["Upload-Length": String(data.count),
+        print("Status will be returned")
+        return MockURLProtocol.Response(status: 200, headers: ["Upload-Length": String(data.count),
                                                         "Upload-Offset": "0"], data: nil)
     }
 }
 
 /// Create call can still succeed. This is useful for triggering a status call.
 func prepareNetworkForFailingUploads() {
+    print("Network prepared for failure")
     // Upload means patch. Letting that fail.
     MockURLProtocol.prepareResponse(for: "PATCH") { _ in
-        MockURLProtocol.Response(status: 401, headers: [:], data: nil)
+        print("Error will be returned")
+        return MockURLProtocol.Response(status: 401, headers: [:], data: nil)
     }
 }
 

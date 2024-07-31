@@ -84,19 +84,16 @@ actor UploadDataTask: NSObject, IdentifiableTask {
             return []
         }
         
-        let progress = try await api.upload(fromFile: file, offset: range?.lowerBound ?? 0 , location: remoteDestination, metaData: metaData)
+        let networkTask = await api.upload(fromFile: file, offset: range?.lowerBound ?? 0 , location: remoteDestination, metaData: metaData)
         observation?.invalidate()
-#warning("This is what we used to do; needs some larger refactoring once everything Sendable to make it work again.")
-        return try taskCompleted(receivedOffset: 0)
-        // self?.taskCompleted(result: result, completed: completed)
         
-        /*
-        sessionTask = task
-        
+        sessionTask = networkTask.urlsessionTask
         if #available(iOS 11.0, macOS 10.13, *) {
-            observeTask(task: task, size: dataToUpload.count)
+            observeTask(task: networkTask.urlsessionTask, size: dataToUpload.count)
         }
-         */
+        
+        let offset = try await networkTask.getResult()
+        return try taskCompleted(receivedOffset: offset)
     }
     
     func taskCompleted(receivedOffset: Int) throws -> [any ScheduledTask] {
@@ -180,7 +177,7 @@ actor UploadDataTask: NSObject, IdentifiableTask {
             data = fileHandle.readDataToEndOfFile()
         }
         
-        return try files.store(data: data, id: metaData.id, preferredFileExtension: "uploadData")
+        return try files.store(data: data, id: metaData.id, preferredFileExtension: "")
     }
     
     /// Load data based on range (if there). Uses FileHandle to be able to handle large files

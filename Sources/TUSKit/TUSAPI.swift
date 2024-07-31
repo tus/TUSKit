@@ -359,23 +359,11 @@ actor TUSAPI {
         return task
     }
     
-    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata) async throws -> NetworkTask<Int> {
-        var task: NetworkTask<Int>!
-//        
-        let sessionTask = upload(fromFile: file, offset: offset, location: location, metaData: metaData) { result in
-//            task.sendResult(result as! Result<Int, any Error>)
-        }
-//        
-        return NetworkTask(urlsessionTask: sessionTask)
-    }
-    
-#warning("we _need_ access to this task from the outside...")
-    func upload(
+    private func uploadTask(
         fromFile file: URL,
         offset: Int = 0,
         location: URL,
-        metaData: UploadMetadata,
-        completion: @escaping @Sendable (Result<Int, TUSAPIError>) -> Void
+        metaData: UploadMetadata
     ) -> URLSessionUploadTask {
         let length: Int
         if let fileAttributes = try? FileManager.default.attributesOfItem(atPath: file.path) {
@@ -400,6 +388,34 @@ actor TUSAPI {
         let request = makeRequest(url: location, method: .patch, headers: headersWithCustom)
         let task = session.uploadTask(with: request, fromFile: file)
         task.taskDescription = metaData.id.uuidString
+        
+        return task
+    }
+    
+    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata) -> NetworkTask<Int, URLSessionUploadTask> {
+        let urlSessionTask = uploadTask(
+            fromFile: file, offset: offset, location: location,
+            metaData: metaData
+        )
+        
+        let task = NetworkTask<Int, URLSessionUploadTask>(
+            urlsessionTask: urlSessionTask
+        )
+        
+        upload(fromTask: urlSessionTask, metaData: metaData, completion: { result in
+            Task {
+                await task.sendResult(result.mapError({ $0 as any Error }))
+            }
+        })
+
+        return task
+    }
+    
+    private func upload(
+        fromTask task: URLSessionUploadTask,
+        metaData: UploadMetadata,
+        completion: @escaping @Sendable (Result<Int, TUSAPIError>) -> Void
+    ) {
         queue.sync {
             self.callbacks[metaData.id.uuidString] = { result in
                 processResult(completion: completion) {
@@ -413,7 +429,6 @@ actor TUSAPI {
             }
         }
         task.resume()
-        return task
     }
     
     func registerCallback(

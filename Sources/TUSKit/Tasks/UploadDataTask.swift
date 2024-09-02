@@ -76,10 +76,12 @@ final class UploadDataTask: NSObject, IdentifiableTask {
             return
         }
         
-        let dataToUpload: Data
+        let dataSize: Int
         let file: URL
         do {
-            dataToUpload = try loadData()
+            let attr = try FileManager.default.attributesOfItem(atPath: metaData.filePath.path)
+            dataSize = attr[FileAttributeKey.size] as! Int
+
             file = try prepareUploadFile()
         } catch let error {
             let tusError = TUSClientError.couldNotLoadData(underlyingError: error)
@@ -104,7 +106,7 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         sessionTask = task
         
         if #available(iOS 11.0, macOS 10.13, *) {
-            observeTask(task: task, size: dataToUpload.count)
+            observeTask(task: task, size: dataSize)
         }
     }
     
@@ -190,8 +192,8 @@ final class UploadDataTask: NSObject, IdentifiableTask {
              Note that compiler and api says that readToEnd is available on macOS 10.15.4 and higher, but yet github actions of 10.15.7 fails to find the member.
              return try fileHandle.readToEnd()
              */
-        } else { // No range, older versions
-            data = fileHandle.readDataToEndOfFile()
+        } else { // No range, we're uploading the file in full so no need to read / recopy
+            return metaData.filePath
         }
         
         return try files.store(data: data, id: metaData.id, preferredFileExtension: "uploadData")

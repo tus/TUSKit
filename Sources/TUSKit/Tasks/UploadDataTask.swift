@@ -177,7 +177,7 @@ actor UploadDataTask: NSObject, IdentifiableTask {
             data = fileHandle.readDataToEndOfFile()
         }
         
-        return try files.store(data: data, id: metaData.id, preferredFileExtension: "uploadData")
+        return try files.store(data: data, id: metaData.id, preferredFileExtension: ".uploadData")
     }
     
     /// Load data based on range (if there). Uses FileHandle to be able to handle large files

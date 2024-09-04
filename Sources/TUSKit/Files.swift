@@ -159,6 +159,17 @@ final class Files: Sendable {
         }
     }
     
+    func removeUploadData(_ metaData: UploadMetadata) throws {
+        let filePath = metaData.filePath.appendingPathExtension("uploadData")
+        print(filePath)
+        
+        try queue.sync {
+            if FileManager.default.fileExists(atPath: filePath.path) {
+                try FileManager.default.removeItem(at: filePath)
+            }
+        }
+    }
+    
     /// Removes metadata and its related file from disk
     /// - Parameter metaData: The metadata description
     /// - Throws: Any error from FileManager when removing a file.

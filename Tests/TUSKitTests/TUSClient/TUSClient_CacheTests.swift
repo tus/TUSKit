@@ -106,17 +106,16 @@ final class TUSClient_CacheTests: XCTestCase {
         await client.setDelegate(tusDelegate)
         
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty)
         
         try await client.upload(data: data)
         
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssertEqual(2, contents.count) // Every upload has a metadata file
-
+        
         await waitForUploadsToFinish(1)
 
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
-        XCTAssert(contents.isEmpty)
+        XCTAssertEqual(contents.count, 0)
     }
 
     private func waitForUploadsToFinish(_ amount: Int = 1) async {

@@ -647,6 +647,14 @@ extension TUSClient: SchedulerDelegate {
     
     func handleFinishedUploadTask(_ uploadTask: UploadDataTask) {
         uploadTask.metaData.errorCount = 0 // We reset errorcounts after a succesful action.
+        
+        do {
+            try files.removeUploadData(uploadTask.metaData)
+        } catch let error {
+            let tusError = TUSClientError.couldNotDeleteFile(underlyingError: error)
+            delegate?.fileError(error: tusError, client: self)
+        }
+        
         guard uploadTask.metaData.isFinished else { return }
         
         do {

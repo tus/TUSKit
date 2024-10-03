@@ -1,5 +1,5 @@
 name: TUSKit CI
-on: [push]
+on: [push, workflow_dispatch]
 jobs:
   build:
     name: Swift ${{ matrix.swift }} on ${{ matrix.os }}

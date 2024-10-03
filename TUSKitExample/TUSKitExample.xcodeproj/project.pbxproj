@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -545,7 +545,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"TUSKitExample/Preview Content\"";
-				DEVELOPMENT_TEAM = G43DLT797F;
+				DEVELOPMENT_TEAM = 4JMM8JMG3H;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = TUSKitExample/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
@@ -567,7 +567,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"TUSKitExample/Preview Content\"";
-				DEVELOPMENT_TEAM = G43DLT797F;
+				DEVELOPMENT_TEAM = 4JMM8JMG3H;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = TUSKitExample/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.1;

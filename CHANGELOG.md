@@ -1,11 +1,17 @@
-# 3.3
+
+# 3.4
+
+## Bugfix
+- Fixed an issue that prevented TUSKit from uploading large files (2GB+) [#193](https://github.com/tus/TUSKit/issues/193)
+
+# 3.3.0
 
 ## Enhancements
 
 - Updated documentation around background uploads
 
 ## Bugfix
-- Fixed an issu with macOS not having a correct path when resuming uploads. Thanks, [@MartinLau7](https://github.com/MartinLau7)
+- Fixed an issue with macOS not having a correct path when resuming uploads. Thanks, [@MartinLau7](https://github.com/MartinLau7)
 - Fixed a metadta issue on iOS. Thanks, [@MartinLau7](https://github.com/MartinLau7)
 - Fixed some issues with metadata not alwasy being cleaned up properly for all platforms. Thanks, [@MartinLau7](https://github.com/MartinLau7)
   

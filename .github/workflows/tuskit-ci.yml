@@ -18,6 +18,6 @@ jobs:
         run: swift --version
       - uses: actions/checkout@v2
       - name: Build
-        run: swift build -Xswiftc --disable-experimental-concurrency
+        run: swift build
       - name: Run tests
-        run: swift test -Xswiftc --disable-experimental-concurrency
+        run: swift test

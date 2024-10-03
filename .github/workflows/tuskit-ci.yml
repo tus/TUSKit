@@ -6,14 +6,16 @@ jobs:
     strategy:
       matrix:
         os: ["macos-latest"]
-        swift: ["5"]
+        swift: ["5.10"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Extract Branch Name
         run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
-      - uses: fwal/setup-swift@v1.10.0
+      - uses: swift-actions/setup-swift@v2
         with:
           swift-version: ${{ matrix.swift }}
+      - name: Get swift version
+        run: swift --version
       - uses: actions/checkout@v2
       - name: Build
         run: swift build -Xswiftc --disable-experimental-concurrency

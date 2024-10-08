@@ -164,12 +164,15 @@ final class Files {
         let filePath = metaData.filePath
         let fileName = filePath.lastPathComponent
         let metaDataPath = storageDirectory.appendingPathComponent(fileName).appendingPathExtension("plist")
-        let metaDataCachePath = storageDirectory.appendingPathComponent("\(metaData.id)uploadData")
+        let uploadDataCachePath = storageDirectory.appendingPathComponent("\(metaData.id)uploadData")
+        let metaDataCachePath = storageDirectory.appendingPathComponent("\(metaData.id)")
         
         try queue.sync {
             try FileManager.default.removeItem(at: metaDataPath)
-            if FileManager.default.fileExists(atPath: metaDataCachePath.path) {
-                try FileManager.default.removeItem(at: metaDataCachePath)
+            try FileManager.default.removeItem(at: metaDataCachePath)
+            
+            if FileManager.default.fileExists(atPath: uploadDataCachePath.path) {
+                try FileManager.default.removeItem(at: uploadDataCachePath)
             }
 #if os(iOS)
             try FileManager.default.removeItem(at: filePath)

@@ -16,7 +16,8 @@ final class TUSClient_CacheTests: XCTestCase {
         
         MockURLProtocol.reset()
         
-        let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let docDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
         
         clearDirectory(dir: fullStoragePath)
@@ -96,7 +97,7 @@ final class TUSClient_CacheTests: XCTestCase {
         
         clearDirectory(dir: fullStoragePath)
 
-        client = makeClient(storagePath: storagePath)
+        client = makeClient(storagePath: fullStoragePath)
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
         

@@ -1,5 +1,4 @@
-
-# 3.4
+# 3.4.0
 
 ## Bugfix
 - Fixed an issue that prevented TUSKit from uploading large files (2GB+) [#193](https://github.com/tus/TUSKit/issues/193)

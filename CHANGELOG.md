@@ -1,7 +1,12 @@
+# 3.4.1
+
+## Bugfix
+- Corrected a mistake in delete file logic
+
 # 3.4.0
 
 ## Bugfix
-- Fixed an issue that prevented TUSKit from uploading large files (2GB+) [#193](https://github.com/tus/TUSKit/issues/193)
+- Fixed an issue that prevented TUSKit from uploading large files (2GB+) [#193](https://github.com/tus/TUSKit/issues/193)**
 
 # 3.3.0
 

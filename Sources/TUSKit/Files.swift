@@ -169,7 +169,10 @@ final class Files {
         
         try queue.sync {
             try FileManager.default.removeItem(at: metaDataPath)
-            try FileManager.default.removeItem(at: metaDataCachePath)
+            
+            if FileManager.default.fileExists(atPath: metaDataCachePath.path) {
+                try FileManager.default.removeItem(at: metaDataCachePath)
+            }
             
             if FileManager.default.fileExists(atPath: uploadDataCachePath.path) {
                 try FileManager.default.removeItem(at: uploadDataCachePath)

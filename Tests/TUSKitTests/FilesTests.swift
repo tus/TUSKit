@@ -168,7 +168,26 @@ final class FilesTests: XCTestCase {
         // Clean up metadata. Doing it here because normally cleaning up metadata also cleans up a file. But we don't have a file to clean up.
         try FileManager.default.removeItem(at: targetLocation)
     }
-    
+
+    func testMissingCachePathDoesNotThrow() throws {
+        let data = "TestData".data(using: .utf8)!
+        let id = UUID()
+        let path = try files.store(data: data, id: id, preferredFileExtension: ".txt")
+        let metaData = UploadMetadata(
+            id: id, 
+            filePath: path, 
+            uploadURL: URL(string: "io.tus")!, 
+            size: data.count, 
+            customHeaders: [:], 
+            mimeType: nil
+        )
+        XCTAssertNoThrow(try files.encodeAndStore(metaData: metaData))
+
+        print("PATH", path.path)
+
+        XCTAssertNoThrow(try files.removeFileAndMetadata(metaData))
+    }
+
     func testMakeSureFileIdIsSameAsStoredName() throws {
 //         A file is stored under a UUID, this must be the same as the metadata's id
         let id = UUID()

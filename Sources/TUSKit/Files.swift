@@ -152,7 +152,7 @@ final class Files {
             
             let targetLocation = storageDirectory.appendingPathComponent(fileName)
             
-            try! data.write(to: targetLocation, options: .atomic)
+            try data.write(to: targetLocation, options: .atomic)
             return targetLocation
         }
     }

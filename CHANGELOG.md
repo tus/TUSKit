@@ -1,3 +1,8 @@
+# 3.4.2
+
+## Bugfix
+- Removed a force-unwrap that would crash if the SDK can't write files.
+
 # 3.4.1
 
 ## Bugfix

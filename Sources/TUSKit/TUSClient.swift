@@ -716,11 +716,15 @@ extension TUSClient: ProgressDelegate {
     func progressUpdatedFor(metaData: UploadMetadata, totalUploadedBytes: Int) {
         delegate?.progressFor(id: metaData.id, context: metaData.context, bytesUploaded: totalUploadedBytes, totalBytes: metaData.size, client: self)
 
-        var totalBytesUploaded: Int = 0
-        var totalSize: Int = 0
-        for (_, metaData) in uploads {
-            totalBytesUploaded += metaData.uploadedRange?.count ?? 0
-            totalSize += metaData.size
+        var totalBytesUploaded: Int = totalUploadedBytes
+        var totalSize: Int = metaData.size
+        for (_, metaDataForTotal) in uploads {
+            guard metaDataForTotal.id != metaData.id else {
+                continue
+            }
+
+            totalBytesUploaded += metaDataForTotal.uploadedRange?.count ?? 0
+            totalSize += metaDataForTotal.size
         }
 
         delegate?.totalProgress(bytesUploaded: totalBytesUploaded, totalBytes: totalSize, client: self)

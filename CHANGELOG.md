@@ -1,3 +1,9 @@
+# 3.4.3
+
+## Bugfix
+- Fixed an issue where the total progress was not being updated correctly when using chunked uploads.
+- Fixed an issue where total progress would not include in progress uploads.
+
 # 3.4.2
 
 ## Bugfix

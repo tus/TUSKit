@@ -106,7 +106,7 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         sessionTask = task
         
         if #available(iOS 11.0, macOS 10.13, *) {
-            observeTask(task: task, size: dataSize)
+            observeTask(task: task, size: range?.count ?? dataSize)
         }
     }
     

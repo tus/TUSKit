@@ -76,6 +76,7 @@ class TUSWrapper: ObservableObject {
 extension TUSWrapper: TUSClientDelegate {
     func progressFor(id: UUID, context: [String: String]?, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
         Task { @MainActor in
+            print("progress for \(id): \(bytesUploaded) / \(totalBytes) => \(Int(Double(bytesUploaded) / Double(totalBytes) * 100))%")
             uploads[id] = .uploading(bytesUploaded: bytesUploaded, totalBytes: totalBytes)
         }
     }
@@ -111,7 +112,9 @@ extension TUSWrapper: TUSClientDelegate {
     }
     
     func fileError(error: TUSClientError, client: TUSClient) { }
-    func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient) { }
+    func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
+        print("total progress: \(bytesUploaded) / \(totalBytes) => \(Int(Double(bytesUploaded) / Double(totalBytes) * 100))%")
+    }
 }
 
 

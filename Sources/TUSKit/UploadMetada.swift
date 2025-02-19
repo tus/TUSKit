@@ -32,20 +32,8 @@ final class UploadMetadata: Codable {
     var isFinished: Bool {
         size == uploadedRange?.count
     }
-    
-    private var _id: UUID
-    var id: UUID {
-        get {
-            queue.sync {
-                _id
-            }
-        } set {
-            queue.async {
-                self._id = newValue
-            }
-        }
-    }
-    
+
+    let id: UUID
     let uploadURL: URL
     
     private var _filePath: URL
@@ -113,7 +101,7 @@ final class UploadMetadata: Codable {
     }
     
     init(id: UUID, filePath: URL, uploadURL: URL, size: Int, customHeaders: [String: String]? = nil, mimeType: String? = nil, context: [String: String]? = nil) {
-        self._id = id
+        self.id = id
         self._filePath = filePath
         self.uploadURL = uploadURL
         self.size = size
@@ -126,7 +114,7 @@ final class UploadMetadata: Codable {
     
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        _id = try values.decode(UUID.self, forKey: .id)
+        id = try values.decode(UUID.self, forKey: .id)
         uploadURL = try values.decode(URL.self, forKey: .uploadURL)
         _filePath = try values.decode(URL.self, forKey: .filePath)
         _remoteDestination = try values.decode(URL?.self, forKey: .remoteDestination)
@@ -141,7 +129,7 @@ final class UploadMetadata: Codable {
     
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(_id, forKey: .id)
+        try container.encode(id, forKey: .id)
         try container.encode(uploadURL, forKey: .uploadURL)
         try container.encode(_remoteDestination, forKey: .remoteDestination)
         try container.encode(_filePath, forKey: .filePath)

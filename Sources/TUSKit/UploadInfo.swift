@@ -9,14 +9,14 @@ import Foundation
 
 
 public struct UploadInfo {
-    public var id: UUID
-    public var uploadURL: URL
-    public var filePath: URL
-    public var remoteDestination: URL?
-    public var context: [String: String]?
-    public var uploadedRange: Range<Int>?
-    public var mimeType: String?
-    public var customHeaders: [String: String]?
+    public let id: UUID
+    public let uploadURL: URL
+    public let filePath: URL
+    public let remoteDestination: URL?
+    public let context: [String: String]?
+    public let uploadedRange: Range<Int>?
+    public let mimeType: String?
+    public let customHeaders: [String: String]?
     public let size: Int
     
     init(id: UUID, uploadURL: URL, filePath: URL, remoteDestination: URL? = nil, context: [String : String]? = nil, uploadedRange: Range<Int>? = nil, mimeType: String? = nil, customHeaders: [String : String]? = nil, size: Int) {

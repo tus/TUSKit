@@ -56,7 +56,20 @@ final class TUSClientTests: XCTestCase {
         waitForUploadsToFinish(1)
         XCTAssertEqual(1, tusDelegate.finishedUploads.count, "Expected the previous and new upload to finish")
     }
-    
+
+    func testHeavyUploadAndNoCrash() throws {
+        // Test adding new uploads, make sure they work after stopping and cancelling
+        for _ in 0..<1000 {
+            try client.upload(data: data)
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)){
+            self.client.stopAndCancelAll()
+        }
+
+        waitForUploadsToFinish(1000)
+    }
+
     func testCancelForID() throws {
         let taskIDtoCancel = try client.upload(data: data)
         

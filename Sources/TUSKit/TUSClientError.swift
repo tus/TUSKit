@@ -21,4 +21,5 @@ public enum TUSClientError: Error {
     case missingRemoteDestination
     case emptyUploadRange
     case rangeLargerThanFile
+    case taskCancelled
 }

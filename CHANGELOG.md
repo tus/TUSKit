@@ -1,3 +1,8 @@
+# 3.5.0
+
+## Bugfix
+- Fixed potential race conditions when concurrently starting and stopping uploads. ([#201](https://github.com/tus/TUSKit/pull/201) by [@fantast1k](https://github.com/fantast1k))
+
 # 3.4.3
 
 ## Bugfix

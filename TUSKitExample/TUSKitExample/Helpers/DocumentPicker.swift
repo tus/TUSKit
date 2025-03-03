@@ -70,7 +70,6 @@ struct DocumentPicker: UIViewControllerRepresentable {
                 for file in files {
                     try self.tusClient.upload(data: file.0, preferredFileExtension: ".\(file.1)")
                 }
-                //tusClient.scheduleBackgroundTasks()
             } catch {
                 print(error)
             }

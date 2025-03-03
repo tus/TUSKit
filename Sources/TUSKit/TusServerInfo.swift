@@ -8,19 +8,17 @@
 import Foundation
 
 public struct TusServerInfo {
-    public private(set) var version: String?
-    
-    public private(set) var maxSize: Int?
-    
-    public private(set) var extensions: [TUSProtocolExtension]?
-    
-    public private(set) var supportedVersions: [String]
-    
-    public private(set) var supportedChecksumAlgorithms: [String]?
-    
-    public var supportsDelete: Bool {
-        extensions?.contains(.termination) ?? false
-    }
+    public let version: String?
+
+    public let maxSize: Int?
+
+    public let extensions: [TUSProtocolExtension]?
+
+    public let supportedVersions: [String]
+
+    public let supportedChecksumAlgorithms: [String]?
+
+    public let supportsDelete: Bool
     
     init(version: String, maxSize: Int?, extensions: [TUSProtocolExtension]?, supportedVersions: [String], supportedChecksumAlgorithms: [String]?) {
         self.version = version
@@ -28,5 +26,6 @@ public struct TusServerInfo {
         self.extensions = extensions
         self.supportedVersions = supportedVersions
         self.supportedChecksumAlgorithms = supportedChecksumAlgorithms
+        self.supportsDelete = extensions?.contains(.termination) ?? false
     }
 }

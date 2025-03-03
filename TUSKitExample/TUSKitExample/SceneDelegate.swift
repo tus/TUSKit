@@ -33,8 +33,5 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             self.window = window
             window.makeKeyAndVisible()
         }
-        
-        // We can already trigger background tasks. Once the background-scheduler runs, the tasks will upload.
-        //tusClient.scheduleBackgroundTasks()
     }
 }

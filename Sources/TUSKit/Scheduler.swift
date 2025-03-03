@@ -66,6 +66,25 @@ final class Scheduler {
         }
     }
     
+    func cancelTask(by id: UUID) {
+        queue.async {
+            self.pendingTasks.removeAll { task in
+                guard let idTask = task as? IdentifiableTask, idTask.id == id else {
+                    return false
+                }
+                idTask.cancel()
+                return true
+            }
+            self.runningTasks.removeAll { task in
+                guard let idTask = task as? IdentifiableTask, idTask.id == id else {
+                    return false
+                }
+                idTask.cancel()
+                return true
+            }
+        }
+    }
+
     func cancelTasks(_ tasksToCancel: [ScheduledTask]) {
         queue.async {
             tasksToCancel.forEach { taskToCancel in
@@ -76,7 +95,7 @@ final class Scheduler {
                     pendingTask.cancel()
                     self.pendingTasks.remove(at: pendingTaskIndex)
                 }
-                
+
                 if let runningTaskIndex = self.runningTasks.firstIndex(where: { runningTask in
                     runningTask === taskToCancel
                 }) {
@@ -122,9 +141,7 @@ final class Scheduler {
                     }
                     self.checkProcessNextTask()
                 }
-                    
             }
-            
         }
     }    
     

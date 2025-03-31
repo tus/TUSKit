@@ -117,7 +117,6 @@ public final class TUSClient {
         self.scheduler = scheduler
         self.reportingQueue = reportingQueue
         scheduler.delegate = self
-        removeFinishedUploads()
         reregisterCallbacks()
     }
     

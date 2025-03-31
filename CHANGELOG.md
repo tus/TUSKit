@@ -1,12 +1,8 @@
-# 3.5.1
-
-## Bugfix
-- Uploads that got cancelled by force closing an app didn't get retried on app launch (Issue: [#200](https://github.com/tus/TUSKit/issues/200))
-
 # 3.5.0
 
 ## Bugfix
 - Fixed potential race conditions when concurrently starting and stopping uploads. ([#201](https://github.com/tus/TUSKit/pull/201) by [@fantast1k](https://github.com/fantast1k))
+- Uploads that got cancelled by force closing an app didn't get retried on app launch (Issue: [#200](https://github.com/tus/TUSKit/issues/200))
 
 # 3.4.3
 

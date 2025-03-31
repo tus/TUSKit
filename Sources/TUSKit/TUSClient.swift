@@ -117,6 +117,8 @@ public final class TUSClient {
         self.scheduler = scheduler
         self.reportingQueue = reportingQueue
         scheduler.delegate = self
+        removeFinishedUploads()
+        reregisterCallbacks()
     }
     
     /// Initialize a TUSClient
@@ -475,7 +477,11 @@ public final class TUSClient {
                 }
                 
                 self.api.registerCallback({ result in
-                    task.taskCompleted(result: result, completed: { _ in })
+                    task.taskCompleted(result: result, completed: { [weak self] result in
+                        if case .failure = result {
+                            try? self?.retry(id: metadata.id)
+                        }
+                    })
                 }, forMetadata: metadata)
             }
         }

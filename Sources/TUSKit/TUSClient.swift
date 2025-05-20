@@ -154,6 +154,42 @@ public final class TUSClient {
         reregisterCallbacks()
     }
     
+    /// Initialize a TUSClient
+    /// - Parameters:
+    ///   - server: The URL of the server where you want to upload to.
+    ///   - storageDirectory: A directory to store local files for uploading and continuing uploads. Leave nil to use the documents dir. Pass a relative path (e.g. "TUS" or "/TUS" or "/Uploads/TUS") for a relative directory inside the documents directory.
+    ///   You can also pass an absolute path, e.g. "file://uploads/TUS"
+    ///   - session: A URLSession you'd like to use. Will default to `URLSession.shared`.
+    ///   - chunkSize: The amount of bytes the data to upload will be chunked by. Defaults to 512 kB.
+    ///   - supportedExtensions: The TUS protocol extensions that the client should use. For now, the available supported extensions are `.creation`. Defaults to `[.creation]`.
+    ///
+    /// - Important: The client assumes by default that your server implements the Creation TUS protocol extension. If your server does not support that,
+    ///   make sure that you provide an empty array in the `supportExtensions` parameter.
+    /// - Throws: File related errors when it can't make a directory at the designated path.
+    @available(iOS 15.0, macOS 12.0, *)
+    public init(server: URL, storageDirectory: URL? = nil,
+                session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024,
+                supportedExtensions: [TUSProtocolExtension] = [.creation], reportingQueue: DispatchQueue = DispatchQueue.main) throws {
+        guard session.configuration.sessionSendsLaunchEvents == false else {
+            throw TUSClientError.customURLSessionWithBackgroundConfigurationNotSupported
+        }
+        self.sessionIdentifier = session.configuration.identifier ?? ""
+        self.api = TUSAPI(session: session)
+        self.files = try Files(storageDirectory: storageDirectory)
+        self.serverURL = server
+        if chunkSize > 0 {
+            self.chunkSize = chunkSize
+        } else {
+            self.chunkSize = nil
+        }
+        self.supportedExtensions = supportedExtensions
+        self.scheduler = Scheduler()
+        self.reportingQueue = reportingQueue
+        scheduler.delegate = self
+        removeFinishedUploads()
+        reregisterCallbacks()
+    }
+    
     // MARK: - Starting and stopping
     
     /// Kick off the client to start uploading any locally stored files.
@@ -393,7 +429,7 @@ public final class TUSClient {
     ///   - handler: The closure you've received in your app delegate. Will be called by TUSClient when all URLSession related calls are received in the background.
     ///   - sessionIdentifier: The session identifier provided by AppDelegate. TUSClient will use this identifier to make sure we don't call the handler for other URLSessions.
     public func registerBackgroundHandler(_ handler: @escaping () -> Void, forSession sessionIdentifier: String) {
-        guard sessionIdentifier == api.session.configuration.identifier else {
+        guard sessionIdentifier == api.sessionIdentifier else {
             return
         }
         

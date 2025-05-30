@@ -142,7 +142,7 @@ final class UploadDataTask: NSObject, IdentifiableTask {
             let nextRange: Range<Int>?
             if let range = range {
                 let chunkSize = range.count
-                nextRange = receivedOffset..<min((receivedOffset + chunkSize), metaData.size)
+                nextRange = receivedOffset..<(receivedOffset + chunkSize)
             } else {
                 nextRange = nil
             }

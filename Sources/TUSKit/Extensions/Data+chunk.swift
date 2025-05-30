@@ -12,7 +12,7 @@ extension Data {
         var chunkStart = chunkStartParam
         while chunkStart < self.count {
             let remaining = self.count - chunkStart
-            let nextChunkSize = Swift.min(size, remaining)
+            let nextChunkSize = size
             let chunkEnd = chunkStart + nextChunkSize
 
             chunks.append(self.subdata(in: chunkStart ..< chunkEnd))

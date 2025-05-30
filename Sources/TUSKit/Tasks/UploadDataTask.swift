@@ -47,11 +47,6 @@ final class UploadDataTask: NSObject, IdentifiableTask {
             throw TUSClientError.couldNotUploadFile(underlyingError: TUSClientError.emptyUploadRange)
         }
         
-        if (range?.count ?? 0) > metaData.size {
-            assertionFailure("The range \(String(describing: range?.count)) to upload is larger than the size \(metaData.size)")
-            throw TUSClientError.couldNotUploadFile(underlyingError: TUSClientError.rangeLargerThanFile)
-        }
-        
         if let destination = metaData.remoteDestination {
             self.metaData.remoteDestination = destination
         } else {

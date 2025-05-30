@@ -56,7 +56,7 @@ final class CreationTask: IdentifiableTask {
                         try files.encodeAndStore(metaData: metaData)
                         let task: UploadDataTask
                         if let chunkSize = chunkSize {
-                            let newRange = 0..<min(chunkSize, metaData.size)
+                            let newRange = 0..<chunkSize
                             task = try UploadDataTask(api: api, metaData: metaData, files: files, range: newRange)
                         } else {
                             task = try UploadDataTask(api: api, metaData: metaData, files: files)

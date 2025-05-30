@@ -78,7 +78,7 @@ final class StatusTask: IdentifiableTask {
 
                             let nextRange: Range<Int>
                             if let chunkSize {
-                                nextRange  = offset..<min((offset + chunkSize), metaData.size)
+                                nextRange  = offset..<(offset + chunkSize)
                             } else {
                                 nextRange = offset..<metaData.size
                             }

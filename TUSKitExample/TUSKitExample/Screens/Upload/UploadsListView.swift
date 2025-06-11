@@ -132,7 +132,6 @@ extension UploadsListView {
                             case .uploaded(let url):
                                 UploadedRowView(key: idx.key, url: url)
                             case .failed(let error):
-                                let _ = print(error)
                                 FailedRowView(key: idx.key, error: error)
                         }
                     }

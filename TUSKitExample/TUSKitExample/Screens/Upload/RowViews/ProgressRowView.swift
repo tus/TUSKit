@@ -96,8 +96,8 @@ struct ProgressRowView: View {
             UploadActionImage(icon: .pause)
         }
         
-//        DestructiveButton(title: showTitle ? "Remove" : nil) {
-//            tusWrapper.clearUpload(id: key)
-//        }
+        DestructiveButton(title: showTitle ? "Remove" : nil) {
+            tusWrapper.clearUpload(id: key)
+        }
     }
 }

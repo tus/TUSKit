@@ -157,7 +157,7 @@ final class Files {
         }
     }
     
-    @available(iOS 13.4, macOS 10.15, *)
+    @available(iOS 13.4, macOS 10.15.4, *)
     func streamingData(_ dataGenerator: () -> Data?, id: UUID, preferredFileExtension: String? = nil) throws -> URL {
         try queue.sync {
             try makeDirectoryIfNeeded()

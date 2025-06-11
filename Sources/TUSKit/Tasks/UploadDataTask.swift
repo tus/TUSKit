@@ -182,7 +182,7 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         
         // Can't use switch with #available :'(
         let data: Data
-        if let range = self.range, #available(iOS 13.4, macOS 10.15, *) { // Has range, for newer versions
+        if let range = self.range, #available(iOS 13.4, macOS 10.15.4, *) { // Has range, for newer versions
             var offset = range.startIndex
             
             return try files.streamingData({

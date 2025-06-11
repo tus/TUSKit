@@ -182,9 +182,25 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         
         // Can't use switch with #available :'(
         let data: Data
-        if let range = self.range, #available(iOS 13.0, macOS 10.15, *) { // Has range, for newer versions
-            try fileHandle.seek(toOffset: UInt64(range.startIndex))
-            data = fileHandle.readData(ofLength: range.count)
+        if let range = self.range, #available(iOS 13.4, macOS 10.15, *) { // Has range, for newer versions
+            var offset = range.startIndex
+            
+            return try files.streamingData({
+                autoreleasepool {
+                    do {
+                        let chunkSize = min(1024 * 1024 * 500, range.endIndex - offset)
+                        try fileHandle.seek(toOffset: UInt64(offset))
+                        guard offset < range.endIndex else { return nil }
+                        
+                        let data = fileHandle.readData(ofLength: chunkSize)
+                        print("read data of size \(data.count) at offset \(offset)")
+                        offset += chunkSize
+                        return data
+                    } catch {
+                        return nil
+                    }
+                }
+            }, id: metaData.id, preferredFileExtension: "uploadData")
         } else if let range = self.range { // Has range, for older versions
             fileHandle.seek(toFileOffset: UInt64(range.startIndex))
             data = fileHandle.readData(ofLength: range.count)

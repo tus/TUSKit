@@ -157,6 +157,37 @@ final class Files {
         }
     }
     
+    @available(iOS 13.4, *)
+    func streamingData(_ dataGenerator: () -> Data?, id: UUID, preferredFileExtension: String? = nil) throws -> URL {
+        try queue.sync {
+            try makeDirectoryIfNeeded()
+            
+            let fileName: String
+            if let fileExtension = preferredFileExtension {
+                fileName = id.uuidString + fileExtension
+            } else {
+                fileName = id.uuidString
+            }
+            
+            let targetLocation = storageDirectory.appendingPathComponent(fileName)
+            if !FileManager.default.fileExists(atPath: targetLocation.path) {
+                FileManager.default.createFile(atPath: targetLocation.path, contents: nil)
+            }
+            
+            let destinationHandle = try FileHandle(forWritingTo: targetLocation)
+            defer {
+                try? destinationHandle.close()
+            }
+            
+            while let data = dataGenerator() {
+                guard !data.isEmpty else { throw FilesError.dataIsEmpty }
+                try destinationHandle.write(contentsOf: data)
+            }
+            
+            return targetLocation
+        }
+    }
+    
     /// Removes metadata and its related file from disk
     /// - Parameter metaData: The metadata description
     /// - Throws: Any error from FileManager when removing a file.

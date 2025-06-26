@@ -175,6 +175,7 @@ final class Files {
             }
             
             let destinationHandle = try FileHandle(forWritingTo: targetLocation)
+            try destinationHandle.truncate(atOffset: 0)
             defer {
                 try? destinationHandle.close()
             }

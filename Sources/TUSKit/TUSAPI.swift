@@ -19,7 +19,7 @@ public enum TUSAPIError: Error {
     public var localizedDescription: String {
         switch self {
         case .underlyingError(let error):
-            return error.localizedDescription
+            return "Underlying error: " + error.localizedDescription
         case .couldNotFetchStatus:
             return "Could not fetch status from server."
         case .couldNotFetchServerInfo:

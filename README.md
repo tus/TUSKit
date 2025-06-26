@@ -33,6 +33,7 @@ final class MyClass {
 Note that you can register as a delegate to retrieve the URL's of the uploads, and also any errors that may arise.
 
 Note that you *can* pass your own `URLSession` instance to the initializer.
+However, custom `URLSession` instances with a background configuration are not supported, as `URLSessionTaskDelegate` cannot be assigned to tasks created by such sessions.
 
 You can conform to the `TUSClientDelegate` to receive updates from the `TUSClient`.
 

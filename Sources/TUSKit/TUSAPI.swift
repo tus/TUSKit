@@ -35,10 +35,12 @@ final class TUSAPI {
         case delete = "DELETE"
     }
     
-    var session: URLSession!
+    let sessionIdentifier: String?
+    private let session: URLSession
+    private let sessionDelegate = SessionDataDelegate()
+    private let queue = DispatchQueue(label: "com.tus.TUSAPI")
     private var backgroundHandler: (() -> Void)? = nil
     private var callbacks: [String: (Result<HTTPURLResponse, Error>) -> Void] = [:]
-    private var queue = DispatchQueue(label: "com.tus.TUSAPI")
     
     deinit {
         if session.delegate is SessionDataDelegate {
@@ -48,10 +50,14 @@ final class TUSAPI {
     
     init(session: URLSession) {
         self.session = session
+        self.sessionIdentifier = session.configuration.identifier
+        self.sessionDelegate.api = self
     }
     
     init(sessionConfiguration: URLSessionConfiguration) {
-        self.session = URLSession(configuration: sessionConfiguration, delegate: SessionDataDelegate(api: self), delegateQueue: nil)
+        self.session = URLSession(configuration: sessionConfiguration, delegate: sessionDelegate, delegateQueue: nil)
+        self.sessionIdentifier = sessionConfiguration.identifier
+        self.sessionDelegate.api = self
     }
     
     @discardableResult
@@ -107,6 +113,9 @@ final class TUSAPI {
         
         let task = session.dataTask(with: request)
         task.taskDescription = identifier
+        if #available(iOS 15.0, macOS 12, *), !session.configuration.sessionSendsLaunchEvents {
+            task.delegate = sessionDelegate
+        }
         
         queue.sync {
             callbacks[identifier] = { result in
@@ -143,6 +152,9 @@ final class TUSAPI {
         let identifier = UUID().uuidString
         let task = session.dataTask(with: request)
         task.taskDescription = identifier
+        if #available(iOS 15.0, macOS 12, *), !session.configuration.sessionSendsLaunchEvents {
+            task.delegate = sessionDelegate
+        }
         
         queue.sync {
             callbacks[identifier] =  { result in
@@ -245,6 +257,9 @@ final class TUSAPI {
         let request = makeRequest(url: location, method: .patch, headers: headersWithCustom)
         let task = session.uploadTask(with: request, from: data)
         task.taskDescription = metaData.id.uuidString
+        if #available(iOS 15.0, macOS 12, *), !session.configuration.sessionSendsLaunchEvents {
+            task.delegate = sessionDelegate
+        }
         
         queue.sync {
             callbacks[metaData.id.uuidString] = { result in
@@ -293,6 +308,10 @@ final class TUSAPI {
         let request = makeRequest(url: location, method: .patch, headers: headersWithCustom)
         let task = session.uploadTask(with: request, fromFile: file)
         task.taskDescription = metaData.id.uuidString
+        if #available(iOS 15.0, macOS 12, *), !session.configuration.sessionSendsLaunchEvents {
+            task.delegate = sessionDelegate
+        }
+        
         queue.sync {
             self.callbacks[metaData.id.uuidString] = { result in
                 processResult(completion: completion) {
@@ -399,11 +418,7 @@ extension Dictionary {
 
 private extension TUSAPI {
     final class SessionDataDelegate: NSObject, URLSessionDataDelegate {
-        private weak var api: TUSAPI?
-        
-        init(api: TUSAPI) {
-            self.api = api
-        }
+        weak var api: TUSAPI?
         
         func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
             api?.handleCompletionOfTask(task, withError: error)

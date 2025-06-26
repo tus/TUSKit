@@ -22,4 +22,5 @@ public enum TUSClientError: Error {
     case emptyUploadRange
     case rangeLargerThanFile
     case taskCancelled
+    case customURLSessionWithBackgroundConfigurationNotSupported
 }

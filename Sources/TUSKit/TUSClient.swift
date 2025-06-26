@@ -402,12 +402,21 @@ public final class TUSClient {
   @discardableResult
   public func resume(id: UUID) throws -> Bool {
       do {
-          var uploadMetadata: UploadMetadata?
+          var metaData: UploadMetadata?
           queue.sync {
-              uploadMetadata = uploads[id]
+              metaData = uploads[id]
           }
-          guard uploadMetadata != nil else { return false }
-          guard let metaData = try files.findMetadata(id: id) else {
+          
+          if metaData == nil {
+              guard let storedMetadata = try files.findMetadata(id: id) else {
+                  return false
+              }
+              
+              metaData = storedMetadata
+          }
+          
+          guard let metaData else {
+              // should never happen...
               return false
           }
           

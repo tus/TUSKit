@@ -117,8 +117,6 @@ extension UploadsListView {
     
     
     // MARK: - Records List View
-    
-    
     @ViewBuilder
     private func uploadRecordsListView(items: [UUID: UploadStatus]) -> some View {
         ScrollView {
@@ -135,6 +133,10 @@ extension UploadsListView {
                                 UploadedRowView(key: idx.key, url: url)
                             case .failed(let error):
                                 FailedRowView(key: idx.key, error: error)
+                                    .onAppear {
+                                        print(error)
+                                        print(error.localizedDescription)
+                                    }
                         }
                     }
                     Divider()

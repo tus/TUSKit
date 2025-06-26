@@ -15,6 +15,23 @@ public enum TUSAPIError: Error {
     case couldNotRetrieveOffset
     case couldNotRetrieveLocation
     case failedRequest(HTTPURLResponse)
+    
+    public var localizedDescription: String {
+        switch self {
+        case .underlyingError(let error):
+            return "Underlying error: " + error.localizedDescription
+        case .couldNotFetchStatus:
+            return "Could not fetch status from server."
+        case .couldNotFetchServerInfo:
+            return "Could not fetch server info."
+        case .couldNotRetrieveOffset:
+            return "Could not retrieve offset from response."
+        case .couldNotRetrieveLocation:
+            return "Could not retrieve location from response."
+        case .failedRequest(let response):
+            return "Failed request with status code \(response.statusCode)."
+        }
+    }
 }
 
 /// The status of an upload.

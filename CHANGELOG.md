@@ -1,3 +1,10 @@
+# 3.6.0
+
+## Bugfix
+- Uploads no longer consume large amounts of memory when resuming an upload ([#204](https://github.com/tus/TUSKit/issues/204))
+- Uploads no longer start over when they're paused and resumed ([#204](https://github.com/tus/TUSKit/issues/204))
+- Better handling of background URLSessions provided by developers ([#206](https://github.com/tus/TUSKit/issues/206) by [dsandriyanov](https://github.com/dsandriyanov))
+
 # 3.5.0
 
 ## Bugfix

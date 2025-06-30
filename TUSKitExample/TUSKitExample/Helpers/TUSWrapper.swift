@@ -40,12 +40,20 @@ class TUSWrapper: ObservableObject {
     
     @MainActor
     func resumeUpload(id: UUID) {
-        _ = try? client.resume(id: id)
-        
-        if case let .paused(bytesUploaded, totalBytes) = uploads[id] {
-            withAnimation {
-                uploads[id] = .uploading(bytesUploaded: bytesUploaded, totalBytes: totalBytes)
+        do {
+            guard try client.resume(id: id) == true else {
+                print("Upload not resumed; metadata not found")
+                return
             }
+            
+            if case let .paused(bytesUploaded, totalBytes) = uploads[id] {
+                withAnimation {
+                    uploads[id] = .uploading(bytesUploaded: bytesUploaded, totalBytes: totalBytes)
+                }
+            }
+        } catch {
+            print("Could not resume upload with id \(id)")
+            print(error)
         }
     }
     
@@ -99,6 +107,10 @@ extension TUSWrapper: TUSClientDelegate {
     
     func uploadFailed(id: UUID, error: Error, context: [String : String]?, client: TUSClient) {
         Task { @MainActor in
+            // Pausing an upload means we cancel it, so we don't want to show it as failed.
+            if let tusError = error as? TUSClientError, case .taskCancelled = tusError {
+                return
+            }
             
             withAnimation {
                 uploads[id] = .failed(error: error)

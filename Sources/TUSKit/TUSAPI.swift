@@ -8,14 +8,14 @@
 import Foundation
 
 /// The errors a TUSAPI can return
-public enum TUSAPIError: Error {
+public enum TUSAPIError: Error, LocalizedError {
     case underlyingError(Error)
     case couldNotFetchStatus
     case couldNotFetchServerInfo
     case couldNotRetrieveOffset
     case couldNotRetrieveLocation
-    case failedRequest(HTTPURLResponse)
-    
+    case failedRequest(HTTPURLResponse, data: Data?)
+
     public var localizedDescription: String {
         switch self {
         case .underlyingError(let error):
@@ -28,9 +28,17 @@ public enum TUSAPIError: Error {
             return "Could not retrieve offset from response."
         case .couldNotRetrieveLocation:
             return "Could not retrieve location from response."
-        case .failedRequest(let response):
-            return "Failed request with status code \(response.statusCode)."
+        case .failedRequest(let response, let data):
+            if let data, let message = String(data: data, encoding: .utf8) {
+                return "Failed request with status code \(response.statusCode): \(message)"
+            } else {
+                return "Failed request with status code \(response.statusCode)."
+            }
         }
+    }
+
+    public var errorDescription: String? {
+        localizedDescription
     }
 }
 
@@ -57,8 +65,8 @@ final class TUSAPI {
     private let sessionDelegate = SessionDataDelegate()
     private let queue = DispatchQueue(label: "com.tus.TUSAPI")
     private var backgroundHandler: (() -> Void)? = nil
-    private var callbacks: [String: (Result<HTTPURLResponse, Error>) -> Void] = [:]
-    
+    private var callbacks: [String: (Result<(Data?, HTTPURLResponse), Error>) -> Void] = [:]
+
     deinit {
         if session.delegate is SessionDataDelegate {
             session.finishTasksAndInvalidate()
@@ -137,10 +145,10 @@ final class TUSAPI {
         queue.sync {
             callbacks[identifier] = { result in
                 processResult(completion: completion) {
-                    let response =  try result.get()
-                    
+                    let (data, response) =  try result.get()
+
                     guard (200...299).contains(response.statusCode) else {
-                        throw TUSAPIError.failedRequest(response)
+                        throw TUSAPIError.failedRequest(response, data: data)
                     }
                     
                     guard let lengthStr = response.allHeaderFields[caseInsensitive: "upload-Length"] as? String,
@@ -176,10 +184,10 @@ final class TUSAPI {
         queue.sync {
             callbacks[identifier] =  { result in
                 processResult(completion: completion) {
-                    let response = try result.get()
-                    
+                    let (data, response) = try result.get()
+
                     guard (200...299).contains(response.statusCode) else {
-                        throw TUSAPIError.failedRequest(response)
+                        throw TUSAPIError.failedRequest(response, data: data)
                     }
 
                     guard let location = response.allHeaderFields[caseInsensitive: "location"] as? String,
@@ -281,10 +289,10 @@ final class TUSAPI {
         queue.sync {
             callbacks[metaData.id.uuidString] = { result in
                 processResult(completion: completion) {
-                    let response = try result.get()
-                    
+                    let (data, response) = try result.get()
+
                     guard (200...299).contains(response.statusCode) else {
-                        throw TUSAPIError.failedRequest(response)
+                        throw TUSAPIError.failedRequest(response, data: data)
                     }
                     
                     guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
@@ -332,7 +340,7 @@ final class TUSAPI {
         queue.sync {
             self.callbacks[metaData.id.uuidString] = { result in
                 processResult(completion: completion) {
-                    let response = try result.get()
+                    let (data, response) = try result.get()
                     guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
                           let offset = Int(offsetStr) else {
                         throw TUSAPIError.couldNotRetrieveOffset
@@ -349,7 +357,7 @@ final class TUSAPI {
         queue.sync {
             self.callbacks[metadata.id.uuidString] = { result in
                 processResult(completion: completion) {
-                    let response = try result.get()
+                    let (data, response) = try result.get()
                     guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
                           let offset = Int(offsetStr) else {
                         throw TUSAPIError.couldNotRetrieveOffset
@@ -436,7 +444,11 @@ extension Dictionary {
 private extension TUSAPI {
     final class SessionDataDelegate: NSObject, URLSessionDataDelegate {
         weak var api: TUSAPI?
-        
+
+        func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+            api?.handleCompletionOfTask(dataTask, withError: nil, data: data)
+        }
+
         func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
             api?.handleCompletionOfTask(task, withError: error)
         }
@@ -446,7 +458,7 @@ private extension TUSAPI {
         }
     }
     
-    func handleCompletionOfTask(_ task: URLSessionTask, withError error: Error?) {
+    func handleCompletionOfTask(_ task: URLSessionTask, withError error: Error?, data: Data? = nil) {
         queue.sync {
             guard let identifier = task.taskDescription else {
                 return
@@ -469,8 +481,9 @@ private extension TUSAPI {
                 completion(.failure(TUSAPIError.underlyingError(NetworkError.noHTTPURLResponse)))
                 return
             }
-            
-            completion(.success(response))
+
+            let success = (data, response)
+            completion(.success(success))
         }
     }
     

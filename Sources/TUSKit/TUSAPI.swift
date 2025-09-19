@@ -66,6 +66,7 @@ final class TUSAPI {
     private let queue = DispatchQueue(label: "com.tus.TUSAPI")
     private var backgroundHandler: (() -> Void)? = nil
     private var callbacks: [String: (Result<(Data?, HTTPURLResponse), Error>) -> Void] = [:]
+    private var taskData: [String: Data] = [:]
 
     deinit {
         if session.delegate is SessionDataDelegate {
@@ -446,7 +447,11 @@ private extension TUSAPI {
         weak var api: TUSAPI?
 
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-            api?.handleCompletionOfTask(dataTask, withError: nil, data: data)
+            guard let api, let identifier = dataTask.taskDescription else {
+                return
+            }
+
+            api.taskData[identifier, default: Data()].append(data)
         }
 
         func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
@@ -458,7 +463,7 @@ private extension TUSAPI {
         }
     }
     
-    func handleCompletionOfTask(_ task: URLSessionTask, withError error: Error?, data: Data? = nil) {
+    func handleCompletionOfTask(_ task: URLSessionTask, withError error: Error?) {
         queue.sync {
             guard let identifier = task.taskDescription else {
                 return
@@ -466,6 +471,7 @@ private extension TUSAPI {
             
             defer {
                 callbacks.removeValue(forKey: identifier)
+                taskData.removeValue(forKey: identifier)
             }
             
             guard let completion = callbacks[identifier] else {
@@ -482,6 +488,7 @@ private extension TUSAPI {
                 return
             }
 
+            let data = taskData[identifier]
             let success = (data, response)
             completion(.success(success))
         }

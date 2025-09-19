@@ -14,7 +14,7 @@ public enum TUSAPIError: Error, LocalizedError {
     case couldNotFetchServerInfo
     case couldNotRetrieveOffset
     case couldNotRetrieveLocation
-    case failedRequest(HTTPURLResponse, data: Data?)
+    case failedRequest(HTTPURLResponse, Data?)
 
     public var localizedDescription: String {
         switch self {
@@ -149,7 +149,7 @@ final class TUSAPI {
                     let (data, response) =  try result.get()
 
                     guard (200...299).contains(response.statusCode) else {
-                        throw TUSAPIError.failedRequest(response, data: data)
+                        throw TUSAPIError.failedRequest(response, data)
                     }
                     
                     guard let lengthStr = response.allHeaderFields[caseInsensitive: "upload-Length"] as? String,
@@ -188,7 +188,7 @@ final class TUSAPI {
                     let (data, response) = try result.get()
 
                     guard (200...299).contains(response.statusCode) else {
-                        throw TUSAPIError.failedRequest(response, data: data)
+                        throw TUSAPIError.failedRequest(response, data)
                     }
 
                     guard let location = response.allHeaderFields[caseInsensitive: "location"] as? String,
@@ -293,7 +293,7 @@ final class TUSAPI {
                     let (data, response) = try result.get()
 
                     guard (200...299).contains(response.statusCode) else {
-                        throw TUSAPIError.failedRequest(response, data: data)
+                        throw TUSAPIError.failedRequest(response, data)
                     }
                     
                     guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,

@@ -1,14 +1,14 @@
 import Foundation
 
 /// The errors that are passed from TUSClient
-public enum TUSClientError: Error {
-    
+public enum TUSClientError: Error, LocalizedError {
+
     case couldNotCopyFile(underlyingError: Error)
     case couldNotStoreFile(underlyingError: Error)
     case fileSizeUnknown
     case couldNotLoadData(underlyingError: Error)
     case couldNotStoreFileMetadata(underlyingError: Error)
-    case couldNotCreateFileOnServer
+    case couldNotCreateFileOnServer(underlyingError: Error)
     case couldNotUploadFile(underlyingError: Error)
     case couldNotGetFileStatus
     case fileSizeMismatchWithServer
@@ -36,8 +36,8 @@ public enum TUSClientError: Error {
             return "Could not load data: \(underlyingError.localizedDescription)"
         case .couldNotStoreFileMetadata(let underlyingError):
             return "Could not store file metadata: \(underlyingError.localizedDescription)"
-        case .couldNotCreateFileOnServer:
-            return "Could not create file on server."
+        case .couldNotCreateFileOnServer(let underlyingError):
+            return "Could not create file on server: (\(underlyingError.localizedDescription))"
         case .couldNotUploadFile(let underlyingError):
             return "Could not upload file: \(underlyingError.localizedDescription)"
         case .couldNotGetFileStatus:
@@ -67,5 +67,9 @@ public enum TUSClientError: Error {
         case .customURLSessionWithBackgroundConfigurationNotSupported:
             return "Custom URLSession with background configuration is not supported."
         }
+    }
+
+    public var errorDescription: String? {
+        localizedDescription
     }
 }

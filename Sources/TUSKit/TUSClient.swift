@@ -6,8 +6,13 @@
 //
 
 import Foundation
+#if canImport(BackgroundTasks)
 import BackgroundTasks
-#if os(iOS)
+#endif
+
+#if canImport(UniformTypeIdentifiers)
+import UniformTypeIdentifiers
+#elseif canImport(MobileCoreServices)
 import MobileCoreServices
 #endif
 
@@ -28,10 +33,10 @@ public protocol TUSClientDelegate: AnyObject {
     /// - Important: The total is based on active uploads, so it will lower once files are uploaded. This is because it's ambiguous what the total is. E.g. You can be uploading 100 bytes, after 50 bytes are uploaded, let's say you add 150 more bytes, is the total then 250 or 200? And what if the upload is done, and you add 50 more. Is the total 50 or 300? or 250?
     ///
     /// As a rule of thumb: The total will be highest on the start, a good starting point is to compare the progress against that number.
-    @available(iOS 11.0, macOS 10.13, *)
+    @available(iOS 11.0, macOS 10.13, watchOS 6.0, *)
     func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient)
     
-    @available(iOS 11.0, macOS 10.13, *)
+    @available(iOS 11.0, macOS 10.13, watchOS 6.0, *)
     /// Get the progress of a specific upload by id. The id is given when adding an upload and methods of this delegate.
     func progressFor(id: UUID, context: [String: String]?, bytesUploaded: Int, totalBytes: Int, client: TUSClient)
 }
@@ -43,7 +48,7 @@ public extension TUSClientDelegate {
 }
 
 protocol ProgressDelegate: AnyObject {
-    @available(iOS 11.0, macOS 10.13, *)
+    @available(iOS 11.0, macOS 10.13, watchOS 6.0, *)
     func progressUpdatedFor(metaData: UploadMetadata, totalUploadedBytes: Int)
 }
 
@@ -94,7 +99,7 @@ public final class TUSClient {
                 storageDirectory: URL? = nil, chunkSize: Int = 500 * 1024,
                 supportedExtensions: [TUSProtocolExtension] = [.creation], reportingQueue: DispatchQueue = DispatchQueue.main) throws {
 
-        if #available(iOS 7.0, macOS 11.0, *) {
+        if #available(iOS 7.0, macOS 11.0, watchOS 6.0, *) {
           if sessionConfiguration.sessionSendsLaunchEvents == false {
             print("TUSClient warning: initializing with a session configuration that's not suited for background uploads.")
           }
@@ -166,7 +171,7 @@ public final class TUSClient {
     /// - Important: The client assumes by default that your server implements the Creation TUS protocol extension. If your server does not support that,
     ///   make sure that you provide an empty array in the `supportExtensions` parameter.
     /// - Throws: File related errors when it can't make a directory at the designated path.
-    @available(iOS 15.0, macOS 12.0, *)
+    @available(iOS 15.0, macOS 12.0, watchOS 8.0, *)
     public init(server: URL, storageDirectory: URL? = nil,
                 session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024,
                 supportedExtensions: [TUSProtocolExtension] = [.creation], reportingQueue: DispatchQueue = DispatchQueue.main) throws {
@@ -257,7 +262,7 @@ public final class TUSClient {
             let id = UUID()
             #if os(macOS)
             let destinationFilePath = filePath
-            #elseif os(iOS)
+            #else
             let destinationFilePath = try files.copy(from: filePath, id: id)
             #endif
             try scheduleTask(for: destinationFilePath, id: id, uploadURL: uploadURL, customHeaders: customHeaders, context: context)
@@ -784,7 +789,7 @@ func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int
 
 extension TUSClient: ProgressDelegate {
     
-    @available(iOS 11.0, macOS 10.13, *)
+    @available(iOS 11.0, macOS 10.13, watchOS 6.0, *)
     func progressUpdatedFor(metaData: UploadMetadata, totalUploadedBytes: Int) {
         reportingQueue.async {
             self.delegate?.progressFor(id: metaData.id, context: metaData.context, bytesUploaded: totalUploadedBytes, totalBytes: metaData.size, client: self)
@@ -814,13 +819,21 @@ extension TUSClient: ProgressDelegate {
 
 private extension URL {
     var mimeType: String {
-        let pathExtension = self.pathExtension
-        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension as NSString, nil)?.takeRetainedValue() {
-            if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
-                return mimetype as String
-            }
+        #if canImport(UniformTypeIdentifiers)
+        if let utType = UTType(filenameExtension: self.pathExtension),
+           let mime = utType.preferredMIMEType {
+            return mime
         }
         return "application/octet-stream"
+        #elseif canImport(MobileCoreServices)
+        let pathExtension = self.pathExtension as NSString
+        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension, nil)?.takeRetainedValue(),
+           let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
+            return mimetype as String
+        }
+        return "application/octet-stream"
+        #else
+        return "application/octet-stream"
+        #endif
     }
 }
-

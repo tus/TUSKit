@@ -5,22 +5,25 @@ import PackageDescription
 
 let package = Package(
     name: "TUSKit",
-    platforms: [.iOS(.v10), .macOS(.v10_11)],
+    platforms: [.iOS(.v10), .macOS(.v10_11), .watchOS(.v8)],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "TUSKit",
-            targets: ["TUSKit"]),
+            targets: ["TUSKit"]
+        ),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "TUSKit",
-            dependencies: []),
+            dependencies: []
+        ),
         .testTarget(
             name: "TUSKitTests",
             dependencies: ["TUSKit"],
-            resources: [.process("Resources")]) // Required to have SwiftPM generate a bundle with resource files
+            resources: [.process("Resources")]
+        ), // Required to have SwiftPM generate a bundle with resource files
     ]
 )

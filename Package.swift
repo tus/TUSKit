@@ -5,7 +5,11 @@ import PackageDescription
 
 let package = Package(
     name: "TUSKit",
-    platforms: [.iOS(.v10), .macOS(.v10_11), .watchOS(.v8)],
+    platforms: [
+        .iOS(.v14),
+        .macOS(.v11),
+        .watchOS(.v8)
+    ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(

@@ -841,13 +841,14 @@ final class HeaderGenerator {
             return
         }
         guard let handler = handler else {
-            store(headers: baseHeaders, for: metaData.id)
+            store(headers: baseHeaders, for: metaData)
             completion(baseHeaders)
             return
         }
 
         handler(metaData.id, baseHeaders) { [weak self] headers in
             guard let self else {
+                metaData.updateAppliedCustomHeaders(baseHeaders)
                 completion(baseHeaders)
                 return
             }
@@ -856,7 +857,7 @@ final class HeaderGenerator {
             for (key, value) in headers where allowedKeys.contains(key) {
                 sanitized[key] = value
             }
-            self.store(headers: sanitized, for: metaData.id)
+            self.store(headers: sanitized, for: metaData)
             completion(sanitized)
         }
     }
@@ -874,18 +875,19 @@ final class HeaderGenerator {
     }
 
     private func storedHeaders(for metaData: UploadMetadata) -> [String: String] {
-        queue.sync {
-            if let stored = latestHeaders[metaData.id] {
-                return stored
-            } else {
-                return metaData.customHeaders ?? [:]
-            }
+        if let inMemory = queue.sync(execute: { latestHeaders[metaData.id] }) {
+            return inMemory
         }
+        if let applied = metaData.appliedCustomHeaders {
+            return applied
+        }
+        return metaData.customHeaders ?? [:]
     }
 
-    private func store(headers: [String: String], for id: UUID) {
+    private func store(headers: [String: String], for metaData: UploadMetadata) {
+        metaData.updateAppliedCustomHeaders(headers)
         queue.async {
-            self.latestHeaders[id] = headers
+            self.latestHeaders[metaData.id] = headers
         }
     }
 }

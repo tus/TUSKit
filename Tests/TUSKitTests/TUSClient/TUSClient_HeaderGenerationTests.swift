@@ -13,7 +13,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        relativeStoragePath = URL(string: "TUSHeaderTests")!
+        relativeStoragePath = URL(string: UUID().uuidString)!
 
         MockURLProtocol.reset()
 
@@ -143,12 +143,12 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         configuration.protocolClasses = [MockURLProtocol.self]
 
         prepareNetworkForSuccesfulUploads(data: data)
-        prepareNetworkForFailingUploads()
 
-        let generatorCalledTwice = expectation(description: "Header generator called twice")
-        generatorCalledTwice.expectedFulfillmentCount = 2
-        var calls: [String] = []
+        let firstGeneratorCalled = expectation(description: "First header generator called")
+        let uploadStarted = expectation(description: "Upload started before pausing")
+        tusDelegate.startUploadExpectation = uploadStarted
 
+        var firstFulfilled = false
         client = try TUSClient(
             server: URL(string: "https://tusd.tusdemo.net/files")!,
             sessionIdentifier: "TEST",
@@ -156,17 +156,45 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
             storageDirectory: relativeStoragePath,
             supportedExtensions: [.creation],
             generateHeaders: { _, headers, onHeadersGenerated in
-                let current = headers["Authorization"] ?? ""
-                calls.append(current)
-                onHeadersGenerated(["Authorization": current.isEmpty ? "Bearer resuming" : "\(current)-resumed"])
-                generatorCalledTwice.fulfill()
+                onHeadersGenerated(["Authorization": "Bearer resume-mutated"])
+                if !firstFulfilled {
+                    firstFulfilled = true
+                    firstGeneratorCalled.fulfill()
+                }
             }
         )
         client.delegate = tusDelegate
 
         let uploadID = try client.upload(data: data, customHeaders: ["Authorization": "Bearer resume"])
-        wait(for: [generatorCalledTwice], timeout: 5)
-        XCTAssertEqual(calls.first, "Bearer resume")
-        XCTAssertEqual(calls.last, "Bearer resume-resumed")
+        wait(for: [firstGeneratorCalled, uploadStarted], timeout: 5)
+        client.stopAndCancelAll()
+
+        MockURLProtocol.reset()
+        prepareNetworkForSuccesfulStatusCall(data: data)
+        prepareNetworkForSuccesfulUploads(data: data)
+
+        tusDelegate = TUSMockDelegate()
+        let finishExpectation = expectation(description: "Upload should finish after resume")
+        tusDelegate.finishUploadExpectation = finishExpectation
+
+        var resumedHeaders: [String] = []
+        client = try TUSClient(
+            server: URL(string: "https://tusd.tusdemo.net/files")!,
+            sessionIdentifier: "TEST",
+            sessionConfiguration: configuration,
+            storageDirectory: relativeStoragePath,
+            supportedExtensions: [.creation],
+            generateHeaders: { _, headers, onHeadersGenerated in
+                resumedHeaders.append(headers["Authorization"] ?? "")
+                onHeadersGenerated(headers)
+            }
+        )
+        client.delegate = tusDelegate
+
+        let resumedUploads = client.start().map(\.0)
+        XCTAssertTrue(resumedUploads.contains(uploadID))
+        wait(for: [finishExpectation], timeout: 5)
+        XCTAssertFalse(resumedHeaders.isEmpty)
+        XCTAssertEqual(resumedHeaders.first, "Bearer resume-mutated")
     }
 }

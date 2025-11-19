@@ -93,4 +93,47 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         XCTAssertNoThrow(try client.upload(data: data))
         wait(for: [generatorNotCalled], timeout: 0.5)
     }
+
+    /// Ensures the generator receives the headers that were actually used on the previous request when retrying.
+    func testGenerateHeadersReceivesLastAppliedValuesOnAutomaticRetry() throws {
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+
+        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForFailingUploads()
+
+        var receivedAuthorizationHeaders: [String] = []
+        let generatorCalledTwice = expectation(description: "Header generator called twice")
+        generatorCalledTwice.expectedFulfillmentCount = 2
+        var trackedCalls = 0
+
+        let uploadFailed = expectation(description: "Upload should fail after retries")
+        tusDelegate.uploadFailedExpectation = uploadFailed
+
+        client = try TUSClient(
+            server: URL(string: "https://tusd.tusdemo.net/files")!,
+            sessionIdentifier: "TEST",
+            sessionConfiguration: configuration,
+            storageDirectory: relativeStoragePath,
+            supportedExtensions: [.creation],
+            generateHeaders: { _, headers, onHeadersGenerated in
+                let current = headers["Authorization"] ?? ""
+                receivedAuthorizationHeaders.append(current)
+                let nextValue = current.isEmpty ? "Bearer mutated\(receivedAuthorizationHeaders.count)" : "\(current)-mutated\(receivedAuthorizationHeaders.count - 1)"
+                onHeadersGenerated(["Authorization": nextValue])
+                if trackedCalls < 2 {
+                    generatorCalledTwice.fulfill()
+                }
+                trackedCalls += 1
+            }
+        )
+        client.delegate = tusDelegate
+
+        _ = try client.upload(data: data, customHeaders: ["Authorization": "Bearer original"])
+
+        wait(for: [uploadFailed, generatorCalledTwice], timeout: 5)
+        XCTAssertGreaterThanOrEqual(receivedAuthorizationHeaders.count, 2)
+        XCTAssertEqual(receivedAuthorizationHeaders[0], "Bearer original")
+        XCTAssertEqual(receivedAuthorizationHeaders[1], "Bearer original-mutated0")
+    }
 }

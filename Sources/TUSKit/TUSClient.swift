@@ -349,6 +349,7 @@ public final class TUSClient {
     public func clearAllCache() throws {
         do {
             try files.clearCacheInStorageDirectory()
+            headerGenerator.clearAll()
         } catch let error {
             throw TUSClientError.couldNotDeleteFile(underlyingError: error)
         }
@@ -367,6 +368,7 @@ public final class TUSClient {
             }
             
             try files.removeFileAndMetadata(metaData)
+            headerGenerator.clearHeaders(for: id)
             return true
         } catch let error {
             throw TUSClientError.couldNotDeleteFile(underlyingError: error)
@@ -693,6 +695,7 @@ extension TUSClient: SchedulerDelegate {
         queue.sync {
             self.uploads[uploadTask.metaData.id] = nil
         }
+        headerGenerator.clearHeaders(for: uploadTask.metaData.id)
         reportingQueue.async {
             self.delegate?.didFinishUpload(id: uploadTask.metaData.id, url: url, context: uploadTask.metaData.context, client: self)
         }
@@ -753,6 +756,7 @@ extension TUSClient: SchedulerDelegate {
             queue.sync {
                 self.uploads[metaData.id] = nil
             }
+            headerGenerator.clearHeaders(for: metaData.id)
             reportingQueue.async {
                 self.delegate?.uploadFailed(id: metaData.id, error: error, context: metaData.context, client: self)
             }
@@ -823,33 +827,65 @@ extension TUSClient: ProgressDelegate {
 
 final class HeaderGenerator {
     private let handler: HeaderGenerationHandler?
+    private let queue = DispatchQueue(label: "com.tuskit.headergenerator")
+    private var latestHeaders = [UUID: [String: String]]()
 
     init(handler: HeaderGenerationHandler?) {
         self.handler = handler
     }
 
     func resolveHeaders(for metaData: UploadMetadata, completion: @escaping ([String: String]) -> Void) {
-        let baseHeaders = metaData.customHeaders ?? [:]
+        let baseHeaders = storedHeaders(for: metaData)
         guard !baseHeaders.isEmpty else {
             completion([:])
             return
         }
         guard let handler = handler else {
+            store(headers: baseHeaders, for: metaData.id)
             completion(baseHeaders)
             return
         }
 
-        handler(metaData.id, baseHeaders) { headers in
-            let allowedKeys = Set(baseHeaders.keys)
-            guard !allowedKeys.isEmpty else {
-                completion([:])
+        handler(metaData.id, baseHeaders) { [weak self] headers in
+            guard let self else {
+                completion(baseHeaders)
                 return
             }
+            let allowedKeys = Set(baseHeaders.keys)
             var sanitized = baseHeaders
             for (key, value) in headers where allowedKeys.contains(key) {
                 sanitized[key] = value
             }
+            self.store(headers: sanitized, for: metaData.id)
             completion(sanitized)
+        }
+    }
+
+    func clearHeaders(for id: UUID) {
+        queue.async {
+            self.latestHeaders.removeValue(forKey: id)
+        }
+    }
+
+    func clearAll() {
+        queue.async {
+            self.latestHeaders.removeAll()
+        }
+    }
+
+    private func storedHeaders(for metaData: UploadMetadata) -> [String: String] {
+        queue.sync {
+            if let stored = latestHeaders[metaData.id] {
+                return stored
+            } else {
+                return metaData.customHeaders ?? [:]
+            }
+        }
+    }
+
+    private func store(headers: [String: String], for id: UUID) {
+        queue.async {
+            self.latestHeaders[id] = headers
         }
     }
 }

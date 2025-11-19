@@ -173,8 +173,8 @@ final class TUSAPI {
     ///   - metaData: The file metadata.
     ///   - completion: Completes with a result that gives a URL to upload to.
     @discardableResult
-    func create(metaData: UploadMetadata, completion: @escaping (Result<URL, TUSAPIError>) -> Void) -> URLSessionDataTask {
-        let request = makeCreateRequest(metaData: metaData)
+    func create(metaData: UploadMetadata, customHeaders: [String: String], completion: @escaping (Result<URL, TUSAPIError>) -> Void) -> URLSessionDataTask {
+        let request = makeCreateRequest(metaData: metaData, customHeaders: customHeaders)
         let identifier = UUID().uuidString
         let task = session.dataTask(with: request)
         task.taskDescription = identifier
@@ -205,7 +205,7 @@ final class TUSAPI {
         return task
     }
     
-    func makeCreateRequest(metaData: UploadMetadata) -> URLRequest {
+    func makeCreateRequest(metaData: UploadMetadata, customHeaders: [String: String]) -> URLRequest {
         func makeUploadMetaHeader() -> [String: String] {
             var metaDataDict: [String: String] = [:]
             
@@ -247,7 +247,7 @@ final class TUSAPI {
         }
         
         /// Attach all headers from customHeader property
-        let headers = defaultHeaders.merging(metaData.customHeaders ?? [:]) { _, new in new }
+        let headers = defaultHeaders.merging(customHeaders) { _, new in new }
         
         return makeRequest(url: metaData.uploadURL, method: .post, headers: headers)
     }
@@ -259,7 +259,7 @@ final class TUSAPI {
     ///   - location: The location of where to upload to.
     ///   - completion: Completionhandler for when the upload is finished.
     @discardableResult
-    func upload(data: Data, range: Range<Int>?, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
+    func upload(data: Data, range: Range<Int>?, location: URL, metaData: UploadMetadata, customHeaders: [String: String], completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
         let offset: Int
         let length: Int
         if let range = range {
@@ -278,7 +278,7 @@ final class TUSAPI {
         ]
         
         /// Attach all headers from customHeader property
-        let headersWithCustom = headers.merging(metaData.customHeaders ?? [:]) { _, new in new }
+        let headersWithCustom = headers.merging(customHeaders) { _, new in new }
         
         let request = makeRequest(url: location, method: .patch, headers: headersWithCustom)
         let task = session.uploadTask(with: request, from: data)
@@ -310,7 +310,7 @@ final class TUSAPI {
         return task
     }
     
-    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata, completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
+    func upload(fromFile file: URL, offset: Int = 0, location: URL, metaData: UploadMetadata, customHeaders: [String: String], completion: @escaping (Result<Int, TUSAPIError>) -> Void) -> URLSessionUploadTask {
         let length: Int
         if let fileAttributes = try? FileManager.default.attributesOfItem(atPath: file.path) {
             if let bytes = fileAttributes[.size] as? Int64 {
@@ -329,7 +329,7 @@ final class TUSAPI {
         ]
         
         /// Attach all headers from customHeader property
-        let headersWithCustom = headers.merging(metaData.customHeaders ?? [:]) { _, new in new }
+        let headersWithCustom = headers.merging(customHeaders) { _, new in new }
         
         let request = makeRequest(url: location, method: .patch, headers: headersWithCustom)
         let task = session.uploadTask(with: request, fromFile: file)
@@ -503,4 +503,3 @@ private extension TUSAPI {
         }
     }
 }
-

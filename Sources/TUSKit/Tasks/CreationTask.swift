@@ -23,54 +23,64 @@ final class CreationTask: IdentifiableTask {
     private let api: TUSAPI
     private let files: Files
     private let chunkSize: Int?
+    private let headerGenerator: HeaderGenerator
     private var didCancel: Bool = false
     private weak var sessionTask: URLSessionDataTask?
 
     private let queue = DispatchQueue(label: "com.tuskit.creationtask")
 
-    init(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int? = nil) throws {
+    init(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int? = nil, headerGenerator: HeaderGenerator) throws {
         self.metaData = metaData
         self.api = api
         self.files = files
         self.chunkSize = chunkSize
+        self.headerGenerator = headerGenerator
     }
     
     func run(completed: @escaping TaskCompletion) {
         queue.async {
             if self.didCancel { return }
 
-            self.sessionTask = self.api.create(metaData: self.metaData) { [weak self] result in
+            self.headerGenerator.resolveHeaders(for: self.metaData) { [weak self] customHeaders in
                 guard let self else { return }
 
-                // File is created remotely. Now start first datatask.
                 self.queue.async {
-                    let metaData = self.metaData
-                    let files = self.files
-                    let chunkSize = self.chunkSize
-                    let api = self.api
-                    let progressDelegate = self.progressDelegate
+                    if self.didCancel { return }
 
-                    do {
-                        let remoteDestination = try result.get()
-                        metaData.remoteDestination = remoteDestination
-                        try files.encodeAndStore(metaData: metaData)
-                        let task: UploadDataTask
-                        if let chunkSize = chunkSize {
-                            let newRange = 0..<min(chunkSize, metaData.size)
-                            task = try UploadDataTask(api: api, metaData: metaData, files: files, range: newRange)
-                        } else {
-                            task = try UploadDataTask(api: api, metaData: metaData, files: files)
+                    self.sessionTask = self.api.create(metaData: self.metaData, customHeaders: customHeaders) { [weak self] result in
+                        guard let self else { return }
+
+                        // File is created remotely. Now start first datatask.
+                        self.queue.async {
+                            let metaData = self.metaData
+                            let files = self.files
+                            let chunkSize = self.chunkSize
+                            let api = self.api
+                            let progressDelegate = self.progressDelegate
+
+                            do {
+                                let remoteDestination = try result.get()
+                                metaData.remoteDestination = remoteDestination
+                                try files.encodeAndStore(metaData: metaData)
+                                let task: UploadDataTask
+                                if let chunkSize = chunkSize {
+                                    let newRange = 0..<min(chunkSize, metaData.size)
+                                    task = try UploadDataTask(api: api, metaData: metaData, files: files, range: newRange, headerGenerator: self.headerGenerator)
+                                } else {
+                                    task = try UploadDataTask(api: api, metaData: metaData, files: files, headerGenerator: self.headerGenerator)
+                                }
+                                task.progressDelegate = progressDelegate
+                                if self.didCancel {
+                                    completed(.failure(TUSClientError.taskCancelled))
+                                } else {
+                                    completed(.success([task]))
+                                }
+                            } catch let error as TUSClientError {
+                                completed(.failure(error))
+                            } catch {
+                                completed(.failure(TUSClientError.couldNotCreateFileOnServer(underlyingError: error)))
+                            }
                         }
-                        task.progressDelegate = progressDelegate
-                        if self.didCancel {
-                            completed(.failure(TUSClientError.taskCancelled))
-                        } else {
-                            completed(.success([task]))
-                        }
-                    } catch let error as TUSClientError {
-                        completed(.failure(error))
-                    } catch {
-                        completed(.failure(TUSClientError.couldNotCreateFileOnServer(underlyingError: error)))
                     }
                 }
             }

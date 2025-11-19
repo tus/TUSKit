@@ -49,6 +49,8 @@ protocol ProgressDelegate: AnyObject {
 
 /// The TUSKit client.
 /// Please refer to the Readme.md on how to use this type.
+public typealias HeaderGenerationHandler = (_ requestID: UUID, _ headers: [String: String], _ completion: @escaping ([String: String]) -> Void) -> Void
+
 public final class TUSClient {
     
     // MARK: - Public Properties
@@ -76,6 +78,7 @@ public final class TUSClient {
     private var uploads = [UUID: UploadMetadata]()
     private let queue = DispatchQueue(label: "com.TUSKit.TUSClient")
     private let reportingQueue: DispatchQueue
+    private let headerGenerator: HeaderGenerator
 
     /// Initialize a TUSClient with support for background URLSessions and uploads
     /// - Parameters:
@@ -92,7 +95,8 @@ public final class TUSClient {
     /// - Throws: File related errors when it can't make a directory at the designated path.
     public init(server: URL, sessionIdentifier: String, sessionConfiguration: URLSessionConfiguration,
                 storageDirectory: URL? = nil, chunkSize: Int = 500 * 1024,
-                supportedExtensions: [TUSProtocolExtension] = [.creation], reportingQueue: DispatchQueue = DispatchQueue.main) throws {
+                supportedExtensions: [TUSProtocolExtension] = [.creation], reportingQueue: DispatchQueue = DispatchQueue.main,
+                generateHeaders: HeaderGenerationHandler? = nil) throws {
 
         if #available(iOS 7.0, macOS 11.0, *) {
           if sessionConfiguration.sessionSendsLaunchEvents == false {
@@ -116,6 +120,7 @@ public final class TUSClient {
         self.supportedExtensions = supportedExtensions
         self.scheduler = scheduler
         self.reportingQueue = reportingQueue
+        self.headerGenerator = HeaderGenerator(handler: generateHeaders)
         scheduler.delegate = self
         reregisterCallbacks()
     }
@@ -136,7 +141,8 @@ public final class TUSClient {
     @available(*, deprecated, message: "Use the init(server:sessionIdentifier:sessionConfiguration:storageDirectory:chunkSize:supportedExtension) initializer instead.")
     public init(server: URL, sessionIdentifier: String, storageDirectory: URL? = nil,
                 session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024,
-                supportedExtensions: [TUSProtocolExtension] = [.creation], reportingQueue: DispatchQueue = DispatchQueue.main) throws {
+                supportedExtensions: [TUSProtocolExtension] = [.creation], reportingQueue: DispatchQueue = DispatchQueue.main,
+                generateHeaders: HeaderGenerationHandler? = nil) throws {
         self.sessionIdentifier = sessionIdentifier
         self.api = TUSAPI(session: session)
         self.files = try Files(storageDirectory: storageDirectory)
@@ -149,6 +155,7 @@ public final class TUSClient {
         self.supportedExtensions = supportedExtensions
         self.scheduler = Scheduler()
         self.reportingQueue = reportingQueue
+        self.headerGenerator = HeaderGenerator(handler: generateHeaders)
         scheduler.delegate = self
         removeFinishedUploads()
         reregisterCallbacks()
@@ -169,7 +176,8 @@ public final class TUSClient {
     @available(iOS 15.0, macOS 12.0, *)
     public init(server: URL, storageDirectory: URL? = nil,
                 session: URLSession = URLSession.shared, chunkSize: Int = 500 * 1024,
-                supportedExtensions: [TUSProtocolExtension] = [.creation], reportingQueue: DispatchQueue = DispatchQueue.main) throws {
+                supportedExtensions: [TUSProtocolExtension] = [.creation], reportingQueue: DispatchQueue = DispatchQueue.main,
+                generateHeaders: HeaderGenerationHandler? = nil) throws {
         guard session.configuration.sessionSendsLaunchEvents == false else {
             throw TUSClientError.customURLSessionWithBackgroundConfigurationNotSupported
         }
@@ -185,6 +193,7 @@ public final class TUSClient {
         self.supportedExtensions = supportedExtensions
         self.scheduler = Scheduler()
         self.reportingQueue = reportingQueue
+        self.headerGenerator = HeaderGenerator(handler: generateHeaders)
         scheduler.delegate = self
         removeFinishedUploads()
         reregisterCallbacks()
@@ -516,7 +525,7 @@ public final class TUSClient {
                     return
                 }
                 guard taskExists,
-                      let task = try? UploadDataTask(api: self.api, metaData: metadata, files: self.files) else {
+                      let task = try? UploadDataTask(api: self.api, metaData: metadata, files: self.files, headerGenerator: self.headerGenerator) else {
                     return
                 }
                 
@@ -568,7 +577,7 @@ public final class TUSClient {
             }
         }
         
-        guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, progressDelegate: self) else {
+        guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, progressDelegate: self, headerGenerator: headerGenerator) else {
             assertionFailure("Could not find a task for metaData \(metaData)")
             return
         }
@@ -627,7 +636,7 @@ public final class TUSClient {
     /// Schedule a single task if needed. Will decide what task to schedule for the metaData.
     /// - Parameter metaData:The metaData the schedule.
     private func scheduleTask(for metaData: UploadMetadata) throws {
-        guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, progressDelegate: self) else {
+        guard let task = try taskFor(metaData: metaData, api: api, files: files, chunkSize: chunkSize, progressDelegate: self, headerGenerator: headerGenerator) else {
             throw TUSClientError.uploadIsAlreadyFinished
         }
         queue.sync {
@@ -766,17 +775,17 @@ private extension String {
 /// Decide which task to create based on metaData.
 /// - Parameter metaData: The `UploadMetadata` for which to create a `Task`.
 /// - Returns: The task that has to be performed for the relevant metaData. Will return nil if metaData's file is already uploaded / finished. (no task needed).
-func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int?, progressDelegate: ProgressDelegate? = nil) throws -> ScheduledTask? {
+func taskFor(metaData: UploadMetadata, api: TUSAPI, files: Files, chunkSize: Int?, progressDelegate: ProgressDelegate? = nil, headerGenerator: HeaderGenerator) throws -> ScheduledTask? {
     guard !metaData.isFinished else {
         return nil
     }
     
     if let remoteDestination = metaData.remoteDestination {
-        let statusTask = StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData, files: files, chunkSize: chunkSize)
+        let statusTask = StatusTask(api: api, remoteDestination: remoteDestination, metaData: metaData, files: files, chunkSize: chunkSize, headerGenerator: headerGenerator)
         statusTask.progressDelegate = progressDelegate
         return statusTask
     } else {
-        let creationTask = try CreationTask(metaData: metaData, api: api, files: files, chunkSize: chunkSize)
+        let creationTask = try CreationTask(metaData: metaData, api: api, files: files, chunkSize: chunkSize, headerGenerator: headerGenerator)
         creationTask.progressDelegate = progressDelegate
         return creationTask
     }
@@ -812,6 +821,35 @@ extension TUSClient: ProgressDelegate {
     }
 }
 
+final class HeaderGenerator {
+    private let handler: HeaderGenerationHandler?
+
+    init(handler: HeaderGenerationHandler?) {
+        self.handler = handler
+    }
+
+    func resolveHeaders(for metaData: UploadMetadata, completion: @escaping ([String: String]) -> Void) {
+        let baseHeaders = metaData.customHeaders ?? [:]
+        guard let handler = handler else {
+            completion(baseHeaders)
+            return
+        }
+
+        handler(metaData.id, baseHeaders) { headers in
+            let allowedKeys = Set(baseHeaders.keys)
+            guard !allowedKeys.isEmpty else {
+                completion([:])
+                return
+            }
+            var sanitized = baseHeaders
+            for (key, value) in headers where allowedKeys.contains(key) {
+                sanitized[key] = value
+            }
+            completion(sanitized)
+        }
+    }
+}
+
 private extension URL {
     var mimeType: String {
         let pathExtension = self.pathExtension
@@ -823,4 +861,3 @@ private extension URL {
         return "application/octet-stream"
     }
 }
-

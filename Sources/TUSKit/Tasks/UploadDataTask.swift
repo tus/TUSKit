@@ -29,6 +29,7 @@ final class UploadDataTask: NSObject, IdentifiableTask {
     private let range: Range<Int>?
     private var observation: NSKeyValueObservation?
     private weak var sessionTask: URLSessionUploadTask?
+    private let headerGenerator: HeaderGenerator
     
     /// Specify range, or upload
     /// - Parameters:
@@ -36,10 +37,11 @@ final class UploadDataTask: NSObject, IdentifiableTask {
     ///   - metaData: The metadata of the file to upload
     ///   - range: Specify range to upload. If omitted, will upload entire file at once.
     /// - Throws: File and network related errors
-    init(api: TUSAPI, metaData: UploadMetadata, files: Files, range: Range<Int>? = nil) throws {
+    init(api: TUSAPI, metaData: UploadMetadata, files: Files, range: Range<Int>? = nil, headerGenerator: HeaderGenerator) throws {
         self.api = api
         self.metaData = metaData
         self.files = files
+        self.headerGenerator = headerGenerator
         
         if let range = range, range.count == 0 {
             // Improve: Enrich error
@@ -91,25 +93,37 @@ final class UploadDataTask: NSObject, IdentifiableTask {
                 return
             }
 
-            let task = self.api.upload(fromFile: file,
-                                       offset: self.range?.lowerBound ?? 0,
-                                       location: remoteDestination,
-                                       metaData: self.metaData) { [weak self] result in
+            self.headerGenerator.resolveHeaders(for: self.metaData) { [weak self] customHeaders in
                 guard let self else { return }
 
                 self.queue.async {
-                    self.observation?.invalidate()
-                    self.taskCompleted(result: result, completed: completed)
+                    if self.isCanceled {
+                        completed(.failure(TUSClientError.taskCancelled))
+                        return
+                    }
+
+                    let task = self.api.upload(fromFile: file,
+                                               offset: self.range?.lowerBound ?? 0,
+                                               location: remoteDestination,
+                                               metaData: self.metaData,
+                                               customHeaders: customHeaders) { [weak self] result in
+                        guard let self else { return }
+
+                        self.queue.async {
+                            self.observation?.invalidate()
+                            self.taskCompleted(result: result, completed: completed)
+                        }
+                    }
+
+                    task.taskDescription = "\(self.metaData.id)"
+                    task.resume()
+
+                    self.sessionTask = task
+
+                    if #available(iOS 11.0, macOS 10.13, *) {
+                        self.observeTask(task: task, size: self.range?.count ?? dataSize)
+                    }
                 }
-            }
-
-            task.taskDescription = "\(self.metaData.id)"
-            task.resume()
-
-            self.sessionTask = task
-
-            if #available(iOS 11.0, macOS 10.13, *) {
-                self.observeTask(task: task, size: self.range?.count ?? dataSize)
             }
         }
     }
@@ -147,7 +161,7 @@ final class UploadDataTask: NSObject, IdentifiableTask {
                 nextRange = nil
             }
 
-            let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange)
+            let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange, headerGenerator: headerGenerator)
             task.progressDelegate = progressDelegate
             completed(.success([task]))
         } catch let error as TUSClientError {

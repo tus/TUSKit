@@ -262,4 +262,61 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
 
         XCTAssertEqual(observedHeaders.first, customHeaders)
     }
+
+    /// Ensures the generator only receives caller-supplied headers when a status check runs.
+    func testGenerateHeadersReceivesOnlyCustomHeadersDuringStatus() throws {
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+        prepareNetworkForSuccesfulUploads(data: data)
+
+        let customHeaders = ["Authorization": "Bearer bar", "X-Trace": "resume-123"]
+        tusDelegate.startUploadExpectation = expectation(description: "Upload started")
+
+        client = try TUSClient(
+            server: URL(string: "https://tusd.tusdemo.net/files")!,
+            sessionIdentifier: "TEST",
+            sessionConfiguration: configuration,
+            storageDirectory: relativeStoragePath,
+            supportedExtensions: [.creation],
+            generateHeaders: { _, headers, onHeadersGenerated in
+                onHeadersGenerated(headers)
+            }
+        )
+        client.delegate = tusDelegate
+
+        let uploadID = try client.upload(data: data, customHeaders: customHeaders)
+        wait(for: [tusDelegate.startUploadExpectation!], timeout: 5)
+        client.stopAndCancelAll()
+
+        MockURLProtocol.reset()
+        prepareNetworkForSuccesfulStatusCall(data: data)
+        prepareNetworkForSuccesfulUploads(data: data)
+
+        tusDelegate = TUSMockDelegate()
+        let statusGeneratorCalled = expectation(description: "Header generator called during status")
+        let finishExpectation = expectation(description: "Upload finished after status")
+        tusDelegate.finishUploadExpectation = finishExpectation
+
+        var observedHeaders: [[String: String]] = []
+        client = try TUSClient(
+            server: URL(string: "https://tusd.tusdemo.net/files")!,
+            sessionIdentifier: "TEST",
+            sessionConfiguration: configuration,
+            storageDirectory: relativeStoragePath,
+            supportedExtensions: [.creation],
+            generateHeaders: { _, headers, onHeadersGenerated in
+                observedHeaders.append(headers)
+                onHeadersGenerated(headers)
+                if observedHeaders.count == 1 {
+                    statusGeneratorCalled.fulfill()
+                }
+            }
+        )
+        client.delegate = tusDelegate
+
+        let resumedUploads = client.start().map(\.0)
+        XCTAssertTrue(resumedUploads.contains(uploadID))
+        wait(for: [statusGeneratorCalled, finishExpectation], timeout: 5)
+        XCTAssertEqual(observedHeaders.first, customHeaders)
+    }
 }

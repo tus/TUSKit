@@ -348,4 +348,40 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
 
         XCTAssertTrue(uploadHeaders.contains(customHeaders))
     }
+
+    /// Ensures new headers introduced by the generator are ignored for protocol safety.
+    func testGenerateHeadersDoesNotAllowUnknownHeaders() throws {
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+        MockURLProtocol.reset()
+        prepareNetworkForSuccesfulUploads(data: data)
+
+        let customHeaders = ["Authorization": "Bearer original"]
+        tusDelegate.finishUploadExpectation = expectation(description: "Upload finished")
+
+        client = try TUSClient(
+            server: URL(string: "https://tusd.tusdemo.net/files")!,
+            sessionIdentifier: "TEST",
+            sessionConfiguration: configuration,
+            storageDirectory: relativeStoragePath,
+            supportedExtensions: [.creation],
+            generateHeaders: { _, headers, onHeadersGenerated in
+                var newHeaders = headers
+                newHeaders["Authorization"] = "Bearer mutated"
+                newHeaders["X-Injected"] = "should-not-pass"
+                onHeadersGenerated(newHeaders)
+            }
+        )
+        client.delegate = tusDelegate
+
+        _ = try client.upload(data: data, customHeaders: customHeaders)
+        wait(for: [tusDelegate.finishUploadExpectation!], timeout: 5)
+
+        XCTAssertTrue(MockURLProtocol.receivedRequests.contains { request in
+            request.allHTTPHeaderFields?["Authorization"] == "Bearer mutated"
+        })
+        XCTAssertFalse(MockURLProtocol.receivedRequests.contains { request in
+            request.allHTTPHeaderFields?["X-Injected"] != nil
+        })
+    }
 }

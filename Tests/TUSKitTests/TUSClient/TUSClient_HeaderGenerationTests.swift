@@ -227,4 +227,39 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         _ = try client.upload(data: data, customHeaders: ["Authorization": "Bearer original"])
         wait(for: [asyncExpectation, finishExpectation], timeout: 5)
     }
+
+    /// Ensures the generator only receives caller-supplied headers during upload creation.
+    func testGenerateHeadersReceivesOnlyCustomHeadersDuringCreate() throws {
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+        prepareNetworkForSuccesfulUploads(data: data)
+
+        let customHeaders = ["Authorization": "Bearer foo", "X-Trace": "123"]
+        var observedHeaders: [[String: String]] = []
+        let createGeneratorCalled = expectation(description: "Header generator called during create")
+
+        var createInvocationRecorded = false
+        client = try TUSClient(
+            server: URL(string: "https://tusd.tusdemo.net/files")!,
+            sessionIdentifier: "TEST",
+            sessionConfiguration: configuration,
+            storageDirectory: relativeStoragePath,
+            supportedExtensions: [.creation],
+            generateHeaders: { _, headers, onHeadersGenerated in
+                if !createInvocationRecorded {
+                    observedHeaders.append(headers)
+                    createInvocationRecorded = true
+                    createGeneratorCalled.fulfill()
+                }
+                onHeadersGenerated(headers)
+            }
+        )
+        tusDelegate.finishUploadExpectation = expectation(description: "Upload finished")
+        client.delegate = tusDelegate
+
+        _ = try client.upload(data: data, customHeaders: customHeaders)
+        wait(for: [createGeneratorCalled, tusDelegate.finishUploadExpectation!], timeout: 5)
+
+        XCTAssertEqual(observedHeaders.first, customHeaders)
+    }
 }

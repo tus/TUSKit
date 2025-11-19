@@ -848,13 +848,13 @@ final class HeaderGenerator {
 
         handler(metaData.id, baseHeaders) { [weak self] headers in
             guard let self else {
-                metaData.updateAppliedCustomHeaders(baseHeaders)
                 completion(baseHeaders)
                 return
             }
-            let allowedKeys = Set(baseHeaders.keys)
             var sanitized = baseHeaders
-            for (key, value) in headers where allowedKeys.contains(key) {
+            for (key, value) in headers {
+                let lowercasedKey = key.lowercased()
+                guard !HeaderGenerator.reservedHeaders.contains(lowercasedKey) else { continue }
                 sanitized[key] = value
             }
             self.store(headers: sanitized, for: metaData)
@@ -890,6 +890,15 @@ final class HeaderGenerator {
             self.latestHeaders[metaData.id] = headers
         }
     }
+
+    private static let reservedHeaders: Set<String> = [
+        "upload-length",
+        "upload-offset",
+        "upload-metadata",
+        "content-type",
+        "content-length",
+        "tus-resumable",
+    ]
 }
 
 private extension URL {

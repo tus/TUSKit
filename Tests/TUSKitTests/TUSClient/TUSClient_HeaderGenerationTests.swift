@@ -349,8 +349,8 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         XCTAssertTrue(uploadHeaders.contains(customHeaders))
     }
 
-    /// Ensures new headers introduced by the generator are ignored for protocol safety.
-    func testGenerateHeadersDoesNotAllowUnknownHeaders() throws {
+    /// Ensures the generator cannot override headers that TUSClient manages itself.
+    func testGenerateHeadersCannotOverrideReservedHeaders() throws {
         let configuration = URLSessionConfiguration.default
         configuration.protocolClasses = [MockURLProtocol.self]
         MockURLProtocol.reset()
@@ -368,7 +368,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
             generateHeaders: { _, headers, onHeadersGenerated in
                 var newHeaders = headers
                 newHeaders["Authorization"] = "Bearer mutated"
-                newHeaders["X-Injected"] = "should-not-pass"
+                newHeaders["Upload-Offset"] = "999"
                 onHeadersGenerated(newHeaders)
             }
         )
@@ -377,11 +377,13 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         _ = try client.upload(data: data, customHeaders: customHeaders)
         wait(for: [tusDelegate.finishUploadExpectation!], timeout: 5)
 
-        XCTAssertTrue(MockURLProtocol.receivedRequests.contains { request in
-            request.allHTTPHeaderFields?["Authorization"] == "Bearer mutated"
-        })
-        XCTAssertFalse(MockURLProtocol.receivedRequests.contains { request in
-            request.allHTTPHeaderFields?["X-Injected"] != nil
-        })
+        let patchRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "PATCH" }
+        XCTAssertFalse(patchRequests.isEmpty)
+        guard let patchHeaders = patchRequests.first?.allHTTPHeaderFields else {
+            XCTFail("Expected PATCH request headers")
+            return
+        }
+        XCTAssertEqual(patchHeaders["Authorization"], "Bearer mutated")
+        XCTAssertNotEqual(patchHeaders["Upload-Offset"], "999")
     }
 }

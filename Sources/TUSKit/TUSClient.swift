@@ -12,7 +12,8 @@ import BackgroundTasks
 
 #if canImport(UniformTypeIdentifiers)
 import UniformTypeIdentifiers
-#elseif canImport(MobileCoreServices)
+#endif
+#if canImport(MobileCoreServices)
 import MobileCoreServices
 #endif
 
@@ -820,20 +821,20 @@ extension TUSClient: ProgressDelegate {
 private extension URL {
     var mimeType: String {
         #if canImport(UniformTypeIdentifiers)
-        if let utType = UTType(filenameExtension: self.pathExtension),
-           let mime = utType.preferredMIMEType {
-            return mime
+        if #available(iOS 14.0, macOS 11.0, watchOS 7.0, *) {
+            if let utType = UTType(filenameExtension: self.pathExtension),
+               let mime = utType.preferredMIMEType {
+                return mime
+            }
         }
-        return "application/octet-stream"
-        #elseif canImport(MobileCoreServices)
+        #endif
+        #if canImport(MobileCoreServices)
         let pathExtension = self.pathExtension as NSString
         if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension, nil)?.takeRetainedValue(),
            let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
             return mimetype as String
         }
-        return "application/octet-stream"
-        #else
-        return "application/octet-stream"
         #endif
+        return "application/octet-stream"
     }
 }

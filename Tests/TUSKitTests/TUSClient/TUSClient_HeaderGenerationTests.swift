@@ -197,4 +197,34 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         XCTAssertFalse(resumedHeaders.isEmpty)
         XCTAssertEqual(resumedHeaders.first, "Bearer resume-mutated")
     }
+
+    /// Ensures uploads wait for asynchronous header generation before proceeding.
+    func testGenerateHeadersSupportsAsynchronousCompletion() throws {
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+        prepareNetworkForSuccesfulUploads(data: data)
+
+        let asyncExpectation = expectation(description: "Async header generator invoked")
+        asyncExpectation.expectedFulfillmentCount = 2
+        let finishExpectation = expectation(description: "Upload finished")
+        tusDelegate.finishUploadExpectation = finishExpectation
+
+        client = try TUSClient(
+            server: URL(string: "https://tusd.tusdemo.net/files")!,
+            sessionIdentifier: "TEST",
+            sessionConfiguration: configuration,
+            storageDirectory: relativeStoragePath,
+            supportedExtensions: [.creation],
+            generateHeaders: { _, headers, onHeadersGenerated in
+                DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
+                    asyncExpectation.fulfill()
+                    onHeadersGenerated(headers.merging(["Authorization": "Bearer async"]) { _, new in new })
+                }
+            }
+        )
+        client.delegate = tusDelegate
+
+        _ = try client.upload(data: data, customHeaders: ["Authorization": "Bearer original"])
+        wait(for: [asyncExpectation, finishExpectation], timeout: 5)
+    }
 }

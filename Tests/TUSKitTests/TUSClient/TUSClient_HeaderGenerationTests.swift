@@ -136,4 +136,37 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         XCTAssertEqual(receivedAuthorizationHeaders[0], "Bearer original")
         XCTAssertEqual(receivedAuthorizationHeaders[1], "Bearer original-mutated0")
     }
+
+    /// Ensures resuming an upload reuses the previously applied headers.
+    func testGenerateHeadersCalledWhenResumingUpload() throws {
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+
+        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForFailingUploads()
+
+        let generatorCalledTwice = expectation(description: "Header generator called twice")
+        generatorCalledTwice.expectedFulfillmentCount = 2
+        var calls: [String] = []
+
+        client = try TUSClient(
+            server: URL(string: "https://tusd.tusdemo.net/files")!,
+            sessionIdentifier: "TEST",
+            sessionConfiguration: configuration,
+            storageDirectory: relativeStoragePath,
+            supportedExtensions: [.creation],
+            generateHeaders: { _, headers, onHeadersGenerated in
+                let current = headers["Authorization"] ?? ""
+                calls.append(current)
+                onHeadersGenerated(["Authorization": current.isEmpty ? "Bearer resuming" : "\(current)-resumed"])
+                generatorCalledTwice.fulfill()
+            }
+        )
+        client.delegate = tusDelegate
+
+        let uploadID = try client.upload(data: data, customHeaders: ["Authorization": "Bearer resume"])
+        wait(for: [generatorCalledTwice], timeout: 5)
+        XCTAssertEqual(calls.first, "Bearer resume")
+        XCTAssertEqual(calls.last, "Bearer resume-resumed")
+    }
 }

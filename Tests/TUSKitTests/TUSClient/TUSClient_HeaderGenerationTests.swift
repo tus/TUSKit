@@ -68,4 +68,29 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         XCTAssertEqual(receivedHeaders, expectedHeaders)
         XCTAssertEqual(receivedRequestID, uploadID)
     }
+
+    /// Verifies we don't bother clients when there are no custom headers to override.
+    func testGenerateHeadersNotCalledWhenNoCustomHeaders() throws {
+        let configuration = URLSessionConfiguration.default
+        configuration.protocolClasses = [MockURLProtocol.self]
+
+        let generatorNotCalled = expectation(description: "Header generator should not be invoked")
+        generatorNotCalled.isInverted = true
+
+        client = try TUSClient(
+            server: URL(string: "https://tusd.tusdemo.net/files")!,
+            sessionIdentifier: "TEST",
+            sessionConfiguration: configuration,
+            storageDirectory: relativeStoragePath,
+            supportedExtensions: [.creation],
+            generateHeaders: { _, _, onHeadersGenerated in
+                generatorNotCalled.fulfill()
+                onHeadersGenerated([:])
+            }
+        )
+        client.delegate = tusDelegate
+
+        XCTAssertNoThrow(try client.upload(data: data))
+        wait(for: [generatorNotCalled], timeout: 0.5)
+    }
 }

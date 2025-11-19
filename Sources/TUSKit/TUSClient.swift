@@ -830,6 +830,10 @@ final class HeaderGenerator {
 
     func resolveHeaders(for metaData: UploadMetadata, completion: @escaping ([String: String]) -> Void) {
         let baseHeaders = metaData.customHeaders ?? [:]
+        guard !baseHeaders.isEmpty else {
+            completion([:])
+            return
+        }
         guard let handler = handler else {
             completion(baseHeaders)
             return

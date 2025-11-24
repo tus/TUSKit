@@ -61,21 +61,37 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         XCTAssertEqual(receivedRequestID, uploadID)
     }
 
-    /// Verifies we don't bother clients when there are no custom headers to override.
-    func testGenerateHeadersNotCalledWhenNoCustomHeaders() throws {
+    /// Verifies the generator is called even when no custom headers were supplied, enabling clients to inject headers.
+    func testGenerateHeadersCalledWithoutCustomHeaders() throws {
         let configuration = makeConfiguration()
+        prepareNetworkForSuccesfulUploads(data: data)
 
-        let generatorNotCalled = expectation(description: "Header generator should not be invoked")
-        generatorNotCalled.isInverted = true
+        let generatorCalled = expectation(description: "Header generator should be invoked")
+        tusDelegate.finishUploadExpectation = expectation(description: "Upload finished")
 
-        client = try makeClient(configuration: configuration) { _, _, onHeadersGenerated in
-            generatorNotCalled.fulfill()
-            onHeadersGenerated([:])
+        var firstReceivedHeaders: [String: String]?
+        var fulfilledGenerator = false
+        client = try makeClient(configuration: configuration) { _, headers, onHeadersGenerated in
+            if !fulfilledGenerator {
+                firstReceivedHeaders = headers
+                generatorCalled.fulfill()
+                fulfilledGenerator = true
+            }
+            onHeadersGenerated(["Authorization": "Bearer injected"])
         }
         client.delegate = tusDelegate
 
         XCTAssertNoThrow(try client.upload(data: data))
-        wait(for: [generatorNotCalled], timeout: 0.5)
+        wait(for: [generatorCalled, tusDelegate.finishUploadExpectation!], timeout: 5)
+
+        XCTAssertEqual(firstReceivedHeaders ?? [:], [:])
+        let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
+        XCTAssertFalse(createRequests.isEmpty)
+        guard let postHeaders = createRequests.first?.allHTTPHeaderFields else {
+            XCTFail("Expected POST request headers")
+            return
+        }
+        XCTAssertEqual(postHeaders["Authorization"], "Bearer injected")
     }
 
     /// Ensures the generator receives the headers that were actually used on the previous request when retrying.

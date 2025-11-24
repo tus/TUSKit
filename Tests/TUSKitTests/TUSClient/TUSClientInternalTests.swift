@@ -89,4 +89,38 @@ final class TUSClientInternalTests: XCTestCase {
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssertFalse(contents.isEmpty, "The client is expected to NOT remove finished uploads on startup")
     }
+
+    func testFileErrorIncludesIdWhenStoringMetadataFails() throws {
+        let failingId = UUID()
+        let missingFilePath = fullStoragePath.appendingPathComponent(failingId.uuidString)
+        try? FileManager.default.removeItem(at: missingFilePath)
+
+        let metaData = UploadMetadata(id: failingId,
+                                      filePath: missingFilePath,
+                                      uploadURL: URL(string: "https://tus.example.com/files")!,
+                                      size: 10,
+                                      customHeaders: [:],
+                                      mimeType: nil)
+        let creationTask = try CreationTask(metaData: metaData,
+                                            api: TUSAPI(session: URLSession(configuration: .ephemeral)),
+                                            files: files)
+
+        let scheduler = Scheduler()
+        let expectation = expectation(description: "delegate receives file error with id")
+        tusDelegate.fileErrorExpectation = expectation
+
+        client.onError(error: TUSClientError.couldNotStoreFileMetadata(underlyingError: FilesError.relatedFileNotFound),
+                       task: creationTask,
+                       scheduler: scheduler)
+
+        waitForExpectations(timeout: 1)
+
+        XCTAssertEqual(tusDelegate.fileErrorsWithIds.count, 1)
+        XCTAssertEqual(tusDelegate.fileErrorsWithIds.first?.0, failingId)
+        if case .couldNotStoreFileMetadata = tusDelegate.fileErrorsWithIds.first?.1 {
+            // Expected error
+        } else {
+            XCTFail("Expected a couldNotStoreFileMetadata error")
+        }
+    }
 }

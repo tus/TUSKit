@@ -39,12 +39,12 @@ You can conform to the `TUSClientDelegate` to receive updates from the `TUSClien
 
 ```swift
 extension MyClass: TUSClientDelegate {
-    func didStartUpload(id: UUID, client: TUSClient) {
+    func didStartUpload(id: UUID, context: [String: String]?, client: TUSClient) {
         print("TUSClient started upload, id is \(id)")
         print("TUSClient remaining is \(client.remainingUploads)")
     }
     
-    func didFinishUpload(id: UUID, url: URL, client: TUSClient) {
+    func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient) {
         print("TUSClient finished upload, id is \(id) url is \(url)")
         print("TUSClient remaining is \(client.remainingUploads)")
         if client.remainingUploads == 0 {
@@ -52,12 +52,12 @@ extension MyClass: TUSClientDelegate {
         }
     }
     
-    func uploadFailed(id: UUID, error: Error, client: TUSClient) {
+    func uploadFailed(id: UUID, error: Error, context: [String: String]?, client: TUSClient) {
         print("TUSClient upload failed for \(id) error \(error)")
     }
     
-    func fileError(error: TUSClientError, client: TUSClient) {
-        print("TUSClient File error \(error)")
+    func fileError(id: UUID?, error: TUSClientError, client: TUSClient) {
+        print("TUSClient File error \(error) for id \(id?.uuidString ?? "unknown")")
     }
     
     
@@ -65,7 +65,7 @@ extension MyClass: TUSClientDelegate {
     }
     
     
-    func progressFor(id: UUID, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
+    func progressFor(id: UUID, context: [String: String]?, bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
 
     }
     

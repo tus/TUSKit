@@ -239,6 +239,18 @@ public final class TUSClient {
         scheduler.cancelTask(by: id)
     }
     
+    /// Cancel an upload and remove its cached data so it will not be retried on the next `start()`.
+    /// - Parameter id: The id of the upload to cancel and delete.
+    /// - Returns: `true` if a cached upload was found and deleted, `false` otherwise.
+    /// - Throws: File-related errors if the cache exists but cannot be removed.
+    @discardableResult
+    public func cancelAndDelete(id: UUID) throws -> Bool {
+        scheduler.cancelTask(by: id)
+        // Wait for the cancel request to be processed before deleting cached data.
+        scheduler.queue.sync { }
+        return try removeCacheFor(id: id)
+    }
+    
     /// This will cancel all running uploads and clear the local cache.
     /// Expect errors passed to the delegate for canceled tasks.
     /// - Warning: This method is destructive and will remove any stored cache.

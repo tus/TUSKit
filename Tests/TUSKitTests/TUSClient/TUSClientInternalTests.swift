@@ -22,11 +22,9 @@ final class TUSClientInternalTests: XCTestCase {
         
         do {
             relativeStoragePath = URL(string: "TUSTEST")!
-            
-            let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
-            files = try Files(storageDirectory: fullStoragePath)
-            clearDirectory(dir: fullStoragePath)
+            files = try Files(storageDirectory: relativeStoragePath)
+            fullStoragePath = files.storageDirectory
+            clearDirectory(dir: files.storageDirectory)
             
             data = Data("abcdef".utf8)
             
@@ -122,6 +120,21 @@ final class TUSClientInternalTests: XCTestCase {
         } else {
             XCTFail("Expected a couldNotStoreFileMetadata error")
         }
+    }
+    
+    func testCancelAndDeleteRemovesCacheAndPreventsResume() throws {
+        let clientFiles = try Files(storageDirectory: relativeStoragePath)
+        let id = UUID()
+        let path = try clientFiles.store(data: data, id: id)
+        let metaData = UploadMetadata(id: id, filePath: path, uploadURL: URL(string: "io.tus")!, size: data.count, customHeaders: [:], mimeType: nil)
+        try clientFiles.encodeAndStore(metaData: metaData)
+        
+        let deleted = try client.cancelAndDelete(id: id)
+        XCTAssertTrue(deleted)
+        XCTAssertNil(try clientFiles.findMetadata(id: id))
+        
+        let resumed = client.start()
+        XCTAssertTrue(resumed.isEmpty)
     }
     
     func testCancellationDoesNotIncrementErrorCountOrRetry() throws {

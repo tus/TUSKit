@@ -123,4 +123,21 @@ final class TUSClientInternalTests: XCTestCase {
             XCTFail("Expected a couldNotStoreFileMetadata error")
         }
     }
+    
+    func testCancellationDoesNotIncrementErrorCountOrRetry() throws {
+        let metaData = try storeFiles()
+        let creationTask = try CreationTask(metaData: metaData,
+                                            api: TUSAPI(session: URLSession(configuration: .ephemeral)),
+                                            files: files)
+        let scheduler = Scheduler()
+        
+        XCTAssertEqual(metaData.errorCount, 0)
+        
+        client.onError(error: TUSClientError.taskCancelled, task: creationTask, scheduler: scheduler)
+        
+        scheduler.queue.sync { }
+        
+        XCTAssertEqual(metaData.errorCount, 0)
+        XCTAssertTrue(scheduler.allTasks.isEmpty)
+    }
 }

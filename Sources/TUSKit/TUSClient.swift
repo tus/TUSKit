@@ -733,6 +733,23 @@ extension TUSClient: SchedulerDelegate {
                 return nil
             }
         }
+        
+        func isCancellation(_ error: Error) -> Bool {
+            if let tusError = error as? TUSClientError, case .taskCancelled = tusError {
+                return true
+            }
+            
+            if let apiError = error as? TUSAPIError, case let .underlyingError(underlying) = apiError {
+                return isCancellation(underlying)
+            }
+            
+            if let urlError = error as? URLError, urlError.code == .cancelled {
+                return true
+            }
+            
+            let nsError = error as NSError
+            return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
+        }
 
         var shouldReturnEarly = false
         queue.sync {
@@ -744,6 +761,10 @@ extension TUSClient: SchedulerDelegate {
         
         guard let metaData = getMetaData() else {
             assertionFailure("Could not fetch metadata from task \(task)")
+            return
+        }
+        
+        if isCancellation(error) {
             return
         }
         

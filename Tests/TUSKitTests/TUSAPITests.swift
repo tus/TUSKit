@@ -70,7 +70,7 @@ final class TUSAPITests: XCTestCase {
                                       filePath: URL(string: "file://whatever/abc")!,
                                       uploadURL: URL(string: "https://io.tus")!,
                                       size: size)
-        api.create(metaData: metaData) { result in
+        api.create(metaData: metaData, customHeaders: metaData.customHeaders ?? [:]) { result in
             do {
                 let url = try result.get()
                 XCTAssertEqual(url, remoteFileURL)
@@ -108,7 +108,7 @@ final class TUSAPITests: XCTestCase {
                                       filePath: URL(string: "file://whatever/abc")!,
                                       uploadURL: uploadURL,
                                       size: size)
-        api.create(metaData: metaData) { result in
+        api.create(metaData: metaData, customHeaders: metaData.customHeaders ?? [:]) { result in
             do {
                 let url = try result.get()
                 XCTAssertEqual(url.absoluteURL, expectedURL)
@@ -147,7 +147,7 @@ final class TUSAPITests: XCTestCase {
                                       uploadURL: URL(string: "io.tus")!,
                                       size: length)
     
-        let task = api.upload(data: Data(), range: range, location: uploadURL, metaData: metaData) { _ in
+        let task = api.upload(data: Data(), range: range, location: uploadURL, metaData: metaData, customHeaders: metaData.customHeaders ?? [:]) { _ in
             uploadExpectation.fulfill()
         }
         XCTAssertEqual(task.originalRequest?.url, uploadURL)
@@ -185,7 +185,7 @@ final class TUSAPITests: XCTestCase {
                                       uploadURL: URL(string: "io.tus")!,
                                       size: length)
     
-        let task = api.upload(data: Data(), range: range, location: uploadURL, metaData: metaData) { _ in
+        let task = api.upload(data: Data(), range: range, location: uploadURL, metaData: metaData, customHeaders: metaData.customHeaders ?? [:]) { _ in
             uploadExpectation.fulfill()
         }
         XCTAssertEqual(task.originalRequest?.url, expectedURL)

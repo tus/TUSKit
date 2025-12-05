@@ -98,6 +98,29 @@ To upload multiple files at once, you can use the `uploadFiles(filePaths:)` meth
 
 To specify a custom upload URL (e.g. for TransloadIt) or custom headers to be added to a file upload, please refer to the `uploadURL` and `customHeaders` properties in the methods related to uploading. Such as: `upload`, `uploadFileAt`, `uploadFiles` or `uploadMultiple(dataFiles:)`.
 
+### Custom header generation
+
+Sometimes headers need to be signed or refreshed right before a request is sent.  
+`TUSClient` exposes a header generation hook so you can mutate previously supplied custom headers without rebuilding the upload. Pass the optional `generateHeaders` closure to the initializer and TUSKit will call it before every `POST`, `PATCH`, or `HEAD` request.
+
+```swift
+let client = try TUSClient(
+    server: serverURL,
+    sessionIdentifier: "UploadSession",
+    sessionConfiguration: configuration,
+    storageDirectory: storageDirectory,
+    supportedExtensions: [.creation]
+) { uploadID, headers, onHeadersGenerated in
+    tokenProvider.fetchToken(for: uploadID) { token in
+        var mutatedHeaders = headers
+        mutatedHeaders["Authorization"] = "Bearer \(token)"
+        onHeadersGenerated(mutatedHeaders)
+    }
+}
+```
+
+TUSKit will reuse whatever headers you return for automatic retries or when resuming an upload, ensuring the same values are applied consistently. New headers can be introduced as needed, while core TUS headers such as `Upload-Offset` and `Content-Length` remain under the SDK’s control.
+
 ## Measuring upload progress
 
 To know how many files have yet to be uploaded, please refer to the `remainingUploads` property.

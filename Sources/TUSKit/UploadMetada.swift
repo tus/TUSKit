@@ -26,6 +26,7 @@ final class UploadMetadata: Codable {
         case customHeaders
         case size
         case errorCount
+        case appliedCustomHeaders
         
     }
     
@@ -83,8 +84,19 @@ final class UploadMetadata: Codable {
     
     let mimeType: String?
     
-    let customHeaders: [String: String]?
+    private var _customHeaders: [String: String]?
+    var customHeaders: [String: String]? {
+        queue.sync {
+            _customHeaders
+        }
+    }
     let size: Int
+    private var _appliedCustomHeaders: [String: String]?
+    var appliedCustomHeaders: [String: String]? {
+        queue.sync {
+            _appliedCustomHeaders
+        }
+    }
     
     private var _errorCount: Int
     /// Number of times the upload failed
@@ -105,11 +117,12 @@ final class UploadMetadata: Codable {
         self._filePath = filePath
         self.uploadURL = uploadURL
         self.size = size
-        self.customHeaders = customHeaders
+        self._customHeaders = customHeaders
         self.mimeType = mimeType
         self.version = 1 // Can't make default property because of Codable
         self.context = context
         self._errorCount = 0
+        self._appliedCustomHeaders = nil
     }
     
     init(from decoder: Decoder) throws {
@@ -122,9 +135,10 @@ final class UploadMetadata: Codable {
         context = try values.decode([String: String]?.self, forKey: .context)
         _uploadedRange = try values.decode(Range<Int>?.self, forKey: .uploadedRange)
         mimeType = try values.decode(String?.self, forKey: .mimeType)
-        customHeaders = try values.decode([String: String]?.self, forKey: .customHeaders)
+        _customHeaders = try values.decode([String: String]?.self, forKey: .customHeaders)
         size = try values.decode(Int.self, forKey: .size)
         _errorCount = try values.decode(Int.self, forKey: .errorCount)
+        _appliedCustomHeaders = try values.decode([String: String]?.self, forKey: .appliedCustomHeaders)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -137,9 +151,16 @@ final class UploadMetadata: Codable {
         try container.encode(context, forKey: .context)
         try container.encode(uploadedRange, forKey: .uploadedRange)
         try container.encode(mimeType, forKey: .mimeType)
-        try container.encode(customHeaders, forKey: .customHeaders)
+        try container.encode(_customHeaders, forKey: .customHeaders)
         try container.encode(size, forKey: .size)
         try container.encode(_errorCount, forKey: .errorCount)
+        try container.encode(_appliedCustomHeaders, forKey: .appliedCustomHeaders)
+    }
+
+    func updateAppliedCustomHeaders(_ headers: [String: String]?) {
+        queue.async {
+            self._appliedCustomHeaders = headers
+        }
     }
     
 }

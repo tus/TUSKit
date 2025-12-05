@@ -207,7 +207,6 @@ final class UploadDataTask: NSObject, IdentifiableTask {
                         guard offset < range.endIndex else { return nil }
                         
                         let data = fileHandle.readData(ofLength: chunkSize)
-                        print("read data of size \(data.count) at offset \(offset)")
                         offset += chunkSize
                         return data
                     } catch {

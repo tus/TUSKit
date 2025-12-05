@@ -22,6 +22,10 @@ public protocol TUSClientDelegate: AnyObject {
     
     /// Receive an error related to files. E.g. The `TUSClient` couldn't store a file or remove a file.
     func fileError(error: TUSClientError, client: TUSClient)
+    /// Receive an error related to files. E.g. The `TUSClient` couldn't store a file or remove a file.
+    /// - Parameters:
+    ///   - id: The upload identifier related to the error when available, otherwise nil.
+    func fileError(id: UUID?, error: TUSClientError, client: TUSClient)
     
     /// Get the progress of all ongoing uploads combined
     ///
@@ -39,6 +43,10 @@ public protocol TUSClientDelegate: AnyObject {
 public extension TUSClientDelegate {
     func progressFor(id: UUID, context: [String: String]?, progress: Float, client: TUSClient) {
         // Optional
+    }
+
+    func fileError(id: UUID?, error: TUSClientError, client: TUSClient) {
+        fileError(error: error, client: client)
     }
 }
 
@@ -229,6 +237,18 @@ public final class TUSClient {
     
     public func cancel(id: UUID) throws {
         scheduler.cancelTask(by: id)
+    }
+    
+    /// Cancel an upload and remove its cached data so it will not be retried on the next `start()`.
+    /// - Parameter id: The id of the upload to cancel and delete.
+    /// - Returns: `true` if a cached upload was found and deleted, `false` otherwise.
+    /// - Throws: File-related errors if the cache exists but cannot be removed.
+    @discardableResult
+    public func cancelAndDelete(id: UUID) throws -> Bool {
+        scheduler.cancelTask(by: id)
+        // Wait for the cancel request to be processed before deleting cached data.
+        scheduler.queue.sync { }
+        return try removeCacheFor(id: id)
     }
     
     /// This will cancel all running uploads and clear the local cache.
@@ -510,7 +530,7 @@ public final class TUSClient {
         } catch let error {
             let tusError = TUSClientError.couldnotRemoveFinishedUploads(underlyingError: error)
             reportingQueue.async {
-                self.delegate?.fileError(error: tusError , client: self)
+                self.delegate?.fileError(id: nil, error: tusError , client: self)
             }
         }
     }
@@ -629,7 +649,7 @@ public final class TUSClient {
         } catch (let error) {
             let tusError = TUSClientError.couldNotLoadData(underlyingError: error)
             reportingQueue.async {
-                self.delegate?.fileError(error: tusError, client: self)
+                self.delegate?.fileError(id: nil, error: tusError, client: self)
             }
             return []
         }
@@ -683,7 +703,7 @@ extension TUSClient: SchedulerDelegate {
         } catch let error {
             let tusError = TUSClientError.couldNotDeleteFile(underlyingError: error)
             reportingQueue.async {
-                self.delegate?.fileError(error: tusError, client: self)
+                self.delegate?.fileError(id: uploadTask.metaData.id, error: tusError, client: self)
             }
         }
         
@@ -725,6 +745,23 @@ extension TUSClient: SchedulerDelegate {
                 return nil
             }
         }
+        
+        func isCancellation(_ error: Error) -> Bool {
+            if let tusError = error as? TUSClientError, case .taskCancelled = tusError {
+                return true
+            }
+            
+            if let apiError = error as? TUSAPIError, case let .underlyingError(underlying) = apiError {
+                return isCancellation(underlying)
+            }
+            
+            if let urlError = error as? URLError, urlError.code == .cancelled {
+                return true
+            }
+            
+            let nsError = error as NSError
+            return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
+        }
 
         var shouldReturnEarly = false
         queue.sync {
@@ -739,13 +776,17 @@ extension TUSClient: SchedulerDelegate {
             return
         }
         
+        if isCancellation(error) {
+            return
+        }
+        
         metaData.errorCount += 1
         do {
             try files.encodeAndStore(metaData: metaData)
         } catch let error {
             let tusError = TUSClientError.couldNotStoreFileMetadata(underlyingError: error)
             reportingQueue.async {
-                self.delegate?.fileError(error: tusError, client: self)
+                self.delegate?.fileError(id: metaData.id, error: tusError, client: self)
             }
         }
         

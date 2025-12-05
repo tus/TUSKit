@@ -123,7 +123,7 @@ extension TUSWrapper: TUSClientDelegate {
         }
     }
     
-    func fileError(error: TUSClientError, client: TUSClient) { }
+    func fileError(id: UUID?, error: TUSClientError, client: TUSClient) { }
     func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
         print("total progress: \(bytesUploaded) / \(totalBytes) => \(Int(Double(bytesUploaded) / Double(totalBytes) * 100))%")
     }

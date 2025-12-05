@@ -22,11 +22,9 @@ final class TUSClientInternalTests: XCTestCase {
         
         do {
             relativeStoragePath = URL(string: "TUSTEST")!
-            
-            let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
-            files = try Files(storageDirectory: fullStoragePath)
-            clearDirectory(dir: fullStoragePath)
+            files = try Files(storageDirectory: relativeStoragePath)
+            fullStoragePath = files.storageDirectory
+            clearDirectory(dir: files.storageDirectory)
             
             data = Data("abcdef".utf8)
             
@@ -88,5 +86,73 @@ final class TUSClientInternalTests: XCTestCase {
         client = makeClient(storagePath: fullStoragePath)
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssertFalse(contents.isEmpty, "The client is expected to NOT remove finished uploads on startup")
+    }
+
+    func testFileErrorIncludesIdWhenStoringMetadataFails() throws {
+        let failingId = UUID()
+        let missingFilePath = fullStoragePath.appendingPathComponent(failingId.uuidString)
+        try? FileManager.default.removeItem(at: missingFilePath)
+
+        let metaData = UploadMetadata(id: failingId,
+                                      filePath: missingFilePath,
+                                      uploadURL: URL(string: "https://tus.example.com/files")!,
+                                      size: 10,
+                                      customHeaders: [:],
+                                      mimeType: nil)
+        let creationTask = try CreationTask(metaData: metaData,
+                                            api: TUSAPI(session: URLSession(configuration: .ephemeral)),
+                                            files: files,
+                                            headerGenerator: HeaderGenerator(handler: nil))
+
+        let scheduler = Scheduler()
+        let expectation = expectation(description: "delegate receives file error with id")
+        tusDelegate.fileErrorExpectation = expectation
+
+        client.onError(error: TUSClientError.couldNotStoreFileMetadata(underlyingError: FilesError.relatedFileNotFound),
+                       task: creationTask,
+                       scheduler: scheduler)
+
+        waitForExpectations(timeout: 1)
+
+        XCTAssertEqual(tusDelegate.fileErrorsWithIds.count, 1)
+        XCTAssertEqual(tusDelegate.fileErrorsWithIds.first?.0, failingId)
+        if case .couldNotStoreFileMetadata = tusDelegate.fileErrorsWithIds.first?.1 {
+            // Expected error
+        } else {
+            XCTFail("Expected a couldNotStoreFileMetadata error")
+        }
+    }
+    
+    func testCancelAndDeleteRemovesCacheAndPreventsResume() throws {
+        let clientFiles = try Files(storageDirectory: relativeStoragePath)
+        let id = UUID()
+        let path = try clientFiles.store(data: data, id: id)
+        let metaData = UploadMetadata(id: id, filePath: path, uploadURL: URL(string: "io.tus")!, size: data.count, customHeaders: [:], mimeType: nil)
+        try clientFiles.encodeAndStore(metaData: metaData)
+        
+        let deleted = try client.cancelAndDelete(id: id)
+        XCTAssertTrue(deleted)
+        XCTAssertNil(try clientFiles.findMetadata(id: id))
+        
+        let resumed = client.start()
+        XCTAssertTrue(resumed.isEmpty)
+    }
+    
+    func testCancellationDoesNotIncrementErrorCountOrRetry() throws {
+        let metaData = try storeFiles()
+        let creationTask = try CreationTask(metaData: metaData,
+                                            api: TUSAPI(session: URLSession(configuration: .ephemeral)),
+                                            files: files,
+                                            headerGenerator: HeaderGenerator(handler: nil))
+        let scheduler = Scheduler()
+        
+        XCTAssertEqual(metaData.errorCount, 0)
+        
+        client.onError(error: TUSClientError.taskCancelled, task: creationTask, scheduler: scheduler)
+        
+        scheduler.queue.sync { }
+        
+        XCTAssertEqual(metaData.errorCount, 0)
+        XCTAssertTrue(scheduler.allTasks.isEmpty)
     }
 }

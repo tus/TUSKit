@@ -15,6 +15,7 @@ final class TUSMockDelegate: TUSClientDelegate {
     var startedUploads = [UUID]()
     var finishedUploads = [(UUID, URL)]()
     var failedUploads = [(UUID, Error)]()
+    var fileErrorsWithIds = [(UUID?, TUSClientError)]()
     var fileErrors = [TUSClientError]()
     var progressPerId = [UUID: Int]()
     var totalProgressReceived = [Int]()
@@ -47,6 +48,11 @@ final class TUSMockDelegate: TUSClientDelegate {
     func fileError(error: TUSClientError, client: TUSClient) {
         fileErrors.append(error)
         fileErrorExpectation?.fulfill()
+    }
+    
+    func fileError(id: UUID?, error: TUSClientError, client: TUSClient) {
+        fileErrorsWithIds.append((id, error))
+        fileError(error: error, client: client)
     }
     
     func uploadFailed(id: UUID, error: Error, context: [String : String]?, client: TUSClient) {
@@ -142,4 +148,3 @@ final class MockURLProtocol: URLProtocol {
         // This is called if the request gets canceled or completed.
     }
 }
-

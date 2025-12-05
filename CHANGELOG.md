@@ -1,3 +1,15 @@
+# 3.7.0
+
+- Removed cocoapods support
+
+## Bugfix
+- Canceling a task by id no longer continues retrying the task automatically ([#214](https://github.com/tus/TUSKit/issues/214))
+
+## Feature
+- Return response from server when creation of resource failed ([#212](https://github.com/tus/TUSKit/issues/212))
+- Clients can now pass in a custom header generator ([#216](https://github.com/tus/TUSKit/issues/216)), ([#211](https://github.com/tus/TUSKit/issues/211))
+- TUSClientDelegate.fileError now includes upload identifier ([#215](https://github.com/tus/TUSKit/issues/215))
+
 # 3.6.0
 
 ## Bugfix

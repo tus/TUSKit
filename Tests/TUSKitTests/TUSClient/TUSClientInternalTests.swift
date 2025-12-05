@@ -101,7 +101,8 @@ final class TUSClientInternalTests: XCTestCase {
                                       mimeType: nil)
         let creationTask = try CreationTask(metaData: metaData,
                                             api: TUSAPI(session: URLSession(configuration: .ephemeral)),
-                                            files: files)
+                                            files: files,
+                                            headerGenerator: HeaderGenerator(handler: nil))
 
         let scheduler = Scheduler()
         let expectation = expectation(description: "delegate receives file error with id")
@@ -141,7 +142,8 @@ final class TUSClientInternalTests: XCTestCase {
         let metaData = try storeFiles()
         let creationTask = try CreationTask(metaData: metaData,
                                             api: TUSAPI(session: URLSession(configuration: .ephemeral)),
-                                            files: files)
+                                            files: files,
+                                            headerGenerator: HeaderGenerator(handler: nil))
         let scheduler = Scheduler()
         
         XCTAssertEqual(metaData.errorCount, 0)

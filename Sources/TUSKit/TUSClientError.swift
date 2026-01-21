@@ -10,7 +10,7 @@ public enum TUSClientError: Error, LocalizedError {
     case couldNotStoreFileMetadata(underlyingError: Error)
     case couldNotCreateFileOnServer(underlyingError: Error)
     case couldNotUploadFile(underlyingError: Error)
-    case couldNotGetFileStatus
+    case couldNotGetFileStatus(underlyingError: Error)
     case fileSizeMismatchWithServer
     case couldNotDeleteFile(underlyingError: Error)
     case uploadIsAlreadyFinished
@@ -40,8 +40,8 @@ public enum TUSClientError: Error, LocalizedError {
             return "Could not create file on server: (\(underlyingError.localizedDescription))"
         case .couldNotUploadFile(let underlyingError):
             return "Could not upload file: \(underlyingError.localizedDescription)"
-        case .couldNotGetFileStatus:
-            return "Could not get file status."
+        case .couldNotGetFileStatus(let underlyingError):
+            return "Could not get file status: \(underlyingError.localizedDescription)"
         case .fileSizeMismatchWithServer:
             return "File size mismatch with server."
         case .couldNotDeleteFile(let underlyingError):

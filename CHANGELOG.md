@@ -1,3 +1,8 @@
+# 3.8.0
+
+## Breaking changes
+- `TUSClientError.couldNotGetFileStatus` now includes an `underlyingError` for better diagnostics.
+
 # 3.7.0
 
 - Removed cocoapods support

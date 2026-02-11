@@ -16,30 +16,34 @@ final class TUSClientInternalTests: XCTestCase {
     var fullStoragePath: URL!
     var data: Data!
     var files: Files!
+    var mockTestID: String!
     
     override func setUp() {
         super.setUp()
         
         do {
-            relativeStoragePath = URL(string: "TUSTEST")!
+            relativeStoragePath = URL(string: UUID().uuidString)!
+            mockTestID = UUID().uuidString
             files = try Files(storageDirectory: relativeStoragePath)
             fullStoragePath = files.storageDirectory
             clearDirectory(dir: files.storageDirectory)
             
             data = Data("abcdef".utf8)
             
-            client = makeClient(storagePath: relativeStoragePath)
+            client = makeClient(storagePath: relativeStoragePath,
+                                sessionIdentifier: "TEST-\(mockTestID!)",
+                                mockTestID: mockTestID)
             tusDelegate = TUSMockDelegate()
             client.delegate = tusDelegate
         } catch {
             XCTFail("Could not instantiate Files \(error)")
         }
-        MockURLProtocol.reset()
+        MockURLProtocol.reset(testID: mockTestID)
     }
     
     override func tearDown() {
         super.tearDown()
-        MockURLProtocol.reset()
+        MockURLProtocol.reset(testID: mockTestID)
         clearDirectory(dir: fullStoragePath)
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         clearDirectory(dir: cacheDir)
@@ -67,7 +71,9 @@ final class TUSClientInternalTests: XCTestCase {
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssertFalse(contents.isEmpty)
         
-        client = makeClient(storagePath: fullStoragePath)
+        client = makeClient(storagePath: fullStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssertFalse(contents.isEmpty, "The client is expected to NOT remove unfinished uploads on startup")
     }
@@ -83,7 +89,9 @@ final class TUSClientInternalTests: XCTestCase {
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssertFalse(contents.isEmpty)
         
-        client = makeClient(storagePath: fullStoragePath)
+        client = makeClient(storagePath: fullStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssertFalse(contents.isEmpty, "The client is expected to NOT remove finished uploads on startup")
     }

@@ -4,13 +4,13 @@ import XCTest
 
 /// Server gives inappropriorate offsets
 /// - Parameter data: Data to upload
-func prepareNetworkForWrongOffset(data: Data) {
-    MockURLProtocol.prepareResponse(for: "POST") { _ in
+func prepareNetworkForWrongOffset(data: Data, testID: String? = nil) {
+    MockURLProtocol.prepareResponse(for: "POST", testID: testID) { _ in
         MockURLProtocol.Response(status: 200, headers: ["Location": "www.somefakelocation.com"], data: nil)
     }
     
     // Mimick chunk uploading with offsets
-    MockURLProtocol.prepareResponse(for: "PATCH") { headers in
+    MockURLProtocol.prepareResponse(for: "PATCH", testID: testID) { headers in
         
         guard let headers = headers,
               let strOffset = headers["Upload-Offset"],
@@ -27,8 +27,8 @@ func prepareNetworkForWrongOffset(data: Data) {
     }
 }
 
-func prepareNetworkForSuccesfulUploads(data: Data, lowerCasedKeysInResponses: Bool = false) {
-    MockURLProtocol.prepareResponse(for: "POST") { _ in
+func prepareNetworkForSuccesfulUploads(data: Data, lowerCasedKeysInResponses: Bool = false, testID: String? = nil) {
+    MockURLProtocol.prepareResponse(for: "POST", testID: testID) { _ in
         let key: String
         if lowerCasedKeysInResponses {
             key = "location"
@@ -39,7 +39,7 @@ func prepareNetworkForSuccesfulUploads(data: Data, lowerCasedKeysInResponses: Bo
     }
     
     // Mimick chunk uploading with offsets
-    MockURLProtocol.prepareResponse(for: "PATCH") { headers in
+    MockURLProtocol.prepareResponse(for: "PATCH", testID: testID) { headers in
         
         guard let headers = headers,
               let strOffset = headers["Upload-Offset"],
@@ -64,33 +64,33 @@ func prepareNetworkForSuccesfulUploads(data: Data, lowerCasedKeysInResponses: Bo
     
 }
 
-func prepareNetworkForErronousResponses() {
-    MockURLProtocol.prepareResponse(for: "POST") { _ in
+func prepareNetworkForErronousResponses(testID: String? = nil) {
+    MockURLProtocol.prepareResponse(for: "POST", testID: testID) { _ in
         MockURLProtocol.Response(status: 401, headers: [:], data: nil)
     }
-    MockURLProtocol.prepareResponse(for: "PATCH") { _ in
+    MockURLProtocol.prepareResponse(for: "PATCH", testID: testID) { _ in
         MockURLProtocol.Response(status: 401, headers: [:], data: nil)
     }
-    MockURLProtocol.prepareResponse(for: "HEAD") { _ in
+    MockURLProtocol.prepareResponse(for: "HEAD", testID: testID) { _ in
         MockURLProtocol.Response(status: 401, headers: [:], data: nil)
     }
 }
 
-func prepareNetworkForSuccesfulStatusCall(data: Data) {
-    MockURLProtocol.prepareResponse(for: "HEAD") { _ in
+func prepareNetworkForSuccesfulStatusCall(data: Data, testID: String? = nil) {
+    MockURLProtocol.prepareResponse(for: "HEAD", testID: testID) { _ in
         MockURLProtocol.Response(status: 200, headers: ["Upload-Length": String(data.count),
                                                         "Upload-Offset": "0"], data: nil)
     }
 }
 
 /// Create call can still succeed. This is useful for triggering a status call.
-func prepareNetworkForFailingUploads() {
+func prepareNetworkForFailingUploads(testID: String? = nil) {
     // Upload means patch. Letting that fail.
-    MockURLProtocol.prepareResponse(for: "PATCH") { _ in
+    MockURLProtocol.prepareResponse(for: "PATCH", testID: testID) { _ in
         MockURLProtocol.Response(status: 401, headers: [:], data: nil)
     }
 }
 
-func resetReceivedRequests() {
-    MockURLProtocol.receivedRequests = []
+func resetReceivedRequests(testID: String? = nil) {
+    MockURLProtocol.clearReceivedRequests(testID: testID)
 }

@@ -72,12 +72,23 @@ final class TUSMockDelegate: TUSClientDelegate {
     }
 }
 
-    typealias Headers = [String: String]?
+typealias Headers = [String: String]?
 
 /// MockURLProtocol to support mocking the network
 final class MockURLProtocol: URLProtocol {
     
     private static let queue = DispatchQueue(label: "com.tuskit.mockurlprotocol")
+    static let testIDHeader = "X-Mock-Test-ID"
+    
+    private struct ResponseKey: Hashable {
+        let method: String
+        let testID: String?
+    }
+    
+    private struct RequestRecord {
+        let testID: String?
+        let request: URLRequest
+    }
     
     struct Response {
         let status: Int
@@ -85,13 +96,53 @@ final class MockURLProtocol: URLProtocol {
         let data: Data?
     }
     
-    static var responses = [String: (Headers) -> Response]()
-    static var receivedRequests = [URLRequest]()
+    private static var responses = [ResponseKey: (Headers) -> Response]()
+    private static var requestRecords = [RequestRecord]()
     
-    static func reset() {
-        queue.async {
-            responses = [:]
-            receivedRequests = []
+    static var receivedRequests: [URLRequest] {
+        get {
+            queue.sync {
+                requestRecords.map(\.request)
+            }
+        }
+        set {
+            queue.sync {
+                requestRecords = newValue.map { request in
+                    RequestRecord(testID: request.value(forHTTPHeaderField: testIDHeader), request: request)
+                }
+            }
+        }
+    }
+    
+    static func receivedRequests(testID: String?) -> [URLRequest] {
+        queue.sync {
+            requestRecords
+                .filter { $0.testID == testID }
+                .map(\.request)
+        }
+    }
+    
+    static func reset(testID: String? = nil) {
+        queue.sync {
+            guard let testID else {
+                responses = [:]
+                requestRecords = []
+                return
+            }
+            
+            responses = responses.filter { $0.key.testID != testID }
+            requestRecords.removeAll { $0.testID == testID }
+        }
+    }
+    
+    static func clearReceivedRequests(testID: String? = nil) {
+        queue.sync {
+            guard let testID else {
+                requestRecords = []
+                return
+            }
+            
+            requestRecords.removeAll { $0.testID == testID }
         }
     }
     
@@ -99,9 +150,10 @@ final class MockURLProtocol: URLProtocol {
     /// - Parameters:
     ///   - method: The http method (POST PATCH etc)
     ///   - makeResponse: A closure that returns a Response
-    static func prepareResponse(for method: String, makeResponse: @escaping (Headers) -> Response) {
-        queue.async {
-            responses[method] = makeResponse
+    static func prepareResponse(for method: String, testID: String? = nil, makeResponse: @escaping (Headers) -> Response) {
+        let key = ResponseKey(method: method, testID: testID)
+        queue.sync {
+            responses[key] = makeResponse
         }
     }
     
@@ -123,17 +175,27 @@ final class MockURLProtocol: URLProtocol {
             guard let client = self.client else { return }
             
             guard let method = self.request.httpMethod,
-                    let preparedResponseClosure = type(of: self).responses[method] else {
+                  let preparedResponseClosure = {
+                      let testID = self.request.value(forHTTPHeaderField: type(of: self).testIDHeader)
+                      let key = ResponseKey(method: method, testID: testID)
+                      let fallbackKey = ResponseKey(method: method, testID: nil)
+                      return type(of: self).responses[key] ?? type(of: self).responses[fallbackKey]
+                  }() else {
                 //            assertionFailure("No response found for \(String(describing: request.httpMethod)) prepared \(type(of: self).responses)")
                 return
             }
             
             let preparedResponse = preparedResponseClosure(self.request.allHTTPHeaderFields)
             
-            type(of: self).receivedRequests.append(self.request)
+            type(of: self).requestRecords.append(
+                RequestRecord(
+                    testID: self.request.value(forHTTPHeaderField: type(of: self).testIDHeader),
+                    request: self.request
+                )
+            )
             
-            let url = URL(string: "https://tusd.tusdemo.net/files")!
-            let response = HTTPURLResponse(url: url, statusCode: preparedResponse.status, httpVersion: nil, headerFields: preparedResponse.headers)!
+            let responseURL = self.request.url ?? URL(string: "https://tusd.tusdemo.net/files")!
+            let response = HTTPURLResponse(url: responseURL, statusCode: preparedResponse.status, httpVersion: nil, headerFields: preparedResponse.headers)!
             
             client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             

@@ -4,11 +4,14 @@ import XCTest
 final class FilesTests: XCTestCase {
 
     var files: Files!
+    var storagePath: URL!
+
     override func setUp() {
         super.setUp()
         
         do {
-            files = try Files(storageDirectory: URL(string: "TUS")!)
+            storagePath = URL(string: "TUS-\(UUID().uuidString)")!
+            files = try Files(storageDirectory: storagePath)
         } catch {
             XCTFail("Could not instantiate Files")
         }
@@ -17,23 +20,9 @@ final class FilesTests: XCTestCase {
     override func tearDown() {
         do {
             try files.clearCacheInStorageDirectory()
-            try emptyCacheDir()
         } catch {
             // Okay if dir doesn't exist
         }
-    }
-    
-    private func emptyCacheDir() throws {
-        
-        let cacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        guard FileManager.default.fileExists(atPath: cacheDirectory.path, isDirectory: nil) else {
-            return
-        }
-        
-        for file in try FileManager.default.contentsOfDirectory(atPath: cacheDirectory.path) {
-            try FileManager.default.removeItem(atPath: cacheDirectory.appendingPathComponent(file).path)
-        }
-
     }
     
     func testInitializers() {
@@ -127,11 +116,7 @@ final class FilesTests: XCTestCase {
         // Normally we write to the documents dir. But we explicitly are storing a file in a "wrong dir"
         // To see if retrieving metadata updates its directory.
         func writeDummyFileToCacheDir() throws -> URL {
-            let cacheURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
-                .appendingPathComponent("TUS")
-            let fileURL = cacheURL.appendingPathComponent("abcdefgh.txt")
-            return fileURL
+            files.storageDirectory.appendingPathComponent("abcdefgh.txt")
         }
         
         func storeMetaData(filePath: URL) throws -> URL {

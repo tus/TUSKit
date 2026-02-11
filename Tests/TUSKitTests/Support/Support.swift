@@ -30,15 +30,23 @@ func clearDirectory(dir: URL) {
     }
 }
 
-func makeClient(storagePath: URL?, supportedExtensions: [TUSProtocolExtension] = [.creation]) -> TUSClient {
+func makeClient(storagePath: URL?,
+                supportedExtensions: [TUSProtocolExtension] = [.creation],
+                sessionIdentifier: String = "TEST",
+                mockTestID: String? = nil) -> TUSClient {
     let liveDemoPath = URL(string: "https://tusd.tusdemo.net/files")!
     
     // We don't use a live URLSession, we mock it out.
     let configuration = URLSessionConfiguration.default
     configuration.protocolClasses = [MockURLProtocol.self]
+    if let mockTestID {
+        var headers = configuration.httpAdditionalHeaders as? [String: String] ?? [:]
+        headers[MockURLProtocol.testIDHeader] = mockTestID
+        configuration.httpAdditionalHeaders = headers
+    }
     do {
         let client = try TUSClient(server: liveDemoPath,
-                                   sessionIdentifier: "TEST",
+                                   sessionIdentifier: sessionIdentifier,
                                    sessionConfiguration: configuration,
                                    storageDirectory: storagePath,
                                    supportedExtensions: supportedExtensions)

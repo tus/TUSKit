@@ -14,25 +14,32 @@ final class TUSAPITests: XCTestCase {
 
     var api: TUSAPI!
     var uploadURL: URL!
+    var mockTestID: String!
     
     override func setUp() {
         super.setUp()
         
+        mockTestID = UUID().uuidString
+        MockURLProtocol.reset(testID: mockTestID)
+        
         let configuration = URLSessionConfiguration.default
         configuration.protocolClasses = [MockURLProtocol.self]
+        if let mockTestID {
+            configuration.httpAdditionalHeaders = [MockURLProtocol.testIDHeader: mockTestID]
+        }
         uploadURL = URL(string: "www.tus.io")!
         api = TUSAPI(sessionConfiguration: configuration)
     }
     
     override func tearDown() {
         super.tearDown()
-        MockURLProtocol.receivedRequests = []
+        MockURLProtocol.reset(testID: mockTestID)
     }
     
     func testStatus() throws {
         let length = 3000
         let offset = 20
-        MockURLProtocol.prepareResponse(for: "HEAD") { _ in
+        MockURLProtocol.prepareResponse(for: "HEAD", testID: mockTestID) { _ in
             MockURLProtocol.Response(status: 200, headers: ["Upload-Length": String(length), "Upload-Offset": String(offset)], data: nil)
         }
         
@@ -60,7 +67,7 @@ final class TUSAPITests: XCTestCase {
     
     func testCreationWithAbsolutePath() throws {
         let remoteFileURL = URL(string: "https://tus.io/myfile")!
-        MockURLProtocol.prepareResponse(for: "POST") { _ in
+        MockURLProtocol.prepareResponse(for: "POST", testID: mockTestID) { _ in
             MockURLProtocol.Response(status: 200, headers: ["Location": remoteFileURL.absoluteString], data: nil)
         }
         
@@ -82,23 +89,18 @@ final class TUSAPITests: XCTestCase {
         
         waitForExpectations(timeout: 3, handler: nil)
         
-        let headerFields = try XCTUnwrap(MockURLProtocol.receivedRequests.first?.allHTTPHeaderFields)
+        let headerFields = try XCTUnwrap(MockURLProtocol.receivedRequests(testID: mockTestID).first?.allHTTPHeaderFields)
         let expectedFileName = metaData.filePath.lastPathComponent.toBase64()
-        let expectedHeaders: [String: String] =
-            [
-                "TUS-Resumable": "1.0.0",
-                "Upload-Length": String(size),
-                "Upload-Metadata": "filename \(expectedFileName)"
-            ]
-        
-        XCTAssertEqual(expectedHeaders, headerFields)
+        XCTAssertEqual("1.0.0", headerFields["TUS-Resumable"])
+        XCTAssertEqual(String(size), headerFields["Upload-Length"])
+        XCTAssertEqual("filename \(expectedFileName)", headerFields["Upload-Metadata"])
     }
     
     func testCreationWithRelativePath() throws {
         let uploadURL = URL(string: "https://tus.example.org/files")!
         let relativePath = "files/24e533e02ec3bc40c387f1a0e460e216"
         let expectedURL = URL(string: "https://tus.example.org/files/24e533e02ec3bc40c387f1a0e460e216")!
-        MockURLProtocol.prepareResponse(for: "POST") { _ in
+        MockURLProtocol.prepareResponse(for: "POST", testID: mockTestID) { _ in
             MockURLProtocol.Response(status: 200, headers: ["Location": relativePath], data: nil)
         }
         
@@ -120,21 +122,16 @@ final class TUSAPITests: XCTestCase {
         
         waitForExpectations(timeout: 3, handler: nil)
         
-        let headerFields = try XCTUnwrap(MockURLProtocol.receivedRequests.first?.allHTTPHeaderFields)
+        let headerFields = try XCTUnwrap(MockURLProtocol.receivedRequests(testID: mockTestID).first?.allHTTPHeaderFields)
         let expectedFileName = metaData.filePath.lastPathComponent.toBase64()
-        let expectedHeaders: [String: String] =
-            [
-                "TUS-Resumable": "1.0.0",
-                "Upload-Length": String(size),
-                "Upload-Metadata": "filename \(expectedFileName)"
-            ]
-        
-        XCTAssertEqual(expectedHeaders, headerFields)
+        XCTAssertEqual("1.0.0", headerFields["TUS-Resumable"])
+        XCTAssertEqual(String(size), headerFields["Upload-Length"])
+        XCTAssertEqual("filename \(expectedFileName)", headerFields["Upload-Metadata"])
     }
     
     func testUpload() throws {
         let data = Data("Hello how are you".utf8)
-        MockURLProtocol.prepareResponse(for: "PATCH") { _ in
+        MockURLProtocol.prepareResponse(for: "PATCH", testID: mockTestID) { _ in
             MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
         }
         
@@ -154,16 +151,11 @@ final class TUSAPITests: XCTestCase {
         
         waitForExpectations(timeout: 3, handler: nil)
         
-        let headerFields = try XCTUnwrap(MockURLProtocol.receivedRequests.first?.allHTTPHeaderFields)
-        let expectedHeaders: [String: String] =
-            [
-                "TUS-Resumable": "1.0.0",
-                "Content-Type": "application/offset+octet-stream",
-                "Upload-Offset": String(offset),
-                "Content-Length": String(length)
-            ]
-        
-        XCTAssertEqual(headerFields, expectedHeaders)
+        let headerFields = try XCTUnwrap(MockURLProtocol.receivedRequests(testID: mockTestID).first?.allHTTPHeaderFields)
+        XCTAssertEqual("1.0.0", headerFields["TUS-Resumable"])
+        XCTAssertEqual("application/offset+octet-stream", headerFields["Content-Type"])
+        XCTAssertEqual(String(offset), headerFields["Upload-Offset"])
+        XCTAssertEqual(String(length), headerFields["Content-Length"])
     }
     
     func testUploadWithRelativePath() throws {
@@ -172,7 +164,7 @@ final class TUSAPITests: XCTestCase {
         let relativePath = "files/24e533e02ec3bc40c387f1a0e460e216"
         let uploadURL = URL(string: relativePath, relativeTo: baseURL)!
         let expectedURL = URL(string: "https://tus.example.org/files/24e533e02ec3bc40c387f1a0e460e216")!
-        MockURLProtocol.prepareResponse(for: "PATCH") { _ in
+        MockURLProtocol.prepareResponse(for: "PATCH", testID: mockTestID) { _ in
             MockURLProtocol.Response(status: 200, headers: ["Upload-Offset": String(data.count)], data: nil)
         }
         
@@ -192,16 +184,11 @@ final class TUSAPITests: XCTestCase {
         
         waitForExpectations(timeout: 3, handler: nil)
         
-        let headerFields = try XCTUnwrap(MockURLProtocol.receivedRequests.first?.allHTTPHeaderFields)
-        let expectedHeaders: [String: String] =
-            [
-                "TUS-Resumable": "1.0.0",
-                "Content-Type": "application/offset+octet-stream",
-                "Upload-Offset": String(offset),
-                "Content-Length": String(length)
-            ]
-        
-        XCTAssertEqual(headerFields, expectedHeaders)
+        let headerFields = try XCTUnwrap(MockURLProtocol.receivedRequests(testID: mockTestID).first?.allHTTPHeaderFields)
+        XCTAssertEqual("1.0.0", headerFields["TUS-Resumable"])
+        XCTAssertEqual("application/offset+octet-stream", headerFields["Content-Type"])
+        XCTAssertEqual(String(offset), headerFields["Upload-Offset"])
+        XCTAssertEqual(String(length), headerFields["Content-Length"])
     }
     
 }

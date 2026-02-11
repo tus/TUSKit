@@ -9,13 +9,19 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     var relativeStoragePath: URL!
     var fullStoragePath: URL!
     var data: Data!
+    var mockTestID: String!
+    
+    private var receivedRequests: [URLRequest] {
+        MockURLProtocol.receivedRequests(testID: mockTestID)
+    }
 
     override func setUp() {
         super.setUp()
 
         relativeStoragePath = URL(string: UUID().uuidString)!
+        mockTestID = UUID().uuidString
 
-        MockURLProtocol.reset()
+        MockURLProtocol.reset(testID: mockTestID)
 
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
@@ -25,11 +31,12 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         data = Data("abcdef".utf8)
 
         tusDelegate = TUSMockDelegate()
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
     }
 
     override func tearDown() {
         super.tearDown()
+        MockURLProtocol.reset(testID: mockTestID)
         clearDirectory(dir: fullStoragePath)
         client = nil
     }
@@ -64,7 +71,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     /// Verifies the generator is called even when no custom headers were supplied, enabling clients to inject headers.
     func testGenerateHeadersCalledWithoutCustomHeaders() throws {
         let configuration = makeConfiguration()
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
 
         let generatorCalled = expectation(description: "Header generator should be invoked")
         tusDelegate.finishUploadExpectation = expectation(description: "Upload finished")
@@ -85,7 +92,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         wait(for: [generatorCalled, tusDelegate.finishUploadExpectation!], timeout: 5)
 
         XCTAssertEqual(firstReceivedHeaders ?? [:], [:])
-        let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
+        let createRequests = receivedRequests.filter { $0.httpMethod == "POST" }
         XCTAssertFalse(createRequests.isEmpty)
         guard let postHeaders = createRequests.first?.allHTTPHeaderFields else {
             XCTFail("Expected POST request headers")
@@ -98,8 +105,8 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     func testGenerateHeadersReceivesLastAppliedValuesOnAutomaticRetry() throws {
         let configuration = makeConfiguration()
 
-        prepareNetworkForSuccesfulUploads(data: data)
-        prepareNetworkForFailingUploads()
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
+        prepareNetworkForFailingUploads(testID: mockTestID)
 
         var receivedAuthorizationHeaders: [String] = []
         let generatorCalledTwice = expectation(description: "Header generator called twice")
@@ -133,7 +140,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     func testGenerateHeadersCalledWhenResumingUpload() throws {
         let configuration = makeConfiguration()
 
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
 
         let firstGeneratorCalled = expectation(description: "First header generator called")
         let uploadStarted = expectation(description: "Upload started before pausing")
@@ -153,9 +160,9 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         wait(for: [firstGeneratorCalled, uploadStarted], timeout: 5)
         client.stopAndCancelAll()
 
-        MockURLProtocol.reset()
-        prepareNetworkForSuccesfulStatusCall(data: data)
-        prepareNetworkForSuccesfulUploads(data: data)
+        MockURLProtocol.reset(testID: mockTestID)
+        prepareNetworkForSuccesfulStatusCall(data: data, testID: mockTestID)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
 
         tusDelegate = TUSMockDelegate()
         let finishExpectation = expectation(description: "Upload should finish after resume")
@@ -178,7 +185,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     /// Ensures uploads wait for asynchronous header generation before proceeding.
     func testGenerateHeadersSupportsAsynchronousCompletion() throws {
         let configuration = makeConfiguration()
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
 
         let asyncExpectation = expectation(description: "Async header generator invoked")
         asyncExpectation.expectedFulfillmentCount = 2
@@ -200,7 +207,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     /// Ensures the generator only receives caller-supplied headers during upload creation.
     func testGenerateHeadersReceivesOnlyCustomHeadersDuringCreate() throws {
         let configuration = makeConfiguration()
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
 
         let customHeaders = ["Authorization": "Bearer foo", "X-Trace": "123"]
         var observedHeaders: [[String: String]] = []
@@ -227,7 +234,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     /// Ensures the generator only receives caller-supplied headers when a status check runs.
     func testGenerateHeadersReceivesOnlyCustomHeadersDuringStatus() throws {
         let configuration = makeConfiguration()
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
 
         let customHeaders = ["Authorization": "Bearer bar", "X-Trace": "resume-123"]
         tusDelegate.startUploadExpectation = expectation(description: "Upload started")
@@ -241,9 +248,9 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         wait(for: [tusDelegate.startUploadExpectation!], timeout: 5)
         client.stopAndCancelAll()
 
-        MockURLProtocol.reset()
-        prepareNetworkForSuccesfulStatusCall(data: data)
-        prepareNetworkForSuccesfulUploads(data: data)
+        MockURLProtocol.reset(testID: mockTestID)
+        prepareNetworkForSuccesfulStatusCall(data: data, testID: mockTestID)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
 
         tusDelegate = TUSMockDelegate()
         let statusGeneratorCalled = expectation(description: "Header generator called during status")
@@ -269,7 +276,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     /// Ensures the generator only receives caller-supplied headers during the upload (PATCH) step.
     func testGenerateHeadersReceivesOnlyCustomHeadersDuringUpload() throws {
         let configuration = makeConfiguration()
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
 
         let customHeaders = ["Authorization": "Bearer data", "X-Trace": "upload-step"]
         tusDelegate.finishUploadExpectation = expectation(description: "Upload finished")
@@ -290,8 +297,8 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     /// Ensures the generator cannot override headers that TUSClient manages itself.
     func testGenerateHeadersCannotOverrideReservedHeaders() throws {
         let configuration = makeConfiguration()
-        MockURLProtocol.reset()
-        prepareNetworkForSuccesfulUploads(data: data)
+        MockURLProtocol.reset(testID: mockTestID)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
 
         let customHeaders = ["Authorization": "Bearer original"]
         tusDelegate.finishUploadExpectation = expectation(description: "Upload finished")
@@ -307,7 +314,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         _ = try client.upload(data: data, customHeaders: customHeaders)
         wait(for: [tusDelegate.finishUploadExpectation!], timeout: 5)
 
-        let patchRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "PATCH" }
+        let patchRequests = receivedRequests.filter { $0.httpMethod == "PATCH" }
         XCTAssertFalse(patchRequests.isEmpty)
         guard let patchHeaders = patchRequests.first?.allHTTPHeaderFields else {
             XCTFail("Expected PATCH request headers")
@@ -320,6 +327,9 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
     private func makeConfiguration() -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.default
         configuration.protocolClasses = [MockURLProtocol.self]
+        if let mockTestID {
+            configuration.httpAdditionalHeaders = [MockURLProtocol.testIDHeader: mockTestID]
+        }
         return configuration
     }
 
@@ -328,7 +338,7 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         let configuration = configuration ?? makeConfiguration()
         return try TUSClient(
             server: URL(string: "https://tusd.tusdemo.net/files")!,
-            sessionIdentifier: "TEST",
+            sessionIdentifier: "TEST-\(mockTestID!)",
             sessionConfiguration: configuration,
             storageDirectory: relativeStoragePath,
             supportedExtensions: [.creation],

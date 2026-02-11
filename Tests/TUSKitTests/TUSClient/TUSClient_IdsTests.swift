@@ -8,13 +8,15 @@ final class TUSClient_IdsTests: XCTestCase {
     var relativeStoragePath: URL!
     var fullStoragePath: URL!
     var data: Data!
+    var mockTestID: String!
     
     override func setUp() {
         super.setUp()
         
-        relativeStoragePath = URL(string: "TUSTEST")!
+        relativeStoragePath = URL(string: UUID().uuidString)!
+        mockTestID = UUID().uuidString
         
-        MockURLProtocol.reset()
+        MockURLProtocol.reset(testID: mockTestID)
         
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
@@ -23,7 +25,9 @@ final class TUSClient_IdsTests: XCTestCase {
         
         data = Data("abcdef".utf8)
         
-        client = makeClient(storagePath: relativeStoragePath)
+        client = makeClient(storagePath: relativeStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
         do {
@@ -32,11 +36,12 @@ final class TUSClient_IdsTests: XCTestCase {
             XCTFail("Could not reset \(error)")
         }
         
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
     }
     
     override func tearDown() {
         super.tearDown()
+        MockURLProtocol.reset(testID: mockTestID)
         clearDirectory(dir: fullStoragePath)
     }
     
@@ -44,7 +49,7 @@ final class TUSClient_IdsTests: XCTestCase {
     
     func testUploadIdsArePreservedBetweenSessions() throws {
         // Make sure that once id's are given, and then the tusclient restarts a session, it will still use the same id's
-        prepareNetworkForErronousResponses()
+        prepareNetworkForErronousResponses(testID: mockTestID)
         
         let ids = try upload(data: data, amount: 2, customHeaders: [:], shouldSucceed: false)
 
@@ -52,13 +57,15 @@ final class TUSClient_IdsTests: XCTestCase {
         XCTAssertEqual(ids.count, tusDelegate.failedUploads.count)
         
         // Reload client
-        client = makeClient(storagePath: relativeStoragePath)
+        client = makeClient(storagePath: relativeStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
 
         XCTAssert(tusDelegate.startedUploads.isEmpty)
 
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
 
         for id in ids {
             try client.retry(id: id)
@@ -89,7 +96,7 @@ final class TUSClient_IdsTests: XCTestCase {
     }
     
     func testCorrectIdsAreGivenOnFailure() throws {
-        prepareNetworkForErronousResponses()
+        prepareNetworkForErronousResponses(testID: mockTestID)
                                             
         let expectedId = try client.upload(data: Data("hello".utf8))
         

@@ -8,13 +8,15 @@ final class TUSClient_DelegateTests: XCTestCase {
     var relativeStoragePath: URL!
     var fullStoragePath: URL!
     var data: Data!
+    var mockTestID: String!
     
     override func setUp() {
         super.setUp()
         
-        relativeStoragePath = URL(string: "TUSTEST")!
+        relativeStoragePath = URL(string: UUID().uuidString)!
+        mockTestID = UUID().uuidString
         
-        MockURLProtocol.reset()
+        MockURLProtocol.reset(testID: mockTestID)
         
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
@@ -23,7 +25,9 @@ final class TUSClient_DelegateTests: XCTestCase {
         
         data = Data("abcdef".utf8)
         
-        client = makeClient(storagePath: relativeStoragePath)
+        client = makeClient(storagePath: relativeStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
         do {
@@ -32,11 +36,12 @@ final class TUSClient_DelegateTests: XCTestCase {
             XCTFail("Could not reset \(error)")
         }
         
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
     }
     
     override func tearDown() {
         super.tearDown()
+        MockURLProtocol.reset(testID: mockTestID)
         clearDirectory(dir: fullStoragePath)
     }
      
@@ -54,7 +59,7 @@ final class TUSClient_DelegateTests: XCTestCase {
     
     
     func testStartedUploadIsCalledOnceForLargeFileWhenUploadFails() throws {
-        prepareNetworkForFailingUploads()
+        prepareNetworkForFailingUploads(testID: mockTestID)
         // Even when retrying, start should only be called once.
         let data = Fixtures.makeLargeData()
         

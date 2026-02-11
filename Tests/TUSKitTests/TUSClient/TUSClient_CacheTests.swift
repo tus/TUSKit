@@ -8,13 +8,15 @@ final class TUSClient_CacheTests: XCTestCase {
     var relativeStoragePath: URL!
     var fullStoragePath: URL!
     var data: Data!
+    var mockTestID: String!
     
     override func setUp() {
         super.setUp()
         
-        relativeStoragePath = URL(string: "TUSTEST")!
+        relativeStoragePath = URL(string: UUID().uuidString)!
+        mockTestID = UUID().uuidString
         
-        MockURLProtocol.reset()
+        MockURLProtocol.reset(testID: mockTestID)
         
         let docDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
@@ -24,7 +26,9 @@ final class TUSClient_CacheTests: XCTestCase {
         
         data = Data("abcdef".utf8)
         
-        client = makeClient(storagePath: relativeStoragePath)
+        client = makeClient(storagePath: relativeStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
         do {
@@ -33,11 +37,12 @@ final class TUSClient_CacheTests: XCTestCase {
             XCTFail("Could not reset \(error)")
         }
         
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
     }
     
     override func tearDown() {
         super.tearDown()
+        MockURLProtocol.reset(testID: mockTestID)
         clearDirectory(dir: fullStoragePath)
     }
 
@@ -91,13 +96,15 @@ final class TUSClient_CacheTests: XCTestCase {
         // Then the file can be deleted right after fetching the status.
         
         // Create isolated dir for this test, in case of parallelism issues.
-        let storagePath = URL(string: "DELETE_ME")!
+        let storagePath = URL(string: "DELETE_ME-\(UUID().uuidString)")!
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let fullStoragePath = docDir.appendingPathComponent(storagePath.absoluteString)
         
         clearDirectory(dir: fullStoragePath)
 
-        client = makeClient(storagePath: fullStoragePath)
+        client = makeClient(storagePath: fullStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
         

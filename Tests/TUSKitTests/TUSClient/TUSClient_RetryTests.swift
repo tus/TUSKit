@@ -8,13 +8,19 @@ final class TUSClient_RetryTests: XCTestCase {
     var relativeStoragePath: URL!
     var fullStoragePath: URL!
     var data: Data!
+    var mockTestID: String!
+    
+    private var receivedRequests: [URLRequest] {
+        MockURLProtocol.receivedRequests(testID: mockTestID)
+    }
     
     override func setUp() {
         super.setUp()
         
-        relativeStoragePath = URL(string: "TUSTEST")!
+        relativeStoragePath = URL(string: UUID().uuidString)!
+        mockTestID = UUID().uuidString
         
-        MockURLProtocol.reset()
+        MockURLProtocol.reset(testID: mockTestID)
         
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
@@ -23,7 +29,9 @@ final class TUSClient_RetryTests: XCTestCase {
         
         data = Data("abcdef".utf8)
         
-        client = makeClient(storagePath: relativeStoragePath)
+        client = makeClient(storagePath: relativeStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
         do {
@@ -32,26 +40,27 @@ final class TUSClient_RetryTests: XCTestCase {
             XCTFail("Could not reset \(error)")
         }
         
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
     }
     
     override func tearDown() {
         super.tearDown()
+        MockURLProtocol.reset(testID: mockTestID)
         clearDirectory(dir: fullStoragePath)
     }
     
     func testClientRetriesOnFailure() throws {
-        prepareNetworkForErronousResponses()
+        prepareNetworkForErronousResponses(testID: mockTestID)
         
         let fileAmount = 2
         try upload(data: data, amount: fileAmount, shouldSucceed: false)
         
         let expectedRetryCount = 2
-        XCTAssertEqual(fileAmount * (1 + expectedRetryCount), MockURLProtocol.receivedRequests.count)
+        XCTAssertEqual(fileAmount * (1 + expectedRetryCount), receivedRequests.count)
     }
     
     func testMakeSureMetadataWithTooManyErrorsArentLoadedOnStart() throws {
-        prepareNetworkForErronousResponses()
+        prepareNetworkForErronousResponses(testID: mockTestID)
                                             
         // Pre-assertions
         XCTAssert(tusDelegate.failedUploads.isEmpty)
@@ -71,7 +80,9 @@ final class TUSClient_RetryTests: XCTestCase {
         XCTAssertEqual(uploadCount, tusDelegate.failedUploads.count)
         
         // Reload client, and see what happens
-        client = makeClient(storagePath: relativeStoragePath)
+        client = makeClient(storagePath: relativeStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         
         client.start()
         XCTAssert(tusDelegate.startedUploads.isEmpty)

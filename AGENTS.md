@@ -39,7 +39,7 @@ clarify uncertainty before coding, and align suggestions with the rules linked b
 - Use commits in `<type>(<scope>): summary` format; squash fixups locally before sharing
 
 ## Testing
-[Fill in by LLM assistant]
+- `swift test`: Run the SwiftPM test suite
 
 ## Environment
 [Fill in by LLM assistant]

@@ -8,13 +8,19 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
     var relativeStoragePath: URL!
     var fullStoragePath: URL!
     var data: Data!
+    var mockTestID: String!
+    
+    private var receivedRequests: [URLRequest] {
+        MockURLProtocol.receivedRequests(testID: mockTestID)
+    }
     
     override func setUp() {
         super.setUp()
         
-        relativeStoragePath = URL(string: "TUSTEST")!
+        relativeStoragePath = URL(string: UUID().uuidString)!
+        mockTestID = UUID().uuidString
         
-        MockURLProtocol.reset()
+        MockURLProtocol.reset(testID: mockTestID)
         
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
@@ -23,7 +29,9 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
         
         data = Data("abcdef".utf8)
         
-        client = makeClient(storagePath: relativeStoragePath)
+        client = makeClient(storagePath: relativeStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
         do {
@@ -32,11 +40,12 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
             XCTFail("Could not reset \(error)")
         }
         
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
     }
     
     override func tearDown() {
         super.tearDown()
+        MockURLProtocol.reset(testID: mockTestID)
         clearDirectory(dir: fullStoragePath)
     }
     
@@ -66,7 +75,7 @@ final class TUSClient_CustomHeadersTests: XCTestCase {
         wait(for: [startedExpectation], timeout: 5)
         
         // Validate
-        let createRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
+        let createRequests = receivedRequests.filter { $0.httpMethod == "POST" }
         
         for request in createRequests {
             let headers = try XCTUnwrap(request.allHTTPHeaderFields)

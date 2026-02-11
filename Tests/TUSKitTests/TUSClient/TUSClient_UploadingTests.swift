@@ -8,13 +8,19 @@ final class TUSClient_UploadingTests: XCTestCase {
     var relativeStoragePath: URL!
     var fullStoragePath: URL!
     var data: Data!
+    var mockTestID: String!
+    
+    private var receivedRequests: [URLRequest] {
+        MockURLProtocol.receivedRequests(testID: mockTestID)
+    }
     
     override func setUp() {
         super.setUp()
         
-        relativeStoragePath = URL(string: "TUSTEST")!
+        relativeStoragePath = URL(string: UUID().uuidString)!
+        mockTestID = UUID().uuidString
         
-        MockURLProtocol.reset()
+        MockURLProtocol.reset(testID: mockTestID)
         
         let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fullStoragePath = docDir.appendingPathComponent(relativeStoragePath.absoluteString)
@@ -23,7 +29,9 @@ final class TUSClient_UploadingTests: XCTestCase {
         
         data = Data("abcdef".utf8)
         
-        client = makeClient(storagePath: relativeStoragePath)
+        client = makeClient(storagePath: relativeStoragePath,
+                            sessionIdentifier: "TEST-\(mockTestID!)",
+                            mockTestID: mockTestID)
         tusDelegate = TUSMockDelegate()
         client.delegate = tusDelegate
         do {
@@ -32,11 +40,12 @@ final class TUSClient_UploadingTests: XCTestCase {
             XCTFail("Could not reset \(error)")
         }
         
-        prepareNetworkForSuccesfulUploads(data: data)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
     }
     
     override func tearDown() {
         super.tearDown()
+        MockURLProtocol.reset(testID: mockTestID)
         clearDirectory(dir: fullStoragePath)
     }
     // MARK: - Adding files and data to upload
@@ -72,7 +81,7 @@ final class TUSClient_UploadingTests: XCTestCase {
     func testSmallUploadsArentChunked() throws {
         let ids = try upload(data: Data("012345678".utf8))
         XCTAssertEqual(1, ids.count)
-        XCTAssertEqual(2, MockURLProtocol.receivedRequests.count)
+        XCTAssertEqual(2, receivedRequests.count)
     }
 
     func testLargeUploadsWillBeChunked() throws {
@@ -82,8 +91,8 @@ final class TUSClient_UploadingTests: XCTestCase {
         XCTAssert(data.count > Fixtures.chunkSize, "prerequisite failed")
         let ids = try upload(data: data)
         XCTAssertEqual(1, ids.count)
-        XCTAssertEqual(3, MockURLProtocol.receivedRequests.count)
-        let createRequests = MockURLProtocol.receivedRequests.filter { request in
+        XCTAssertEqual(3, receivedRequests.count)
+        let createRequests = receivedRequests.filter { request in
             request.httpMethod == "POST"
         }
         XCTAssertEqual(1, createRequests.count, "The POST method (create) should have been called only once")
@@ -91,7 +100,7 @@ final class TUSClient_UploadingTests: XCTestCase {
     
     func testClientThrowsErrorsWhenReceivingWrongOffset() throws {
         // Make sure that if a server gives a "wrong" offset, the uploader errors and doesn't end up in an infinite uploading loop.
-        prepareNetworkForWrongOffset(data: data)
+        prepareNetworkForWrongOffset(data: data, testID: mockTestID)
         try upload(data: data, shouldSucceed: false)
         XCTAssertEqual(1, tusDelegate.failedUploads.count)
     }
@@ -101,20 +110,20 @@ final class TUSClient_UploadingTests: XCTestCase {
         
         // We fail the client first, then restart and make it use a status call to continue
         // After which we make sure that calls get chunked properly.
-        prepareNetworkForErronousResponses()
+        prepareNetworkForErronousResponses(testID: mockTestID)
         let data = Fixtures.makeLargeData()
         let ids = try upload(data: data, shouldSucceed: false)
         
         // Now that a large upload failed. Let's retry a succesful upload, fetch its status, and check the requests that have been created.
-        prepareNetworkForSuccesfulUploads(data: data)
-        resetReceivedRequests()
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
+        resetReceivedRequests(testID: mockTestID)
         
         try client.retry(id: ids[0])
         waitForUploadsToFinish(1)
         
-        let creationRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
-        let uploadRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "PATCH" }
-        let statusReqests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "HEAD" }
+        let creationRequests = receivedRequests.filter { $0.httpMethod == "POST" }
+        let uploadRequests = receivedRequests.filter { $0.httpMethod == "PATCH" }
+        let statusReqests = receivedRequests.filter { $0.httpMethod == "HEAD" }
         XCTAssert(statusReqests.isEmpty)
         XCTAssertEqual(1, creationRequests.count)
         XCTAssertEqual(2, uploadRequests.count)
@@ -123,22 +132,22 @@ final class TUSClient_UploadingTests: XCTestCase {
     func testLargeUploadsWillBeChunkedAfterFetchingStatus() throws {
         // First we make sure create succeeds. But uploading fails.
         // This means we can do a status call after. After which we measure if something will get chunked.
-        prepareNetworkForFailingUploads()
+        prepareNetworkForFailingUploads(testID: mockTestID)
         let data = Fixtures.makeLargeData()
         let ids = try upload(data: data, shouldSucceed: false)
         
         // Now a file is created with a remote url. So next fetch means the client will perform a status call.
         // Let's retry uploading and make sure that status and 2 (not 1, because chunking) calls have been made.
         
-        prepareNetworkForSuccesfulStatusCall(data: data)
-        prepareNetworkForSuccesfulUploads(data: data)
-        resetReceivedRequests()
+        prepareNetworkForSuccesfulStatusCall(data: data, testID: mockTestID)
+        prepareNetworkForSuccesfulUploads(data: data, testID: mockTestID)
+        resetReceivedRequests(testID: mockTestID)
 
         try client.retry(id: ids[0])
         waitForUploadsToFinish(1)
-        let statusReqests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "HEAD" }
-        let creationRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
-        let uploadRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "PATCH" }
+        let statusReqests = receivedRequests.filter { $0.httpMethod == "HEAD" }
+        let creationRequests = receivedRequests.filter { $0.httpMethod == "POST" }
+        let uploadRequests = receivedRequests.filter { $0.httpMethod == "PATCH" }
         XCTAssert(creationRequests.isEmpty)
         XCTAssertEqual(1, statusReqests.count)
         XCTAssertEqual(2, uploadRequests.count)
@@ -147,17 +156,22 @@ final class TUSClient_UploadingTests: XCTestCase {
     // MARK: - Custom URLs
     
     func testUploadingToCustomURL() throws {
-        let url = URL(string: "www.custom-url")!
-        try client.upload(data: data, uploadURL: url)
+        let url = URL(string: "https://www.custom-url")!
+        let uploadId = try client.upload(data: data, uploadURL: url)
         waitForUploadsToFinish(1)
-        let uploadRequests = MockURLProtocol.receivedRequests.filter { $0.httpMethod == "POST" }
-        XCTAssertEqual(url, uploadRequests.first?.url)
+        
+        let expectedFilenameMetadata = "filename \(uploadId.uuidString.toBase64())"
+        let requestForUpload = receivedRequests.first { request in
+            request.httpMethod == "POST" &&
+                request.value(forHTTPHeaderField: "Upload-Metadata")?.contains(expectedFilenameMetadata) == true
+        }
+        XCTAssertEqual(url, requestForUpload?.url)
     }
     
     // MARK: - Responses
     
     func testMakeSureClientCanHandleLowerCaseKeysInResponses() throws {
-        prepareNetworkForSuccesfulUploads(data: data, lowerCasedKeysInResponses: true)
+        prepareNetworkForSuccesfulUploads(data: data, lowerCasedKeysInResponses: true, testID: mockTestID)
         try upload(data: data)
     }
 

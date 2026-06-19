@@ -22,7 +22,10 @@ public protocol TUSClientDelegate: AnyObject {
     /// TUSClient is starting an upload
     func didStartUpload(id: UUID, context: [String: String]?, client: TUSClient)
     /// `TUSClient` just finished an upload, returns the URL of the uploaded file.
+    @available(*, deprecated, message: "Use the new didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient, responseHeaders: [String: String]?) method instead.")
     func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient)
+    /// `TUSClient` just finished an upload, returns the URL of the uploaded file along with `responseHeaders` from server.
+    func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient, responseHeaders: [String: String]?)
     /// An upload failed. Returns an error. Could either be a TUSClientError or a networking related error.
     func uploadFailed(id: UUID, error: Error, context: [String: String]?, client: TUSClient)
     
@@ -49,6 +52,12 @@ public protocol TUSClientDelegate: AnyObject {
 public extension TUSClientDelegate {
     func progressFor(id: UUID, context: [String: String]?, progress: Float, client: TUSClient) {
         // Optional
+    }
+    
+    /// `TUSClient` just finished an upload, returns the URL of the uploaded file along with `responseHeaders` from server.
+    func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient, responseHeaders: [String: String]?) {
+        // Supports calling the existing implementation without forcing conformance to the new delegate function.
+        didFinishUpload(id: id, url: url, context: context, client: client)
     }
 
     func fileError(id: UUID?, error: TUSClientError, client: TUSClient) {
@@ -717,13 +726,17 @@ extension TUSClient: SchedulerDelegate {
             assertionFailure("Somehow uploaded task did not have a url")
             return
         }
-
+        
+        didFinishUpload(id: uploadTask.metaData.id, url: url, context: uploadTask.metaData.context, client: self, responseHeaders: uploadTask.metaData.responseHeaders)
+    }
+    
+    private func didFinishUpload(id: UUID, url: URL, context: [String: String]?, client: TUSClient, responseHeaders: [String: String]?) {
         queue.sync {
-            self.uploads[uploadTask.metaData.id] = nil
+            self.uploads[id] = nil
         }
-        headerGenerator.clearHeaders(for: uploadTask.metaData.id)
+        headerGenerator.clearHeaders(for: id)
         reportingQueue.async {
-            self.delegate?.didFinishUpload(id: uploadTask.metaData.id, url: url, context: uploadTask.metaData.context, client: self)
+            self.delegate?.didFinishUpload(id: id, url: url, context: context, client: self, responseHeaders: responseHeaders)
         }
     }
 

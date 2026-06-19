@@ -105,7 +105,7 @@ extension UploadsListView {
             Spacer()
             Text(uploadCategory.noRecoredMessage)
             if uploadCategory == .all {
-                (Text("Upload files for ") + (Text("Upload files ") + Text(Image(systemName: Icon.uploadFileFilled.rawValue))).foregroundColor(.blue) + Text(" tab"))
+                (Text("Upload files from ") + (Text("Upload files ") + Text(Image(systemName: Icon.uploadFileFilled.rawValue))).foregroundColor(.blue) + Text(" tab"))
             }
             Spacer()
         }

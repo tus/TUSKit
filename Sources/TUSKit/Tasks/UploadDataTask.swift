@@ -114,12 +114,12 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         }
     }
     
-    func taskCompleted(result: Result<Int, TUSAPIError>, completed: @escaping TaskCompletion) {
+    func taskCompleted(result: UploadTaskResult, completed: @escaping TaskCompletion) {
         do {
-            let receivedOffset = try result.get()
+            let receivedOffset = try result.get().0
             let currentOffset = metaData.uploadedRange?.upperBound ?? 0
             metaData.uploadedRange = 0..<receivedOffset
-
+            
             let hasFinishedUploading = receivedOffset == metaData.size
             if hasFinishedUploading {
                 try files.encodeAndStore(metaData: metaData)
@@ -130,15 +130,15 @@ final class UploadDataTask: NSObject, IdentifiableTask {
                 // assertionFailure("Server returned a new uploaded offset \(offset), but it's lower than what's already uploaded \(metaData.uploadedRange!), according to the metaData. Either the metaData is wrong, or the server is returning a wrong value offset.")
                 throw TUSClientError.receivedUnexpectedOffset
             }
-
+            
             try files.encodeAndStore(metaData: metaData)
-
+            
             // If the task has been canceled
             // we don't continue to create subsequent UploadDataTasks
             if self.isCanceled {
                 throw TUSClientError.taskCancelled
             }
-
+            
             let nextRange: Range<Int>?
             if let range = range {
                 let chunkSize = range.count
@@ -146,7 +146,7 @@ final class UploadDataTask: NSObject, IdentifiableTask {
             } else {
                 nextRange = nil
             }
-
+            
             let task = try UploadDataTask(api: api, metaData: metaData, files: files, range: nextRange, headerGenerator: headerGenerator)
             completed(.success([task]))
         } catch let error as TUSClientError {

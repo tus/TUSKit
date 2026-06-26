@@ -116,7 +116,8 @@ final class UploadDataTask: NSObject, IdentifiableTask {
     
     func taskCompleted(result: UploadTaskResult, completed: @escaping TaskCompletion) {
         do {
-            let receivedOffset = try result.get().0
+            let (receivedOffset, responseHeaders) = try result.get()
+            metaData.responseHeaders = responseHeaders
             let currentOffset = metaData.uploadedRange?.upperBound ?? 0
             metaData.uploadedRange = 0..<receivedOffset
             

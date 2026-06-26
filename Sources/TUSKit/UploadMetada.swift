@@ -141,7 +141,7 @@ final class UploadMetadata: Codable {
         _customHeaders = try values.decode([String: String]?.self, forKey: .customHeaders)
         size = try values.decode(Int.self, forKey: .size)
         _errorCount = try values.decode(Int.self, forKey: .errorCount)
-        responseHeaders = try values.decode([String: String].self, forKey: .responseHeaders)
+        responseHeaders = try values.decodeIfPresent([String: String].self, forKey: .responseHeaders)
         _appliedCustomHeaders = try values.decode([String: String]?.self, forKey: .appliedCustomHeaders)
     }
     

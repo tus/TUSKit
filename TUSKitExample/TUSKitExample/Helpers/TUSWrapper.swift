@@ -98,6 +98,12 @@ extension TUSWrapper: TUSClientDelegate {
     }
     
     func didFinishUpload(id: UUID, url: URL, context: [String : String]?, client: TUSClient) {
+        /// This function is called if the following
+        /// `didFinishUpload(id:UUID, url:URL, context:[String:String]?, client:TUSClient, responseHeaders:[String:String]?)`
+        /// delegate method is not implemented.
+    }
+    
+    func didFinishUpload(id: UUID, url: URL, context: [String : String]?, client: TUSClient, responseHeaders: [String : String]?) {
         Task { @MainActor in
             withAnimation {
                 uploads[id] = .uploaded(url: url)
@@ -123,7 +129,9 @@ extension TUSWrapper: TUSClientDelegate {
         }
     }
     
+    func fileError(error: TUSClientError, client: TUSClient) {}
     func fileError(id: UUID?, error: TUSClientError, client: TUSClient) { }
+    
     func totalProgress(bytesUploaded: Int, totalBytes: Int, client: TUSClient) {
         print("total progress: \(bytesUploaded) / \(totalBytes) => \(Int(Double(bytesUploaded) / Double(totalBytes) * 100))%")
     }

@@ -26,8 +26,8 @@ final class UploadMetadata: Codable {
         case customHeaders
         case size
         case errorCount
+        case responseHeaders
         case appliedCustomHeaders
-        
     }
     
     var isFinished: Bool {
@@ -49,6 +49,8 @@ final class UploadMetadata: Codable {
             }
         }
     }
+    
+    var responseHeaders: [String: String]?
     
     private var _remoteDestination: URL?
     var remoteDestination: URL? {
@@ -112,10 +114,11 @@ final class UploadMetadata: Codable {
         }
     }
     
-    init(id: UUID, filePath: URL, uploadURL: URL, size: Int, customHeaders: [String: String]? = nil, mimeType: String? = nil, context: [String: String]? = nil) {
+    init(id: UUID, filePath: URL, uploadURL: URL, responseHeaders: [String: String]? = nil, size: Int, customHeaders: [String: String]? = nil, mimeType: String? = nil, context: [String: String]? = nil) {
         self.id = id
         self._filePath = filePath
         self.uploadURL = uploadURL
+        self.responseHeaders = responseHeaders
         self.size = size
         self._customHeaders = customHeaders
         self.mimeType = mimeType
@@ -138,6 +141,7 @@ final class UploadMetadata: Codable {
         _customHeaders = try values.decode([String: String]?.self, forKey: .customHeaders)
         size = try values.decode(Int.self, forKey: .size)
         _errorCount = try values.decode(Int.self, forKey: .errorCount)
+        responseHeaders = try values.decodeIfPresent([String: String].self, forKey: .responseHeaders)
         _appliedCustomHeaders = try values.decode([String: String]?.self, forKey: .appliedCustomHeaders)
     }
     
@@ -154,6 +158,7 @@ final class UploadMetadata: Codable {
         try container.encode(_customHeaders, forKey: .customHeaders)
         try container.encode(size, forKey: .size)
         try container.encode(_errorCount, forKey: .errorCount)
+        try container.encode(responseHeaders, forKey: .responseHeaders)
         try container.encode(_appliedCustomHeaders, forKey: .appliedCustomHeaders)
     }
 

@@ -157,7 +157,40 @@ final class TUSAPITests: XCTestCase {
         XCTAssertEqual(String(offset), headerFields["Upload-Offset"])
         XCTAssertEqual(String(length), headerFields["Content-Length"])
     }
-    
+
+    func testUploadFromFileReportsFailedRequestWhenPatchResponseHasNoOffset() throws {
+        let data = Data("Hello how are you".utf8)
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try data.write(to: fileURL)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        let responseData = Data("Upload offset is stale".utf8)
+        MockURLProtocol.prepareResponse(for: "PATCH", testID: mockTestID) { _ in
+            MockURLProtocol.Response(status: 409, headers: [:], data: responseData)
+        }
+
+        let uploadExpectation = expectation(description: "Call api.upload(fromFile:)")
+        let metaData = UploadMetadata(id: UUID(),
+                                      filePath: fileURL,
+                                      uploadURL: URL(string: "io.tus")!,
+                                      size: data.count)
+
+        api.upload(fromFile: fileURL, offset: data.count, location: uploadURL, metaData: metaData, customHeaders: metaData.customHeaders ?? [:]) { result in
+            switch result {
+            case .success:
+                XCTFail("Expected failed PATCH response to be reported")
+            case .failure(.failedRequest(let response, let data)):
+                XCTAssertEqual(response.statusCode, 409)
+                XCTAssertEqual(data, responseData)
+            case .failure(let error):
+                XCTFail("Expected failedRequest, got \(error)")
+            }
+            uploadExpectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 3, handler: nil)
+    }
+
     // MARK: - Progress delegate
 
     func testProgressDelegateFiredViaHandleProgressForTask() {

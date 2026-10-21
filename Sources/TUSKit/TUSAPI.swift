@@ -297,17 +297,7 @@ final class TUSAPI {
         queue.sync {
             callbacks[metaData.id.uuidString] = { result in
                 processResult(completion: completion) {
-                    let (data, response) = try result.get()
-
-                    guard (200...299).contains(response.statusCode) else {
-                        throw TUSAPIError.failedRequest(response, data)
-                    }
-                    
-                    guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
-                          let offset = Int(offsetStr) else {
-                        throw TUSAPIError.couldNotRetrieveOffset
-                    }
-                    return (offset, response.extractHeaders())
+                    try TUSAPI.uploadResult(from: result)
                 }
             }
         }
@@ -350,12 +340,7 @@ final class TUSAPI {
         queue.sync {
             self.callbacks[metaData.id.uuidString] = { result in
                 processResult(completion: completion) {
-                    let (_, response) = try result.get()
-                    guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
-                          let offset = Int(offsetStr) else {
-                        throw TUSAPIError.couldNotRetrieveOffset
-                    }
-                    return (offset, response.extractHeaders())
+                    try TUSAPI.uploadResult(from: result)
                 }
             }
         }
@@ -385,15 +370,25 @@ final class TUSAPI {
         queue.sync {
             self.callbacks[metadata.id.uuidString] = { result in
                 processResult(completion: completion) {
-                    let (_, response) = try result.get()
-                    guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
-                          let offset = Int(offsetStr) else {
-                        throw TUSAPIError.couldNotRetrieveOffset
-                    }
-                    return (offset, response.extractHeaders())
+                    try TUSAPI.uploadResult(from: result)
                 }
             }
         }
+    }
+
+    /// Reads the new offset from a PATCH response, reporting any non-2xx response as `failedRequest`.
+    private static func uploadResult(from result: Result<(Data?, HTTPURLResponse), Error>) throws -> (Int, responseHeaders: [String: String]?) {
+        let (data, response) = try result.get()
+
+        guard (200...299).contains(response.statusCode) else {
+            throw TUSAPIError.failedRequest(response, data)
+        }
+
+        guard let offsetStr = response.allHeaderFields[caseInsensitive: "upload-offset"] as? String,
+              let offset = Int(offsetStr) else {
+            throw TUSAPIError.couldNotRetrieveOffset
+        }
+        return (offset, response.extractHeaders())
     }
     
     func registerBackgroundHandler(_ handler: @escaping () -> Void) {

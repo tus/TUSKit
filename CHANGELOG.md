@@ -3,6 +3,9 @@
 ## Breaking changes
 - `TUSClientError.couldNotGetFileStatus` now includes an `underlyingError` for better diagnostics.
 
+## Bugfix
+- Rejected `PATCH` responses are reported as `TUSAPIError.failedRequest` with their status code instead of `couldNotRetrieveOffset` ([#233](https://github.com/tus/TUSKit/pull/233) by [@samsonjs](https://github.com/samsonjs))
+
 # 3.7.0
 
 - Removed cocoapods support

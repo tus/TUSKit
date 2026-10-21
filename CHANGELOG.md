@@ -3,6 +3,9 @@
 ## Breaking changes
 - `TUSClientError.couldNotGetFileStatus` now includes an `underlyingError` for better diagnostics.
 
+## Bugfix
+- Background `URLSession`s are no longer invalidated when a `TUSAPI` is deallocated, which broke other sessions using the same identifier ([#234](https://github.com/tus/TUSKit/pull/234) by [@samsonjs](https://github.com/samsonjs))
+
 # 3.7.0
 
 - Removed cocoapods support

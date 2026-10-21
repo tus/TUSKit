@@ -74,7 +74,10 @@ final class TUSAPI {
 
     deinit {
         progressObservations.values.forEach { $0.invalidate() }
-        if session.delegate is SessionDataDelegate {
+        // Don't invalidate background sessions: they're daemon-backed, and two URLSession proxies
+        // sharing the same background identifier share one underlying daemon session. Invalidating
+        // one proxy kills that shared daemon session and crashes any other proxy with the same id.
+        if session.delegate is SessionDataDelegate, session.configuration.identifier == nil {
             session.finishTasksAndInvalidate()
         }
     }

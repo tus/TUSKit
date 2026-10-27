@@ -58,6 +58,24 @@ final class Scheduler {
         }
     }
     
+    /// Tracks a task that is already running, such as a request a background session kept going across a relaunch,
+    /// so that cancelling reaches it like the tasks the scheduler runs.
+    func adoptRunningTask(_ task: ScheduledTask) {
+        queue.async {
+            self.runningTasks.append(task)
+        }
+    }
+
+    /// Stops tracking an adopted task once it completes.
+    /// - Returns: `false` if the task was cancelled while it ran, in which case its result should be ignored.
+    func finishAdoptedTask(_ task: ScheduledTask) -> Bool {
+        queue.sync {
+            guard let index = runningTasks.firstIndex(where: { $0 === task }) else { return false }
+            runningTasks.remove(at: index)
+            return true
+        }
+    }
+
     func cancelAll() {
         queue.async {
             self.pendingTasks = []

@@ -409,6 +409,15 @@ final class TUSAPI {
             completion(hasTask)
         })
     }
+
+    /// The upload request the session is still running for `metadata`, such as one a background session kept going
+    /// across a relaunch.
+    func runningUploadTask(for metadata: UploadMetadata, completion: @escaping (URLSessionUploadTask?) -> Void) {
+        session.getAllTasks(completionHandler: { tasks in
+            let task = tasks.first { $0.taskDescription == metadata.id.uuidString } as? URLSessionUploadTask
+            completion(task)
+        })
+    }
     
     /// A factory to make requests with sane defaults.
     /// - Parameters:

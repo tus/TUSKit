@@ -199,6 +199,14 @@ final class UploadDataTask: NSObject, IdentifiableTask {
         return try files.store(data: data, id: metaData.id, preferredFileExtension: "uploadData")
     }
     
+    /// Takes over a request that was already running, such as one a background session kept going across a relaunch,
+    /// so that cancelling this task cancels it.
+    func adopt(_ sessionTask: URLSessionUploadTask) {
+        queue.async {
+            self.sessionTask = sessionTask
+        }
+    }
+
     func cancel() {
         queue.async {
             self.isCanceled = true

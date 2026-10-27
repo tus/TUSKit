@@ -557,21 +557,38 @@ public final class TUSClient {
         }
 
         for metadata in allMetadata {
-            api.checkTaskExists(for: metadata) { [weak self] taskExists in
+            api.runningUploadTask(for: metadata) { [weak self] sessionTask in
                 guard let self else {
                     return
                 }
-                guard taskExists,
-                      let task = try? UploadDataTask(api: self.api, metaData: metadata, files: self.files, headerGenerator: self.headerGenerator) else {
+                guard let sessionTask,
+                      let task = try? UploadDataTask(api: self.api, metaData: metadata, files: self.files, range: self.inFlightRange(for: metadata), headerGenerator: self.headerGenerator) else {
                     return
                 }
 
                 self.queue.sync { self.uploads[metadata.id] = metadata }
+                task.adopt(sessionTask)
+                self.scheduler.adoptRunningTask(task)
 
                 self.api.registerCallback({ result in
                     task.taskCompleted(result: result, completed: { [weak self] result in
-                        if case .failure = result {
-                            _ = try? self?.retry(id: metadata.id)
+                        guard let self else { return }
+                        // A request can still complete after it was cancelled, or after the client was stopped.
+                        guard self.scheduler.finishAdoptedTask(task) else { return }
+                        switch result {
+                        case let .success(newTasks):
+                            // Handled like an upload the scheduler ran: report a finished upload, continue a chunked one.
+                            self.handleFinishedUploadTask(task)
+                            self.scheduler.addTasks(tasks: newTasks)
+                        case let .failure(error):
+                            // The system resends a re-attached request from the offset it started at, which the server
+                            // rejects once it has more than that. Ask the server where to continue instead. If that
+                            // fails too, the status check is retried like any other failed task.
+                            guard let remoteDestination = metadata.remoteDestination else {
+                                self.onError(error: error, task: task, scheduler: self.scheduler)
+                                return
+                            }
+                            self.scheduler.addTask(task: StatusTask(api: self.api, remoteDestination: remoteDestination, metaData: metadata, files: self.files, chunkSize: self.chunkSize, headerGenerator: self.headerGenerator))
                         }
                     })
                 }, forMetadata: metadata)
@@ -579,6 +596,14 @@ public final class TUSClient {
         }
     }
     
+    /// The chunk a background session was uploading for `metadata`, so the next chunk follows on from it.
+    /// Unchunked uploads have no range.
+    private func inFlightRange(for metadata: UploadMetadata) -> Range<Int>? {
+        let offset = metadata.uploadedRange?.upperBound ?? 0
+        guard let chunkSize, offset < metadata.size else { return nil }
+        return offset..<min(offset + chunkSize, metadata.size)
+    }
+
     /// Upload a file at the URL. Will not copy the path.
     /// - Parameter storedFilePath: The path where the file is stored for processing.
     private func scheduleTask(for storedFilePath: URL, id: UUID, uploadURL: URL?, customHeaders: [String: String], context: [String: String]?) throws {

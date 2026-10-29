@@ -52,18 +52,21 @@ final class TUSClient_HeaderGenerationTests: XCTestCase {
         var receivedHeaders: [String: String]?
         var receivedRequestID: UUID?
         let generatorCalled = expectation(description: "Header generator called")
+        tusDelegate.finishUploadExpectation = expectation(description: "Upload finished")
 
         client = try makeClient(configuration: configuration) { requestID, headers, onHeadersGenerated in
-            receivedRequestID = requestID
-            receivedHeaders = headers
+            if receivedHeaders == nil {
+                receivedRequestID = requestID
+                receivedHeaders = headers
+                generatorCalled.fulfill()
+            }
             onHeadersGenerated(headers)
-            generatorCalled.fulfill()
         }
         client.delegate = tusDelegate
 
         let uploadID = try client.upload(data: data, customHeaders: expectedHeaders)
 
-        wait(for: [generatorCalled], timeout: 1)
+        wait(for: [generatorCalled, tusDelegate.finishUploadExpectation!], timeout: 5)
         XCTAssertEqual(receivedHeaders, expectedHeaders)
         XCTAssertEqual(receivedRequestID, uploadID)
     }

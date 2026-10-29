@@ -80,7 +80,9 @@ final class TUSClient_CacheTests: XCTestCase {
     }
     
     func testDeleteSingleFile() throws {
-        let id = try client.upload(data: data)
+        // removeCacheFor(id:) is only safe while the client is idle, so let the upload fail for good first
+        prepareNetworkForErronousResponses(testID: mockTestID)
+        let id = try upload(data: data, shouldSucceed: false)[0]
         
         var contents = try FileManager.default.contentsOfDirectory(at: fullStoragePath, includingPropertiesForKeys: nil)
         XCTAssertEqual(2, contents.count, "Prerequisite for tests fails, expected 2 files to exist, the file to upload and metadata")
